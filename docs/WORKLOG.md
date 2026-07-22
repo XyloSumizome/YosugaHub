@@ -1,5 +1,46 @@
 # 作業記録
 
+## 2026-07-22: Phase 2-1 ViewModel / Repository 層の導入
+
+### 目的
+
+Phase 2 の下準備。**UIの見た目は一切変えず**、データ経路を `DummyData` の直接参照から
+`UI → ViewModel → Repository → DataSource` へ通す(設計書3.3のアーキテクチャに整える)。
+これにより次の Room / DataStore を DataSource 差し替えだけで導入できる状態にする。
+
+### 実施内容
+
+- ドメインモデルを新設(`domain/model/`): `CalendarEvent` / `Project` / `Recommendation`
+  - 旧 `data/model/DummyData.kt` の `Dummy*` データクラスを置き換え、同ファイルは削除
+- インメモリのデータソース `data/local/SampleDataSource` を新設(旧 `DummyData` の種データを集約)
+- Repository を3つ新設(`data/repository/`): `CalendarRepository` / `ProjectRepository` / `AssistantRepository`
+  - 一覧は `Flow<List<...>>` で公開(Room 導入時に DAO の Flow へそのまま差し替え可能)
+  - `today` / `lastSyncedAt` / `priorityTask` は暫定値。後で端末時計・DataStore・導出ロジックへ置き換える
+- 手動DI: `di/AppContainer`(interface + `DefaultAppContainer`)と `YosugaHubApplication` を新設
+  - `AndroidManifest.xml` に `android:name=".YosugaHubApplication"` を追加
+  - 設計書3.4の方針どおり、初期版は手動DI。画面/Repositoryが増えたら Hilt を検討
+- 各画面に ViewModel を追加(`Home` / `Calendar` / `Projects` / `Assistant`)
+  - `StateFlow<XxxUiState>` を公開し、画面は `collectAsState()` で監視
+  - 画面から `DummyData` 直参照を全廃(設定画面はデータを持たないため据え置き)
+- テスト更新: `DummyDataTest` → `SampleDataSourceTest`、加えて `ProjectRepositoryTest`(Flow の emit を検証)を追加
+
+### 新規ライブラリ
+
+- **なし**。`Flow` / `viewModelScope` / coroutines は既存の lifecycle 依存に含まれる推移的依存を利用。
+  `collectAsStateWithLifecycle` は追加依存(`lifecycle-runtime-compose`)が必要なため、
+  今回は追加せず標準の `collectAsState()` を使用。
+
+### テスト結果
+
+- `assembleDebug` 成功 / `testDebugUnitTest` 成功(BUILD SUCCESSFUL、JDK 17・WSL)
+- UIの表示内容は変更前と同一(仮データの見た目を維持)
+
+### 次に推奨する作業(Phase 2 の続き)
+
+1. Room 導入(Entity / DAO / DB)→ `SampleDataSource` を Room 由来の DataSource へ差し替え
+2. DataStore 導入(設定値・最終同期時刻)
+3. JSONモデル + schemaVersion 検証 + エクスポート/インポート + 共有メニュー対応
+
 ## 2026-07-22: WSLビルド環境の構築とビルド・テストの検証
 
 ### 実施内容

@@ -10,11 +10,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.data.model.DummyEvent
+import com.shiro.yosugahub.domain.model.CalendarEvent
 
 /** 予定1件分の行表示 */
 @Composable
-fun EventRow(event: DummyEvent, modifier: Modifier = Modifier) {
+fun EventRow(event: CalendarEvent, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Text(
             text = "${event.start}〜${event.end}",

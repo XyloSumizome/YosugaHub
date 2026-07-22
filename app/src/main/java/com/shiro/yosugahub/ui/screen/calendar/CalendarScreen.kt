@@ -10,16 +10,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.data.model.DummyData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
 
 @Composable
-fun CalendarScreen(modifier: Modifier = Modifier) {
+fun CalendarScreen(
+    modifier: Modifier = Modifier,
+    viewModel: CalendarViewModel = viewModel(factory = CalendarViewModel.Factory),
+) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -31,17 +37,17 @@ fun CalendarScreen(modifier: Modifier = Modifier) {
         }
         item {
             SectionCard(title = "今日") {
-                DummyData.todayEvents.forEach { EventRow(it) }
+                uiState.todayEvents.forEach { EventRow(it) }
             }
         }
         item {
             SectionCard(title = "今後7日") {
-                DummyData.upcomingEvents.forEach { EventRow(it) }
+                uiState.upcomingEvents.forEach { EventRow(it) }
             }
         }
         item {
             SectionCard(title = "過去7日") {
-                DummyData.pastEvents.forEach { EventRow(it) }
+                uiState.pastEvents.forEach { EventRow(it) }
             }
         }
         item {

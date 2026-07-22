@@ -16,16 +16,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.data.model.DummyData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.SectionCard
 
 @Composable
-fun AssistantScreen(modifier: Modifier = Modifier) {
+fun AssistantScreen(
+    modifier: Modifier = Modifier,
+    viewModel: AssistantViewModel = viewModel(factory = AssistantViewModel.Factory),
+) {
     val context = LocalContext.current
     val notYet = { Toast.makeText(context, "Phase 2 で実装予定です", Toast.LENGTH_SHORT).show() }
+    val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -55,7 +61,7 @@ fun AssistantScreen(modifier: Modifier = Modifier) {
         item {
             Text(text = "受け取った提案", style = MaterialTheme.typography.titleMedium)
         }
-        items(DummyData.recommendations) { recommendation ->
+        items(uiState.recommendations) { recommendation ->
             SectionCard(title = recommendation.title) {
                 Text(
                     text = recommendation.detail,

@@ -15,17 +15,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.data.model.DummyData
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
+) {
     val context = LocalContext.current
     val notYet = { Toast.makeText(context, "Phase 2 で実装予定です", Toast.LENGTH_SHORT).show() }
+    val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -34,23 +40,23 @@ fun HomeScreen(modifier: Modifier = Modifier) {
     ) {
         item {
             Text(
-                text = DummyData.today,
+                text = uiState.today,
                 style = MaterialTheme.typography.headlineSmall,
             )
         }
         item {
             SectionCard(title = "今日の予定") {
-                DummyData.todayEvents.forEach { EventRow(it) }
+                uiState.todayEvents.forEach { EventRow(it) }
             }
         }
         item {
             SectionCard(title = "次の予定") {
-                EventRow(DummyData.upcomingEvents.first())
+                uiState.nextEvent?.let { EventRow(it) }
             }
         }
         item {
             SectionCard(title = "ゲーム進捗") {
-                DummyData.projects.forEach { project ->
+                uiState.projects.forEach { project ->
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         Text(text = project.name, style = MaterialTheme.typography.titleSmall)
                         Text(
@@ -63,7 +69,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
         item {
             SectionCard(title = "優先タスク") {
-                Text(text = DummyData.priorityTask, style = MaterialTheme.typography.bodyLarge)
+                Text(text = uiState.priorityTask, style = MaterialTheme.typography.bodyLarge)
             }
         }
         item {
@@ -80,7 +86,7 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         item {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 Text(
-                    text = "最終同期: ${DummyData.lastSyncedAt}",
+                    text = "最終同期: ${uiState.lastSyncedAt}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -16,13 +16,20 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.data.model.DummyData
-import com.shiro.yosugahub.data.model.DummyProject
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.domain.model.Project
 
 @Composable
-fun ProjectsScreen(modifier: Modifier = Modifier) {
+fun ProjectsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: ProjectsViewModel = viewModel(factory = ProjectsViewModel.Factory),
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -31,14 +38,14 @@ fun ProjectsScreen(modifier: Modifier = Modifier) {
         item {
             Text(text = "プロジェクト", style = MaterialTheme.typography.headlineSmall)
         }
-        items(DummyData.projects) { project ->
+        items(uiState.projects) { project ->
             ProjectCard(project)
         }
     }
 }
 
 @Composable
-private fun ProjectCard(project: DummyProject, modifier: Modifier = Modifier) {
+private fun ProjectCard(project: Project, modifier: Modifier = Modifier) {
     Card(modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
