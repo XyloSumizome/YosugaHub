@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
+import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.domain.model.CalendarEvent
@@ -29,16 +30,18 @@ data class HomeUiState(
 class HomeViewModel(
     private val calendarRepository: CalendarRepository,
     private val projectRepository: ProjectRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = combine(
         calendarRepository.todayEvents(),
         calendarRepository.upcomingEvents(),
         projectRepository.projects(),
-    ) { todayEvents, upcomingEvents, projects ->
+        userPreferencesRepository.lastSyncedAt,
+    ) { todayEvents, upcomingEvents, projects, lastSyncedAt ->
         HomeUiState(
             today = calendarRepository.today,
-            lastSyncedAt = calendarRepository.lastSyncedAt,
+            lastSyncedAt = lastSyncedAt.ifEmpty { "未同期" },
             priorityTask = projectRepository.priorityTask,
             todayEvents = todayEvents,
             nextEvent = upcomingEvents.firstOrNull(),
@@ -57,6 +60,7 @@ class HomeViewModel(
                 HomeViewModel(
                     calendarRepository = app.container.calendarRepository,
                     projectRepository = app.container.projectRepository,
+                    userPreferencesRepository = app.container.userPreferencesRepository,
                 )
             }
         }

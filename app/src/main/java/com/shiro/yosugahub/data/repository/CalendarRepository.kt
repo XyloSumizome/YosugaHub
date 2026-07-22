@@ -16,9 +16,6 @@ class CalendarRepository(private val dao: CalendarEventDao) {
     /** 現在日付(暫定)。後で端末時計から求める。 */
     val today: String get() = PLACEHOLDER_TODAY
 
-    /** 最終同期時刻(暫定)。後で DataStore から読む。 */
-    val lastSyncedAt: String get() = PLACEHOLDER_LAST_SYNCED_AT
-
     fun todayEvents(): Flow<List<CalendarEvent>> = observeBucket(CalendarBucket.TODAY)
 
     fun upcomingEvents(): Flow<List<CalendarEvent>> = observeBucket(CalendarBucket.UPCOMING)
@@ -30,6 +27,5 @@ class CalendarRepository(private val dao: CalendarEventDao) {
 
     private companion object {
         const val PLACEHOLDER_TODAY = "2026-07-22 (水)"
-        const val PLACEHOLDER_LAST_SYNCED_AT = "2026-07-22 20:00"
     }
 }

@@ -1,5 +1,53 @@
 # 作業記録
 
+## 2026-07-22: Phase 2-3 DataStore 導入(最終同期時刻の永続化)
+
+### 目的
+
+設計書4.1が指定する軽量設定の保存先として DataStore を導入。最初の実用値として
+「最終同期時刻」を永続化する。従来ホーム画面の「最終同期」はコード内の固定文字列
+(プレースホルダー)だったが、これを DataStore 管理へ移し、**実際にローカルデータを
+投入した時刻を本物の値として保存・表示**する(未実装を実装済みに見せない)。
+
+### 新規ライブラリ(追加理由を明記)
+
+- **DataStore Preferences 1.1.1**(`androidx.datastore:datastore-preferences`)
+  - 理由: 設計書4.1が最終同期時刻・軽量設定の保存先として明示指定。
+    SharedPreferences より coroutines/Flow と相性がよく、非同期・型安全に読める。
+
+### 実施内容
+
+- `data/local/datastore/UserPreferencesRepository` を新設
+  - `preferencesDataStore`(ファイル名 `user_prefs`)を用い、`lastSyncedAt: Flow<String>` を公開
+  - IO エラー時は `emptyPreferences()` にフォールバックしクラッシュさせない
+  - `setLastSyncedAt(value)` で書き込み
+- `util/SyncTime`: 最終同期時刻の表示フォーマット(`yyyy-MM-dd HH:mm`)を関数化
+- `DefaultAppContainer`
+  - `UserPreferencesRepository` を生成・公開(`AppContainer` interface にも追加)
+  - 初回シードを実行したとき、`LocalDateTime.now()` を整形して最終同期時刻に記録
+- `HomeViewModel`
+  - `userPreferencesRepository.lastSyncedAt` を combine に追加(4フロー)
+  - 空なら「未同期」と表示
+- `CalendarRepository` から `lastSyncedAt` のプレースホルダー const を削除(DataStore へ移管)
+- テスト: `SyncTimeTest`(フォーマット検証)を追加
+
+### 設計上の注意
+
+- DataStore の I/O 検証はユニットテスト対象外(Context/ファイルが必要なため)。
+  代わりにフォーマッタを純粋関数として切り出し `SyncTimeTest` で検証。
+- 「最終同期時刻＝初回シード時刻」は暫定。Phase 3(GitHub)/ Phase 4(Calendar)の
+  実同期処理が入ったら、その完了時刻に置き換える。
+
+### テスト結果
+
+- `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- ホーム画面の「最終同期」が固定文字列から DataStore 由来の実時刻表示に変化(それ以外の見た目は不変)
+
+### 次に推奨する作業(Phase 2 の最後)
+
+- JSONモデル + schemaVersion 検証 + エクスポート/インポート + Android共有メニュー対応
+  (ホーム・よすが画面の「未実装Toast」ボタンを実機能へ)
+
 ## 2026-07-22: Phase 2-2 Room 導入(ローカル永続化)
 
 ### 目的
