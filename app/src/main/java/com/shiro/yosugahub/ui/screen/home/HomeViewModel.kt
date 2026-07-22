@@ -9,6 +9,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
+import com.shiro.yosugahub.data.repository.ExportRepository
+import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.Project
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** ホーム画面が監視するUI状態。 */
 data class HomeUiState(
@@ -31,7 +34,15 @@ class HomeViewModel(
     private val calendarRepository: CalendarRepository,
     private val projectRepository: ProjectRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val exportRepository: ExportRepository,
 ) : ViewModel() {
+
+    /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
+    fun createExport(onResult: (Result<ExportResult>) -> Unit) {
+        viewModelScope.launch {
+            onResult(runCatching { exportRepository.createContextExport() })
+        }
+    }
 
     val uiState: StateFlow<HomeUiState> = combine(
         calendarRepository.todayEvents(),
@@ -61,6 +72,7 @@ class HomeViewModel(
                     calendarRepository = app.container.calendarRepository,
                     projectRepository = app.container.projectRepository,
                     userPreferencesRepository = app.container.userPreferencesRepository,
+                    exportRepository = app.container.exportRepository,
                 )
             }
         }

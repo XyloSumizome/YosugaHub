@@ -1,5 +1,54 @@
 # 作業記録
 
+## 2026-07-22: Phase 2-4 JSONエクスポート(状況JSON生成・保存・共有)
+
+### 目的
+
+Phase 2 完了条件の1つ「アプリが状況JSNを生成できる」を満たす。設計書2.3「アプリから
+ChatGPTへ」の状況JSONを生成し、アプリ専用領域へ保存 + Android共有メニューで渡せるようにする。
+ホーム・よすが画面の「未実装Toast」だったJSN作成ボタンを実機能に置き換える。
+
+### 新規ライブラリ(追加理由を明記)
+
+- **kotlinx.serialization JSON 1.7.3**(`org.jetbrains.kotlinx:kotlinx-serialization-json`)
+  + Gradleプラグイン `org.jetbrains.kotlin.plugin.serialization`(Kotlin 2.0.21 に追従)
+  - 理由: 設計書2.3/15章のJSN受け渡しがPhase 2の中核。`schemaVersion` 付きの型安全な
+    JSN生成・(次ステップの)検証に必要。設計書3.4のライブラリ候補にも記載。
+
+### 実施内容
+
+- JSNモデル `data/file/model/ContextExport`(`@Serializable`)を新設
+  - 設計書2.3の状況JN構造(`schemaVersion` / `generatedAt` / `userContext` /
+    `calendar{pastDays,futureDays,events}` / `projects[]` / `recentAssistantExchange`)
+  - `SCHEMA_VERSION = 1` を定数化(設計書15章: schemaVersion必須)
+- `data/file/ContextExporter`(純粋オブジェクト)を新設
+  - ドメインモデル → DTO変換 + `Json.encodeToString`(prettyPrint / encodeDefaults)
+  - I/O・プラットフォーム非依存でユニットテスト可能
+  - `generatedAt` は引数注入(テスト容易性)。現状 `statusMarkdown` は手元の
+    goal/inProgress/nextTask から簡易Markdownを生成(status.md は Phase 3 で導入)
+- `data/repository/ExportRepository` を新設
+  - projects + events(today/upcoming/past を結合)を `Flow.first()` でスナップショット
+  - `OffsetDateTime.now()`(ISO 8601 + タイムゾーン)で generatedAt を付与
+  - `filesDir/exports/context_<yyyy-MM-dd_HHmmss>.json` へ保存(設計書4.2)
+  - `ExportResult(fileName, json)` を返す
+- `DefaultAppContainer` / `AppContainer` に `exportRepository` を追加
+- `ui/share/ShareJson`: `ACTION_SEND`(`application/json` / EXTRA_TEXT)で共有
+  - ファイル添付共有(FileProvider)は次段で検討
+- `HomeViewModel` / `AssistantViewModel` に `createExport(onResult)` を追加
+  - ホーム「ChatGPT用JSNを作成」/ よすが「状況JSNを作成」ボタンを実機能化
+    (生成 → 保存Toast → 共有シート、失敗時はエラーToast)
+- テスト: `ContextExporterTest`(schemaVersion / フィールドマッピング / JN往復)を追加
+
+### テスト結果
+
+- `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL、kspDebugKotlin 実行)
+
+### 残作業(Phase 2 の最後)
+
+- 回答JSNの取り込み(インポート): 選択 → schemaVersion検証 → 検証結果表示 →
+  不正JSNでクラッシュさせず取り込み → Room へ保存
+- (任意)FileProvider によるファイル添付共有
+
 ## 2026-07-22: Phase 2-3 DataStore 導入(最終同期時刻の永続化)
 
 ### 目的

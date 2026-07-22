@@ -7,6 +7,7 @@ import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
+import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.CoroutineScope
@@ -24,6 +25,7 @@ interface AppContainer {
     val projectRepository: ProjectRepository
     val assistantRepository: AssistantRepository
     val userPreferencesRepository: UserPreferencesRepository
+    val exportRepository: ExportRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -49,6 +51,9 @@ class DefaultAppContainer(
     }
     override val userPreferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(context.applicationContext)
+    }
+    override val exportRepository: ExportRepository by lazy {
+        ExportRepository(context.applicationContext, projectRepository, calendarRepository)
     }
 
     init {

@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.share.shareJsonText
 
 @Composable
 fun HomeScreen(
@@ -32,6 +33,19 @@ fun HomeScreen(
     val context = LocalContext.current
     val notYet = { Toast.makeText(context, "Phase 2 で実装予定です", Toast.LENGTH_SHORT).show() }
     val uiState by viewModel.uiState.collectAsState()
+
+    val createExport = {
+        viewModel.createExport { result ->
+            result
+                .onSuccess { export ->
+                    Toast.makeText(context, "保存しました: ${export.fileName}", Toast.LENGTH_SHORT).show()
+                    shareJsonText(context, export.json)
+                }
+                .onFailure {
+                    Toast.makeText(context, "JSONの作成に失敗しました", Toast.LENGTH_SHORT).show()
+                }
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -74,7 +88,7 @@ fun HomeScreen(
         }
         item {
             Column {
-                Button(onClick = notYet, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = createExport, modifier = Modifier.fillMaxWidth()) {
                     Text("ChatGPT用JSONを作成")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
