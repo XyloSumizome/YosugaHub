@@ -1,5 +1,56 @@
 # 作業記録
 
+## 2026-07-22: Phase 2-2 Room 導入(ローカル永続化)
+
+### 目的
+
+Phase 2 の完了条件「再起動後もデータが残る」を満たすため、ローカル永続化に Room を導入。
+前ステップで Repository が `Flow` を返す形にしてあるので、データソースを
+インメモリ(`SampleDataSource`)から Room DAO へ差し替えるだけで済む。
+**UIの見た目は変えない**(同じ仮データで DB を初回シードする)。
+
+### 新規ライブラリ(追加理由を明記)
+
+- **Room 2.6.1**(`room-runtime` / `room-ktx` / `room-compiler`)
+  - 理由: Phase 2 の永続化要件。設計書4.1が Room を明示指定、3.4のライブラリ候補にも記載。
+  - `room-ktx` は DAO の `Flow` 返却(coroutines 連携)のために追加。
+- **KSP 2.0.21-1.0.28**(`com.google.devtools.ksp`)
+  - 理由: Room のアノテーション処理に必要。Kotlin 2.0.21 と整合するバージョンを選択。
+  - ルート `build.gradle.kts` に `apply false` で宣言、`app` で適用。
+
+### 実施内容
+
+- Room 層を新設(`data/local/db/`)
+  - `entity/`: `ProjectEntity`(id を主キー)/ `CalendarEventEntity`(bucket で今日・今後・過去を区別)/ `RecommendationEntity`
+  - `dao/`: `ProjectDao` / `CalendarEventDao` / `RecommendationDao`(一覧は `Flow` で公開、`count()` と `insertAll()` を用意)
+  - `YosugaDatabase`(version 1、exportSchema=false)
+  - `Mappers.kt`(Entity → ドメインモデル変換。UIへは常にドメインモデルを渡す)
+  - `CalendarBucket`(today/upcoming/past の暫定区分)
+  - `SampleSeed`(初回シード用の仮データ。旧 `SampleDataSource` を置き換え、同ファイルは削除)
+- Repository をDAO利用へ変更(3つとも `dao.observe...().map { it.toDomain() }`)
+  - `today` / `lastSyncedAt` / `priorityTask` は各Repositoryの private const に暫定保持(後で時計・DataStore・導出へ)
+- `DefaultAppContainer` を `Room.databaseBuilder` で DB 構築するよう変更
+  - 引数に `Context` を追加(`YosugaHubApplication` から `this` を渡す)
+  - 初回起動時、各テーブルが空の場合のみ `SampleSeed` を投入(`applicationScope` で非同期、再起動後の実データを壊さない)
+- テスト更新: `SampleSeedTest`(種データの件数・ID・bucket検証)、`ProjectRepositoryTest`(フェイクDAOで Entity→ドメイン変換を検証)
+
+### 設計上の注意 / 既知の割り切り
+
+- `exportSchema=false`: 現状マイグレーション不要のため。将来スキーマ変更が必要になったら
+  スキーマ出力とマイグレーションを追加する。
+- シードはあくまで仮データ。Phase 3(GitHub)/ Phase 4(Calendar)/ Phase 2 のJSON取り込みで
+  実データに置き換わり、`SampleSeed` は不要になる。
+
+### テスト結果
+
+- `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL、`kspDebugKotlin` 実行を確認)
+- UIの表示内容は変更前と同一
+
+### 次に推奨する作業(Phase 2 の続き)
+
+1. DataStore 導入(設定値・最終同期時刻)
+2. JSONモデル + schemaVersion 検証 + エクスポート/インポート + Android共有メニュー対応
+
 ## 2026-07-22: Phase 2-1 ViewModel / Repository 層の導入
 
 ### 目的
