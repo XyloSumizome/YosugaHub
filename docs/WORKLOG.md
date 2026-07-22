@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-07-23: v3-Step 1(Task実体化)の詳細設計を確定 — 記録のみ(コード変更なし)
+
+### ユーザーと合意した決定
+
+1. **status は3状態**: `todo` / `doing` / `done`(最小構成。停滞はプロジェクト側 health で表現済み)。
+2. **プロジェクト外タスクを許可**: `projectId` は null 可(TGS準備・事務など。会話からの抽出で必ず出る)。
+3. **UIはプロジェクト詳細画面を新設**: 一覧カードタップ → 詳細(プロジェクト情報編集 + タスク一覧/追加/編集)。
+   下部ナビ外のネストルート(初のネストナビ)。プロジェクト外タスクはホームの「今日やること」側で扱う(将来)。
+
+### データモデル(確定)
+
+- `Task`(domain)/ `TaskEntity`(テーブル `tasks`、`projectId` に index):
+  `id`(UUID文字列, PK)/ `projectId`(String?)/ `title` / `detail` /
+  `status`(todo|doing|done)/ `priority`(high|medium|low、Recommendationと同語彙)/
+  `dueDate`(String? "yyyy-MM-dd")/ `createdAt` / `updatedAt`(ISO 8601)/
+  `completedAt`(String?、完了履歴の土台)/ `source`(manual|assistant、Step 2 の承認由来記録用)
+- **Room v1→v2**: `CREATE TABLE tasks` の追加マイグレーション(既存データ無傷)。
+  これを機に `exportSchema = true` + スキーマJSON出力を有効化(Phase 2-2 の予告どおり)。
+- `TaskDao` + `TaskRepository`(observeAll / observeByProject / upsert / setStatus / delete)+ Mapper。
+- `SampleSeed` に仮タスク数件(既存 nextTask 相当 + プロジェクト外1件)。
+
+### 既存を壊さないための割り切り
+
+- `Project.inProgress` / `nextTask` の文字列は当面残す(タスクからの導出は後段で判断)。
+- ホーム「優先タスク」も当面既存表示のまま。
+- 編集UIは title / detail / priority / dueDate / status のみ。並び替え・検索・繰り返しは作らない。
+
+### 実装順(1ステップ=1コミット、都度ビルド+テスト)
+
+- **1-a**: Entity / DAO / Migration / Repository / シード(UIなし)+ テスト
+- **1-b**: プロジェクト詳細画面(読み取りのみ: 情報 + タスク一覧)
+- **1-c**: タスク追加・編集・完了・削除(編集ダイアログ)
+- **1-d**: プロジェクト編集(name / currentGoal / health)
+
+新規ライブラリ: **なし**。
+
+---
+
 ## 2026-07-23: 設計を v3(AIファースト)へ転換 — 記録のみ(コード変更なし)
 
 ### 目的
