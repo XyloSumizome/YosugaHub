@@ -1,5 +1,54 @@
 # 作業記録
 
+---
+
+## ▶ 次回の再開ポイント(2026-07-22 時点)
+
+### 今どこ
+- **Phase 0 / 1 / 2 まで完了**。最新コミット: `570fc7d`(Phase 2-5)。作業ツリーはクリーン。
+- Phase 2 完了条件(状況JSON生成 / 回答JSON取り込み / 再起動後もデータ保持)はすべて達成。
+- コード検証は WSL 上の `assembleDebug` + `testDebugUnitTest` が通っている(BUILD SUCCESSFUL)。
+- **実機/エミュレーターでの起動確認は未実施**(次にやると良い)。
+
+### いま移行中の作業: Windows 側 Android Studio で開く
+- Android Studio 本体はインストール済み(`C:\Program Files\Android\Android Studio`)。
+  **ただし Android SDK は未ダウンロード**(初回セットアップウィザードが未完了)。
+- Windows で開くための下準備として、以下をこちら側で実施済み:
+  - `local.properties` を削除(WSL用に `sdk.dir=/home/note_xylo/android-sdk` を指していたため)。
+    → Windows の Android Studio が Sync 時に正しい `sdk.dir` を自動生成する。
+  - `.gradle` / `app/build` / `build`(WSL生成のキャッシュ)を削除(OS跨ぎ初回同期の安定化。再生成される)。
+- **ユーザーの次の操作**: ①Android Studio 起動→Setup Wizard(Standard)でSDK取得 →
+  ②`File > Open` で `C:\Users\note_\Desktop\Yosuga` を開く → ③Gradle Sync(不足SDKは同意して導入)→ ④▶実行。
+
+### 再び WSL でビルドしたい場合(Windows と併用する際の注意)
+- `local.properties` を復元する必要がある(Git管理外なので削除済み):
+  ```
+  echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
+  ```
+  ※ Windows の Android Studio で開くときは、逆に Windows 用 `sdk.dir` が入っている必要がある。
+    同じ `local.properties` を両OSで共有できないため、使う側に合わせて中身を差し替える。
+- WSL のビルド/テストコマンド(JDK・SDKは WSL 側に導入済み):
+  ```
+  JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug --no-daemon
+  JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew testDebugUnitTest --no-daemon
+  ```
+
+### 次にやること
+1. (推奨)実機/エミュレーターで起動確認し、5画面遷移・JSON作成/取り込みの動作を目視。
+2. **Phase 3(GitHub 進捗取得)** に着手:
+   - 各ゲームの `.yosuga/status.json` を GitHub(Contents API / Raw URL)から取得。
+   - まず1プロジェクトで接続確認 → Markdown/構造化表示 → キャッシュ(Room)→ 更新日時 →
+     エラー表示 → 3プロジェクトへ拡張(設計書 Phase 3 / 19〜27章)。
+   - **新規ライブラリの検討**(着手時に理由を説明): Retrofit または Ktor Client + kotlinx.serialization コンバータ。
+   - **セキュリティ**(設計書9章): 非公開リポジトリ用トークンは Android Keystore で保持。コード/ログ/Git に置かない。
+
+### 積み残し(任意の改善)
+- FileProvider によるファイル添付共有(現状はテキスト共有)。
+- Storage Access Framework での保存先フォルダ選択(現状は内部固定)。
+- 取り込み履歴一覧の画面表示。
+
+---
+
 ## 2026-07-22: Phase 2-5 JSONインポート(回答JSON取り込み) — Phase 2 完了
 
 ### 目的
