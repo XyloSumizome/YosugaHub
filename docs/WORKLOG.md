@@ -1,5 +1,62 @@
 # 作業記録
 
+## 2026-07-22: Phase 2-5 JSONインポート(回答JSON取り込み) — Phase 2 完了
+
+### 目的
+
+Phase 2 の最後の完了条件「ChatGPT回答JSNを取り込める」を満たす。設計書2.3「ChatGPTから
+アプリへ」の回答JSNを、設計書15章のルール(schemaVersion検証 / 未知項目は無視 /
+不正JSNでクラッシュさせない / 元ファイルを上書きせず履歴を残す)に沿って取り込む。
+ホーム・よすが画面の「未実装Toast」だった取り込みボタンを実機能化。
+
+### 新規ライブラリ
+
+- **なし**(kotlinx.serialization は導入済み、ファイル選択は既存の activity-compose を使用)
+
+### 実施内容
+
+- 回答JSNモデル `data/file/model/AssistantResponse`(`@Serializable`)+ 補助モデル
+  (`RecommendationImport` / `SuggestedTaskImport` / `SchemaProbe`)を新設
+  - 設計書2.3の回答JN構造。必須は `schemaVersion` のみ、他はデフォルト値付き
+- `data/file/ResponseImporter`(純粋オブジェクト)を新設
+  - `Json { ignoreUnknownKeys = true; isLenient = true }` で未知項目を無視
+  - まず `SchemaProbe` で schemaVersion を先読みして対応可否を判定
+  - 結果を sealed `ParseResult`(Success / InvalidJson / UnsupportedSchema)で返す
+  - `SerializationException` 等を捕捉し、不正JSNでもクラッシュさせない
+- `data/repository/ImportRepository` を新設
+  - 選択された Uri を `contentResolver` で読み、`ResponseImporter` で検証
+  - 成功時のみ `imports/response_<日時>.json` へ履歴保存(上書きしない)し、
+    提案を Room の recommendations テーブルへ反映(deleteAll → insertAll で置き換え)
+  - 結果を sealed `ImportResult`(Success / InvalidJson / UnsupportedSchema / ReadError)で返す
+- `RecommendationDao.deleteAll()` を追加
+- `DefaultAppContainer` / `AppContainer` に `importRepository` を追加
+- `ui/share/ImportMessage`: `ImportResult` をユーザー向け短文へ変換(設計書8章)
+- `HomeViewModel` / `AssistantViewModel` に `importResponse(uri, onResult)` を追加
+- ホーム「ChatGPT回答JSNを取り込む」/ よすが「回答JSNを取り込む」を実機能化
+  - `ActivityResultContracts.OpenDocument()` でファイル選択 → 取り込み → 結果Toast
+  - Room が Flow で提案テーブルを監視しているため、取り込み後に一覧が自動更新される
+- 設定画面「JSN保存先」の表示を現状に合わせて更新(内部の exports / imports に保存)
+- テスト: `ResponseImporterTest`(正常 / 不明項目無視 / 不正JSN / 非対応バージョン /
+  schemaVersion欠落)を追加
+
+### テスト結果
+
+- `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### Phase 2 完了条件の達成状況
+
+- ✅ アプリが状況JSNを生成できる(Phase 2-4)
+- ✅ ChatGPT回答JSNを取り込める(本ステップ)
+- ✅ 再起動後もデータが残る(Phase 2-2 Room / 2-3 DataStore)
+
+**→ Phase 2 完了。次は Phase 3(GitHub進捗取得)。**
+
+### 今後の改善候補(任意)
+
+- FileProvider によるファイル添付共有(現状はテキスト共有)
+- Storage Access Framework で保存先フォルダを選択(現状は内部固定)
+- 取り込み履歴一覧の画面表示、schemaVersion 非対応時の詳細案内
+
 ## 2026-07-22: Phase 2-4 JSONエクスポート(状況JSON生成・保存・共有)
 
 ### 目的

@@ -6,11 +6,14 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import android.net.Uri
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
+import com.shiro.yosugahub.data.repository.ImportRepository
+import com.shiro.yosugahub.data.repository.ImportResult
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.Project
@@ -35,12 +38,20 @@ class HomeViewModel(
     private val projectRepository: ProjectRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val exportRepository: ExportRepository,
+    private val importRepository: ImportRepository,
 ) : ViewModel() {
 
     /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
     fun createExport(onResult: (Result<ExportResult>) -> Unit) {
         viewModelScope.launch {
             onResult(runCatching { exportRepository.createContextExport() })
+        }
+    }
+
+    /** 選択された回答JSNを取り込み、結果を UI へ返す。 */
+    fun importResponse(uri: Uri, onResult: (ImportResult) -> Unit) {
+        viewModelScope.launch {
+            onResult(importRepository.importResponse(uri))
         }
     }
 
@@ -73,6 +84,7 @@ class HomeViewModel(
                     projectRepository = app.container.projectRepository,
                     userPreferencesRepository = app.container.userPreferencesRepository,
                     exportRepository = app.container.exportRepository,
+                    importRepository = app.container.importRepository,
                 )
             }
         }

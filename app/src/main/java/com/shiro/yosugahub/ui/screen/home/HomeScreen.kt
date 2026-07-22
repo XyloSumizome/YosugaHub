@@ -1,6 +1,8 @@
 package com.shiro.yosugahub.ui.screen.home
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.shareJsonText
 
 @Composable
@@ -31,7 +34,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val context = LocalContext.current
-    val notYet = { Toast.makeText(context, "Phase 2 で実装予定です", Toast.LENGTH_SHORT).show() }
     val uiState by viewModel.uiState.collectAsState()
 
     val createExport = {
@@ -46,6 +48,17 @@ fun HomeScreen(
                 }
         }
     }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importResponse(uri) { result ->
+                Toast.makeText(context, importResultMessage(result), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    val importResponse = { importLauncher.launch(arrayOf("application/json", "text/plain")) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -92,7 +105,7 @@ fun HomeScreen(
                     Text("ChatGPT用JSONを作成")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(onClick = notYet, modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
                     Text("ChatGPT回答JSONを取り込む")
                 }
             }

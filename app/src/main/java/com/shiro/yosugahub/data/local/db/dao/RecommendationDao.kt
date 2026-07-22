@@ -17,4 +17,7 @@ interface RecommendationDao {
 
     @Insert
     suspend fun insertAll(recommendations: List<RecommendationEntity>)
+
+    @Query("DELETE FROM recommendations")
+    suspend fun deleteAll()
 }

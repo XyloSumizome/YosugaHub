@@ -38,7 +38,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         }
         item {
             SectionCard(title = "JSON保存先") {
-                Text("未設定(Phase 2 で実装予定)", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    "アプリ内の exports / imports に保存(保存先の選択は今後対応)",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
         item {

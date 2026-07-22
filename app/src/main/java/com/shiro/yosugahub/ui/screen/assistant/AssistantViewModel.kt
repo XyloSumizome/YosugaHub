@@ -6,10 +6,13 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import android.net.Uri
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
+import com.shiro.yosugahub.data.repository.ImportRepository
+import com.shiro.yosugahub.data.repository.ImportResult
 import com.shiro.yosugahub.domain.model.Recommendation
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,12 +28,20 @@ data class AssistantUiState(
 class AssistantViewModel(
     private val assistantRepository: AssistantRepository,
     private val exportRepository: ExportRepository,
+    private val importRepository: ImportRepository,
 ) : ViewModel() {
 
     /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
     fun createExport(onResult: (Result<ExportResult>) -> Unit) {
         viewModelScope.launch {
             onResult(runCatching { exportRepository.createContextExport() })
+        }
+    }
+
+    /** 選択された回答JSNを取り込み、結果を UI へ返す。 */
+    fun importResponse(uri: Uri, onResult: (ImportResult) -> Unit) {
+        viewModelScope.launch {
+            onResult(importRepository.importResponse(uri))
         }
     }
 
@@ -49,6 +60,7 @@ class AssistantViewModel(
                 AssistantViewModel(
                     assistantRepository = app.container.assistantRepository,
                     exportRepository = app.container.exportRepository,
+                    importRepository = app.container.importRepository,
                 )
             }
         }

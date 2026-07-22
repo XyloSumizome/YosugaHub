@@ -25,8 +25,11 @@
 
 # Current Phase
 
-Phase 0(環境構築)+ Phase 1(5画面の骨組みとダミーデータ)まで実装済み。
-次は Phase 2(Room / DataStore / JSONエクスポート・インポート)。
+Phase 0〜2 まで実装済み。
+- Phase 0(環境構築)+ Phase 1(5画面の骨組みとダミーデータ)
+- Phase 2(ViewModel/Repository層 + Room + DataStore + 状況JSONエクスポート/回答JSONインポート)
+  - 仮データは Room に初回シード。ViewModel→Repository→DataSource で分離済み。
+次は Phase 3(GitHub進捗取得: `.yosuga/status.json` の取得・表示・キャッシュ)。
 
 # Build
 
