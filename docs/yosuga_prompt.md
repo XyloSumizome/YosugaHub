@@ -13,7 +13,7 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 ```
 最新の状況はここから読んでください。
 一覧: https://<あなたのドメイン>/yosuga/api.php?file=index&token=<トークン>
-各ファイル: file=projects / tasks / knowledge / calendar / conversations / documents / directives
+各ファイルは projects / tasks / knowledge / calendar / conversations / documents / directives に分割して管理する。必要なものだけ取得してよい。
 ```
 
 ※ ChatGPT のブラウズ機能が有効な会話で使うこと。回答JSONの受け取り(④〜⑥)は従来どおり。
@@ -173,6 +173,13 @@ Yosuga Hub には「未整理文書」が保存されます。これは会話で
 ```
 
 ---
+
+### v4での運用方針（最新版）
+
+- データは用途ごとのJSONへ分割して保存・同期する。
+- ChatGPTは必要なJSONだけ読み込み、巨大な1ファイルを毎回取得しない。
+- タグ整理・文書分類・プロジェクト健康診断はヨスガが担当する。
+- GitHub上の各ゲームのClaude Codeは `.yosuga/status.json` を更新し、Yosuga Hub経由でヨスガへ共有される。
 
 ## アプリ側の取り込み仕様(参考・実装済みの挙動)
 

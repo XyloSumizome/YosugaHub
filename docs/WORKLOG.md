@@ -368,8 +368,9 @@ v1 から使い続けている端末の更新は、実機更新でのみ確認�
 
 ### 未検証(実機・実通信が必要)
 
-- Room v6 マイグレーション通し / 文書の一連の操作 / documents.json の実アップロード /
+- Room v6 マイグレーション通し / 文書の一連の操作 /
   ChatGPT が documents.json を読んで分類を返す一連の流れ
+- ※ documents.json の実アップロードは 2026-07-23 に**検証済み**(再開ポイント参照)
 
 ---
 
@@ -621,13 +622,22 @@ v1 から使い続けている端末の更新は、実機更新でのみ確認�
 3. GitHub Fine-grained PAT(Contents: Read-only)→ アプリ設定 → プロジェクト編集で owner/repo 入力
 4. ChatGPT に `docs/yosuga_prompt.md` を貼る → 状況JSON or サーバーAPI経由で運用開始
 
+### ✅ 検証済み(2026-07-23 実機・実通信)
+- **ロリポップ設置と実通信が通った**。エミュレーターのアプリから「今すぐ同期」→
+  `api.php?file=index` に **7ファイルすべてが並ぶ**ことを確認。
+  これにより次がまとめて実証された:
+  Keystore へのトークン保存→復号 / `X-Yosuga-Token` ヘッダー認証 / PHP側の検証と保存 /
+  配信(api.php)/ AiExporter の7ファイル生成。
+- エミュレーターでのアプリ起動・動作。
+
 ### 未検証(実機・実通信が必要)
-- Room マイグレーション v1→v5 の通し。
-- GitHub 実通信 / Keystore のトークン保存→再起動後の復号。
+- Room マイグレーションの通し(**新規インストールは最新版を直接作るため未検証のまま**。
+  `./gradlew connectedDebugAndroidTest` で `MigrationTest` を流せば確認できる)。
+- ChatGPT がサーバーのJSONを読み、回答JSONを返す一連の流れ(v4.1 分類 / v4.2 指示書)。
+- GitHub 実通信(`.yosuga/status.json` の取得)。
 - Obsidian SAF 書き出し(`createFile("text/markdown")` の拡張子挙動はプロバイダ依存)。
-- カレンダー(READ_CALENDAR 権限ダイアログ・繰り返し予定)。シミュレーターは
+- カレンダー(READ_CALENDAR 権限ダイアログ・繰り返し予定)。エミュレーターは
   Googleアカウント未追加だと0件になる。
-- **ロリポップへの実設置と実通信**(MockEngine では検証済み)。
 
 ### WSL でビルドする場合
 ```
