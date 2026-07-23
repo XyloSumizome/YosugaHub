@@ -4,6 +4,7 @@ import com.shiro.yosugahub.data.file.ProposalPayloads
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.ProposalType
+import com.shiro.yosugahub.ui.component.itemKindLabel
 
 /**
  * 承認待ち提案カードの表示モデル(純粋関数で生成、ユニットテスト可能)。
@@ -82,15 +83,6 @@ private fun PendingProposal.unreadable(typeLabel: String) = ProposalCardUi(
     body = "内容を解釈できませんでした。棄却してください。",
     readable = false,
 )
-
-private fun itemKindLabel(kind: ItemKind): String = when (kind) {
-    ItemKind.MEMO -> "メモ"
-    ItemKind.IDEA -> "アイデア"
-    ItemKind.DECISION -> "決定事項"
-    ItemKind.SHOPPING -> "買い物"
-    ItemKind.TECH -> "技術"
-    ItemKind.OTHER -> "その他"
-}
 
 private fun priorityLabel(priority: String): String = when (priority) {
     "high" -> "高"

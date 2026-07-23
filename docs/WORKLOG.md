@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-07-23: v3-Step 2-d 「記録」タブ新設(知識ベース閲覧・6タブ化)
+
+### 目的
+
+承認済みの知識(情報アイテム・決定事項ログ・観察日記)を閲覧する「記録」タブを追加する。
+Step 2 設計の合意どおり6タブ化(ホーム/カレンダー/プロジェクト/記録/ヨスガ/設定)。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `YosugaDestination` に `Records`(記録、Icons.Filled.Create)を追加し NavHost へ配線
+- `ui/screen/records/RecordsViewModel`: items + tagNames + diaryEntries を combine
+- `ui/screen/records/RecordsFilters`(純粋関数): `filterItemsByTag`(null=すべて)/
+  `decisionsOf`(kind=DECISION 抽出)
+- `ui/screen/records/RecordsScreen`:
+  - セクション切替チップ(アイテム / 決定 / 日記)。選択状態は rememberSaveable で保持
+  - アイテム: タグ絞込チップ(横スクロール、再タップで解除)+ カード
+    (日付・種別チップ・本文・#タグ・関連実体)
+  - 決定: 決定事項ログを時系列カードで表示(日付 + タイトル + 本文)
+  - 日記: 観察日記を日付ごとのカードで表示
+  - 各セクションの空状態テキストに対応
+- `ui/component/KindLabels`: itemKindLabel を共用化(ProposalCardUi の private 版を移設)
+- テスト: `RecordsFiltersTest`(タグ絞込 / 全件 / 決定事項抽出)3件
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### 次にやること
+
+- **2-e**: 状況JSONエクスポート v2(タスク・決定事項を含める)→ Step 2 完了
+
+---
+
 ## 2026-07-23: v3-Step 2-c 提案レビューUI(ヨスガ画面を承認ハブ化)
 
 ### 目的

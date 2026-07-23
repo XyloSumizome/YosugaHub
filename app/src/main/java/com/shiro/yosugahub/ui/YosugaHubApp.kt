@@ -21,6 +21,7 @@ import com.shiro.yosugahub.ui.screen.calendar.CalendarScreen
 import com.shiro.yosugahub.ui.screen.home.HomeScreen
 import com.shiro.yosugahub.ui.screen.projectdetail.ProjectDetailScreen
 import com.shiro.yosugahub.ui.screen.projects.ProjectsScreen
+import com.shiro.yosugahub.ui.screen.records.RecordsScreen
 import com.shiro.yosugahub.ui.screen.settings.SettingsScreen
 
 @Composable
@@ -72,6 +73,7 @@ fun YosugaHubApp() {
             composable(ProjectDetailRoute.PATTERN) {
                 ProjectDetailScreen(onBack = { navController.popBackStack() })
             }
+            composable(YosugaDestination.Records.route) { RecordsScreen() }
             composable(YosugaDestination.Assistant.route) { AssistantScreen() }
             composable(YosugaDestination.Settings.route) { SettingsScreen() }
         }
