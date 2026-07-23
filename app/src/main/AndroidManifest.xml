@@ -3,6 +3,8 @@
 
     <!-- GitHub から .yosuga/status.json を取得するために必要 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 端末に同期済みのカレンダー(Googleカレンダー含む)を読むために必要。読み取り専用 -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
 
     <application
         android:name=".YosugaHubApplication"

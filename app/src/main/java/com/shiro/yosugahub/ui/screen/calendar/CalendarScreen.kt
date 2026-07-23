@@ -1,6 +1,9 @@
 package com.shiro.yosugahub.ui.screen.calendar
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.share.calendarSyncMessage
 
 @Composable
 fun CalendarScreen(
@@ -26,6 +30,35 @@ fun CalendarScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+
+    val runSync = {
+        viewModel.sync { result ->
+            Toast.makeText(context, calendarSyncMessage(result), Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // 権限がまだなら要求し、許可されたらそのまま同期する。
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            runSync()
+        } else {
+            Toast.makeText(
+                context,
+                "カレンダーの読み取りが許可されませんでした。端末の設定から許可できます。",
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
+    val syncOrRequestPermission = {
+        if (viewModel.hasPermission()) {
+            runSync()
+        } else {
+            permissionLauncher.launch(Manifest.permission.READ_CALENDAR)
+        }
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -36,29 +69,41 @@ fun CalendarScreen(
             Text(text = "カレンダー", style = MaterialTheme.typography.headlineSmall)
         }
         item {
-            SectionCard(title = "今日") {
-                uiState.todayEvents.forEach { EventRow(it) }
+            SectionCard(title = "今日(${uiState.today})") {
+                EventList(uiState.todayEvents)
             }
         }
         item {
             SectionCard(title = "今後7日") {
-                uiState.upcomingEvents.forEach { EventRow(it) }
+                EventList(uiState.upcomingEvents)
             }
         }
         item {
             SectionCard(title = "過去7日") {
-                uiState.pastEvents.forEach { EventRow(it) }
+                EventList(uiState.pastEvents)
             }
         }
         item {
             OutlinedButton(
-                onClick = {
-                    Toast.makeText(context, "Phase 4 で実装予定です", Toast.LENGTH_SHORT).show()
-                },
+                onClick = syncOrRequestPermission,
+                enabled = !uiState.isSyncing,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("手動更新")
+                Text(if (uiState.isSyncing) "取得中..." else "端末のカレンダーから更新")
             }
         }
+    }
+}
+
+@Composable
+private fun EventList(events: List<com.shiro.yosugahub.domain.model.CalendarEvent>) {
+    if (events.isEmpty()) {
+        Text(
+            text = "予定はありません",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        events.forEach { EventRow(it) }
     }
 }

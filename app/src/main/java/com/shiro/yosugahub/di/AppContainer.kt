@@ -2,6 +2,7 @@ package com.shiro.yosugahub.di
 
 import android.content.Context
 import androidx.room.Room
+import com.shiro.yosugahub.data.calendar.DeviceCalendarDataSource
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
@@ -67,7 +68,10 @@ class DefaultAppContainer(
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
-        CalendarRepository(database.calendarEventDao())
+        CalendarRepository(
+            dao = database.calendarEventDao(),
+            dataSource = DeviceCalendarDataSource(context.applicationContext),
+        )
     }
     override val projectRepository: ProjectRepository by lazy {
         ProjectRepository(database.projectDao())
@@ -150,10 +154,8 @@ class DefaultAppContainer(
                 database.projectDao().insertAll(SampleSeed.projects)
                 seededAnything = true
             }
-            if (database.calendarEventDao().count() == 0) {
-                database.calendarEventDao().insertAll(SampleSeed.events)
-                seededAnything = true
-            }
+            // カレンダーは端末から同期する実データに置き換わったためシードしない
+            // (SampleSeed.events はテスト用に残している)。
             if (database.recommendationDao().count() == 0) {
                 database.recommendationDao().insertAll(SampleSeed.recommendations)
                 seededAnything = true

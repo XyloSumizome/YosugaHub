@@ -46,7 +46,10 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   Room v5 キャッシュと詳細画面表示・一括更新 / 状況JSONへの反映(source=github/local を明示)。
 - 運用ドキュメント: `docs/yosuga_prompt.md`(ChatGPT=ヨスガ用)、`docs/claude_code_onboarding.md`(各ゲームのClaude Code用)。
 - 未検証: 実通信・実機でのマイグレーション通し・Keystore復号・Obsidian SAF書き出し(WORKLOG再開ポイント参照)。
-- 次の候補: Googleカレンダー連携(旧Phase 4。カレンダーは現在唯一の仮データ)。
+- **カレンダー連携 完了**(旧Phase 4): 設計書v2のOAuth方式ではなく **CalendarContract で端末に同期済みの
+  カレンダーを読む**方式を採用(READ_CALENDAR のみ / Google Cloud設定・新規ライブラリ不要)。
+  これで仮データは解消済み。
+- 次の候補: 実機での通し確認、積み残し(タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI 等)。
 - アシスタント名は「ヨスガ」(カタカナ表記)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。

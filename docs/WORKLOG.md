@@ -2,6 +2,59 @@
 
 ---
 
+## 2026-07-23: カレンダー連携(旧Phase 4)— 端末カレンダー読み取りで実装
+
+### 方式の決定(ユーザーと合意)
+
+設計書v2は Google Calendar API + OAuth 前提だったが、**CalendarContract で端末に同期済みの
+カレンダー(Googleカレンダー含む)を直接読む方式**を採用した。
+
+- 採用理由: READ_CALENDAR 権限のみで動作し、**Google Cloud プロジェクト / OAuth クライアントID /
+  SHA-1登録 / 同意画面の設定がすべて不要**。新規ライブラリもゼロ。オフラインでも動く。
+  設計書の完了条件(過去7日〜未来7日を確認 / 状況JSONへ出力)は満たせる。
+  「初期版の権限は可能な限り読み取り専用に限定する」(設計書5.1)にも合致。
+- 制約: 端末に同期されているカレンダーのみが対象(Pixel で Google カレンダーを使う運用なら問題なし)。
+- 将来 API + OAuth へ移す場合も、DataSource を差し替えるだけで済む構造にしてある。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `AndroidManifest.xml` に **READ_CALENDAR**(読み取り専用)を追加
+- `data/calendar/EventFormatting`(純粋ロジック): 今日の日付表示 / 予定時刻の整形
+  (今日は時刻のみ・他日は日付+時刻・終日は日付のみ)/ 今日・今後・過去のバケット判定
+- `data/calendar/DeviceCalendarDataSource`: `CalendarContract.Instances` を期間指定で問い合わせ
+  - **Instances を使うことで繰り返し予定が期間内の個別予定として展開される**
+  - 権限チェック、タイトル空欄は「(タイトルなし)」、終日予定は終了時刻を出さない
+  - 結果は `Result<List<CalendarEventEntity>>`(例外を投げない)
+- `CalendarEventDao.replaceAll()`(@Transaction で全削除→挿入。同期は常に洗い替え)
+- `CalendarRepository` を刷新:
+  - `today` を**端末時計から**算出(固定文字列のプレースホルダーを廃止)
+  - `sync()`: 権限なし → `PermissionDenied` / 失敗 → `Failed`(**キャッシュは変更しない**)/
+    成功 → 洗い替え
+- `CalendarViewModel`: `sync()` と `hasPermission()`、同期中フラグ
+- `CalendarScreen`: 「端末のカレンダーから更新」ボタン(未許可なら権限ダイアログ →
+  許可されたらそのまま同期)。0件時の表示、今日の日付をセクション見出しに表示
+- `ui/share/CalendarMessage`: 結果 → 短文(0件と失敗を区別、技術的な例外文は出さない)
+- **仮カレンダーのシードを停止**(実データに置き換わったため)。`SampleSeed.events` はテスト用に残す
+- テスト: `EventFormattingTest` 5件、`CalendarMessageTest` 4件
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- **実機/シミュレーター未検証**: 権限ダイアログ、実際の予定取得、繰り返し予定の展開。
+  シミュレーターの場合、Googleアカウント未追加だと予定0件になる点に注意。
+
+### これで仮データはすべて解消
+
+- プロジェクト/タスク/知識ベース: 手動編集・AI提案・GitHub取得で実データ化済み
+- カレンダー: 端末から実データ取得(本ステップ)
+- 残るシードは初回起動時のサンプルのみ(実データ投入後は上書き・削除可能)
+
+---
+
 ## ▶ 次回の再開ポイント(2026-07-23 時点 / GitHub連携まで実装完了)
 
 ### 今どこ
@@ -23,6 +76,8 @@
 - GitHub 実通信(認証・取得・エラー表示)。MockEngine では検証済み。
 - Keystore へのトークン保存→再起動後の復号。
 - Obsidian SAF 書き出し(`createFile("text/markdown")` の拡張子挙動はプロバイダ依存)。
+- **カレンダー**: READ_CALENDAR の権限ダイアログ、実際の予定取得、繰り返し予定の展開。
+  シミュレーターは Google アカウント未追加だと0件になる。
 
 ### WSL でビルドする場合
 ```
@@ -32,9 +87,9 @@ JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebug
 ※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
 
 ### 次の実装候補
-- **Google カレンダー連携(旧Phase 4)**: 現在のカレンダーは唯一の仮データ。
 - 積み残し: タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI / 観察日記のObsidian書き出し /
-  FileProvider共有 / status.json の decisions を提案へ流し込む。
+  FileProvider共有 / status.json の decisions を提案へ流し込む / カレンダーの自動同期(起動時)。
+- ※ 主要ロードマップ(v3-Step 1〜4 / GitHub連携 / カレンダー)は実装完了。次は実機での通し確認が有益。
 
 ---
 
