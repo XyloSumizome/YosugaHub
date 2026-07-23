@@ -2,6 +2,75 @@
 
 ---
 
+## ▶ 次回の再開ポイント(2026-07-23 時点 / v3-Step 2 完了)
+
+### 今どこ
+- 設計: v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)。アシスタント名は「ヨスガ」(カタカナ)。
+- **v3-Step 1 完了**(Task実体化 + プロジェクト詳細/編集)。実機確認済み。
+- **v3-Step 2 完了**(2-a〜2-e): Room v3(知識ベース7テーブル)/ 回答JSON v2 取り込み /
+  提案レビューUI(承認→本テーブル反映・棄却)/ 「記録」タブ(6タブ化)/ 状況JSONエクスポート v2。
+- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている。
+
+### 未実施の実機確認(次にやると良い)
+1. Room v2→v3 マイグレーション(Step 1 確認時の端末で更新起動 → データ保持とクラッシュなし)。
+2. 「記録」タブ(アイテム/決定/日記の切替、タグ絞込)。
+3. **提案→承認フローの一気通貫**: ヨスガ画面で状況JSON作成(v2で出力される)→
+   ChatGPT に渡し schemaVersion:2 の回答JSONをもらう → 取り込み → 承認待ちカード →
+   承認でタスク/記録/日記/健康状態へ反映されること。
+   ※ 手元で試すだけなら、`{"schemaVersion":2,"proposals":{"items":[{"kind":"memo","title":"テスト"}]}}`
+   のような小さなJSONをファイル保存して取り込めばよい。
+
+### WSL でビルドする場合
+```
+echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
+JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebugUnitTest --no-daemon
+```
+※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
+
+### 次の実装候補(ユーザーと相談して決める)
+- **v3-Step 3: Obsidian連携(SAF)** — Vault フォルダ選択・URI権限永続化・長文知識の書き出し(`KnowledgeStore` 抽象化)。
+- または Step 4 相当(ホームのAI秘書視点への再編: 今日やること/承認待ち件数/最近の決定)。
+- 積み残し(任意): 記録タブのアイテム編集・検索、タグのタスク適用、FileProvider共有、取り込み履歴画面。
+
+---
+
+## 2026-07-23: v3-Step 2-e 状況JSONエクスポート v2 — v3-Step 2 完了
+
+### 目的
+
+状況JSONにタスク・最近の決定事項を含め、AIが現状を踏まえた提案を返せるようにする。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `ContextExport` を v2 へ: `SCHEMA_VERSION = 2`、`tasks[]` / `recentDecisions[]` を追加。
+  `responseSchemaVersion = 2` も追加(「proposals 形式で返してほしい」という宣言)
+- `TaskExport`(projectId/title/detail/status/priority/dueDate)/ `DecisionExport`(date/title/body)
+- `ContextExporter.build` に tasks / decisions パラメータを追加(既定は空リスト)
+- `ExportRepository`: タスク全件 + 決定事項(新しい順に最大20件)をスナップショットに追加
+- `AppContainer`: ExportRepository へ taskRepository / knowledgeRepository を配線
+- テスト: `ContextExporterTest` を v2 に更新 + タスク/決定事項マッピングのテストを追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### v3-Step 2 完了条件の達成状況
+
+- ✅ 2-a: Room v3(知識ベースのデータ層)
+- ✅ 2-b: 回答JSON v2 取り込み(v1互換維持)
+- ✅ 2-c: 提案レビューUI(承認→反映 / 棄却→履歴)
+- ✅ 2-d: 「記録」タブ(アイテム・決定・日記、タグ絞込)
+- ✅ 2-e: 状況JSONエクスポート v2
+- ⬜ 実機確認は未実施 → 再開ポイント参照
+
+**→ v3-Step 2 完了。次は実機確認、その後 Step 3(Obsidian連携)等を相談。**
+
+---
+
 ## 2026-07-23: v3-Step 2-d 「記録」タブ新設(知識ベース閲覧・6タブ化)
 
 ### 目的
@@ -204,36 +273,6 @@ Step 2 設計(下記エントリ)のデータモデルを Room に実装。UIは
 - **2-c**: 提案レビューUI(よすが画面を承認ハブ化)
 - **2-d**: 「記録」タブ新設(アイテム一覧・タグ絞込・決定事項ログ・日記)
 - **2-e**: 状況JSONエクスポート v2
-
----
-
-## ▶ 次回の再開ポイント(2026-07-23 時点)
-
-### 今どこ
-- **設計は v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)**。
-  設計書: `yosuga_hub_android_design_v3.md` / `yosuga_hub_android_design_v3_1.md`(v2は技術資料)。
-- **v3-Step 1(Task実体化)完了**: 1-a データ層 / 1-b プロジェクト詳細画面 / 1-c タスク編集 / 1-d プロジェクト編集。
-- コード検証は WSL の `assembleDebug` + `testDebugUnitTest` が通っている(BUILD SUCCESSFUL)。
-
-### 未実施の実機確認(次にやると良い)
-1. **Room v1→v2 マイグレーション**: 旧DBが入った端末/エミュレーターで更新起動し、既存データが残ることを確認。
-2. プロジェクト詳細画面の一連の操作(カードタップ→詳細→タスク追加/編集/チェック/削除→プロジェクト編集)。
-- Windows 側 Android Studio で実行(`local.properties` は Windows SDK パスの状態にしてある)。
-- Windows の Gradle Sync が失敗する場合は `.gradle` / `build` / `app/build` を削除して再Sync。
-
-### WSL でビルドする場合
-```
-echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
-JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebugUnitTest --no-daemon
-```
-※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
-
-### 次の実装: v3-Step 2 の詳細設計(v3.1統合)
-- 情報アイテム(kind: memo/idea/decision/shopping/tech…)+ タグ(多対多・AI管理)+
-  エンティティ + 観察日記のデータモデル(Room v3 へのマイグレーション)
-- 回答JSONスキーマ v2(タスク提案 + タグ付きアイテム / 決定事項 / 日記 / エンティティ関連付け / 健康状態)
-- 提案レビュー(承認/棄却)UI
-- 着手前に詳細設計をユーザーと合意すること(1ステップ=1コミットの進め方を維持)
 
 ---
 

@@ -2,11 +2,15 @@ package com.shiro.yosugahub.data.file
 
 import com.shiro.yosugahub.data.file.model.CalendarExport
 import com.shiro.yosugahub.data.file.model.ContextExport
+import com.shiro.yosugahub.data.file.model.DecisionExport
 import com.shiro.yosugahub.data.file.model.EventExport
 import com.shiro.yosugahub.data.file.model.ProjectExport
+import com.shiro.yosugahub.data.file.model.TaskExport
 import com.shiro.yosugahub.data.file.model.UserContext
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.domain.model.Task
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -27,6 +31,8 @@ object ContextExporter {
         projects: List<Project>,
         events: List<CalendarEvent>,
         generatedAt: String,
+        tasks: List<Task> = emptyList(),
+        decisions: List<KnowledgeItem> = emptyList(),
         pastDays: Int = 7,
         futureDays: Int = 7,
         purpose: String = DEFAULT_PURPOSE,
@@ -39,9 +45,26 @@ object ContextExporter {
             events = events.map { it.toExport() },
         ),
         projects = projects.map { it.toExport() },
+        tasks = tasks.map { it.toExport() },
+        recentDecisions = decisions.map { it.toDecisionExport() },
     )
 
     fun toJson(export: ContextExport): String = json.encodeToString(export)
+
+    private fun Task.toExport(): TaskExport = TaskExport(
+        projectId = projectId,
+        title = title,
+        detail = detail,
+        status = status.dbValue,
+        priority = priority,
+        dueDate = dueDate,
+    )
+
+    private fun KnowledgeItem.toDecisionExport(): DecisionExport = DecisionExport(
+        date = createdAt.take(10),
+        title = title,
+        body = body,
+    )
 
     private fun CalendarEvent.toExport(): EventExport = EventExport(
         title = title,

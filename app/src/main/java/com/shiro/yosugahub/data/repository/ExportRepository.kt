@@ -3,6 +3,7 @@ package com.shiro.yosugahub.data.repository
 import android.content.Context
 import com.shiro.yosugahub.data.file.ContextExporter
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.ItemKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -18,12 +19,15 @@ data class ExportResult(
 
 /**
  * 状況JSONの生成と保存を担う Repository(設計書2.3 / 4.2)。
- * 現在のプロジェクト・予定のスナップショットを取り、JSON化してアプリ専用領域へ保存する。
+ * 現在のプロジェクト・予定・タスク・最近の決定事項のスナップショットを取り、
+ * JSON化してアプリ専用領域へ保存する(v2)。
  */
 class ExportRepository(
     private val context: Context,
     private val projectRepository: ProjectRepository,
     private val calendarRepository: CalendarRepository,
+    private val taskRepository: TaskRepository,
+    private val knowledgeRepository: KnowledgeRepository,
 ) {
 
     /** 状況JSNを生成し `exports/` へ保存する。保存したファイル名とJSON本文を返す。 */
@@ -33,12 +37,19 @@ class ExportRepository(
             calendarRepository.todayEvents().first() +
                 calendarRepository.upcomingEvents().first() +
                 calendarRepository.pastEvents().first()
+        val tasks = taskRepository.tasks().first()
+        // 決定事項は新しい順(items() は createdAt 降順)に最大 MAX_DECISIONS 件。
+        val decisions = knowledgeRepository.items().first()
+            .filter { it.kind == ItemKind.DECISION }
+            .take(MAX_DECISIONS)
 
         val now = OffsetDateTime.now()
         val export = ContextExporter.build(
             projects = projects,
             events = events,
             generatedAt = now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            tasks = tasks,
+            decisions = decisions,
         )
         val json = ContextExporter.toJson(export)
 
@@ -51,5 +62,8 @@ class ExportRepository(
 
     private companion object {
         val FILE_TIMESTAMP: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss")
+
+        /** 状況JSONに含める決定事項の最大件数(肥大化防止)。 */
+        const val MAX_DECISIONS = 20
     }
 }

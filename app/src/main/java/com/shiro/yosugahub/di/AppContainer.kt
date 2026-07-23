@@ -85,7 +85,13 @@ class DefaultAppContainer(
         UserPreferencesRepository(context.applicationContext)
     }
     override val exportRepository: ExportRepository by lazy {
-        ExportRepository(context.applicationContext, projectRepository, calendarRepository)
+        ExportRepository(
+            context.applicationContext,
+            projectRepository,
+            calendarRepository,
+            taskRepository,
+            knowledgeRepository,
+        )
     }
     override val importRepository: ImportRepository by lazy {
         ImportRepository(
