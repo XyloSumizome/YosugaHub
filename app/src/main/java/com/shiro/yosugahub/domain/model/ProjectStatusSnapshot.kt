@@ -20,6 +20,11 @@ data class ProjectStatusSnapshot(
     val inProgress: List<StatusLine>,
     val nextTasks: List<StatusLine>,
     val blockers: List<StatusLine>,
+    /**
+     * ゲーム側で確定した設計判断(status.json の decisions)。
+     * AIがこれに矛盾する提案をしないよう、表示とAI向けJSONの両方へ流す。
+     */
+    val decisions: List<StatusLine> = emptyList(),
     val questionsForYosuga: List<String>,
     val generatedAt: String,
     val sourceCommit: String,

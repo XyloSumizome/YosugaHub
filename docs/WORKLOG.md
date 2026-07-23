@@ -2,6 +2,42 @@
 
 ---
 
+## 2026-07-24: status.json の decisions が捨てられていた問題を修正
+
+### 見つけた問題
+
+`docs/claude_code_onboarding.md` は各ゲームの Claude Code に
+「重要な設計判断は decisions へ記録する」と指示しているのに、
+**Hub は `StatusDecision` をパースするだけで、どこにも使っていなかった**
+(スナップショットにも、画面にも、AI向けJSONにも流れていない)。
+
+v4.3 で実害がある: レコルが projects.json を読んで提案するとき、
+**ゲーム側で確定済みの設計判断が見えない**ため、それに矛盾する提案をしかねない。
+
+### 実施内容
+
+- `ProjectStatusSnapshot.decisions` を追加(既定値 emptyList のため既存コードは無影響)
+- `StatusSnapshotMapper`: 空タイトルは落とし、日付を詳細の先頭に置く
+  (`2026-07-20 / 操作を単純に保つため` の形)
+- `ProjectExport.decisions` を追加 + statusMarkdown に `## Decisions` 節
+  → **状況JSON と AI向け projects.json の両方に載る**
+- プロジェクト詳細画面に「決定事項」を表示
+- `docs/recoru_prompt.md`: decisions は**ゲーム側で既に確定した設計判断**であり
+  「これに矛盾する提案をしない。見直しが必要なら勝手に覆さず会話で問題提起する」と明記
+
+### 保留(ユーザー判断待ち)
+
+decisions を**承認待ち提案として流し込む**案は見送った。同じ決定を毎回取り込まないための
+照合キー(projectId + date + title?)の設計が要り、運用の好みにも依存するため。
+まずは「読める」状態にして、必要になったら提案化を検討する。
+
+### テスト
+
+- `ContextExporterTest` / `ProjectStatusRepositoryTest` に decisions の検証を追加
+  (空タイトルを落とす / 日付の整形 / Markdown と JSON の両方に出る)
+
+---
+
 ## 2026-07-24: 回答JSONの貼り付け取り込み
 
 ### 経緯(実運用で見つかった摩擦)
@@ -738,7 +774,8 @@ v1 から使い続けている端末の更新は、実機更新でのみ確認�
 ### ユーザーの判断待ち(実装せず保留中)
 - タグのタスク適用(アイテムのタグと使い分ける意味があるか、運用次第)
 - 観察日記のObsidian書き出し(いつ・どのノートへ書くかのUX)
-- status.json の decisions を提案へ流し込む(重複取込を防ぐ照合キーの設計)
+- status.json の decisions を**提案として流し込む**か(表示とAI連携は 2026-07-24 に実装済み。
+  提案化には重複取込を防ぐ照合キーの設計が要る)
 - アプリUI文言の「ヨスガ」→「レコル」改名(実機検証が落ち着いてから)
 
 ---

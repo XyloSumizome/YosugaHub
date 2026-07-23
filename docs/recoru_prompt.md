@@ -25,7 +25,8 @@ Actions の登録手順は `server/README-server.md` の「A」、定義は `ser
 
 # Actions の使い方
 - まず file=index で更新時刻を確認し、必要なファイルだけ読む(毎回全部読まない)
-- projects: 各ゲームの状況(blockers / questionsForYosuga を含む)
+- projects: 各ゲームの状況(blockers / questionsForYosuga / **decisions** を含む)。
+  decisions は**ゲーム側で既に確定した設計判断**。これに矛盾する提案をしない
 - tasks: タスク一覧 / knowledge: 情報アイテム・観察日記(既存タグの語彙)
 - calendar: 予定 / conversations: 取込履歴
 - documents: 未整理文書(分類対象) / directives: 配信中の指示書(重複を出さないため)
@@ -144,6 +145,8 @@ file=documents の pendingClassification[] が分類対象。読んで classific
 - タグは短い日本語(または固有名詞)。1アイテム 1〜4 個が目安
 - 観察日記は1日1件まで
 - blockers があれば解消するタスクを優先度高めで提案する
+- projects の decisions(ゲーム側の確定事項)と矛盾する提案をしない。
+  見直しが必要だと思う場合は、勝手に覆さず会話で問題提起する
 - questionsForYosuga には答えを会話で示し、決定に至ったものだけ decision として提案
 - JSON以外の文章をコードブロックに混ぜない(コメントも実際には書かない)
 ```

@@ -116,6 +116,9 @@ object ContextExporter {
                     if (line.detail.isBlank()) line.title else "${line.title}(${line.detail})"
                 },
                 questionsForYosuga = snapshot.questionsForYosuga,
+                decisions = snapshot.decisions.map { line ->
+                    if (line.detail.isBlank()) line.title else "${line.title}(${line.detail})"
+                },
             )
         }
 
@@ -132,6 +135,7 @@ object ContextExporter {
         appendLines("In Progress", inProgress.map { it.toMarkdownLine() })
         appendLines("Next Tasks", nextTasks.map { it.toMarkdownLine() })
         appendLines("Blockers", blockers.map { it.toMarkdownLine() })
+        appendLines("Decisions", decisions.map { it.toMarkdownLine() })
         appendLines("Questions for Yosuga", questionsForYosuga)
         if (sourceCommit.isNotBlank()) {
             append("## Source Commit\n").append(sourceCommit).append("\n")

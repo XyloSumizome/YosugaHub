@@ -64,6 +64,8 @@ data class ProjectExport(
     val health: String = "",
     val blockers: List<String> = emptyList(),
     val questionsForYosuga: List<String> = emptyList(),
+    /** ゲーム側で確定した設計判断。AIがこれに矛盾する提案をしないための材料。 */
+    val decisions: List<String> = emptyList(),
 )
 
 /** タスクの現状(v2)。AIがタスク化・優先順位の提案をする材料。 */

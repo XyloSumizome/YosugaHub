@@ -71,6 +71,7 @@ class ContextExporterTest {
             inProgress = listOf(StatusLine("第2章の執筆", "50%")),
             nextTasks = listOf(StatusLine("戦闘調整", "優先度: high")),
             blockers = listOf(StatusLine("素材待ち", "深刻度: high")),
+            decisions = listOf(StatusLine("リズム判定は3段階にする", "2026-07-20 / 操作を単純に保つため")),
             questionsForYosuga = listOf("難易度はどうすべきか"),
             generatedAt = "2026-07-23T21:00:00+09:00",
             sourceCommit = "abc123",
@@ -93,6 +94,12 @@ class ContextExporterTest {
         assertTrue(project.statusMarkdown.contains("abc123"))
         assertEquals(listOf("素材待ち(深刻度: high)"), project.blockers)
         assertEquals(listOf("難易度はどうすべきか"), project.questionsForYosuga)
+        // ゲーム側の確定事項もAIへ渡す(これに矛盾する提案をさせないため)
+        assertTrue(project.statusMarkdown.contains("## Decisions"))
+        assertEquals(
+            listOf("リズム判定は3段階にする(2026-07-20 / 操作を単純に保つため)"),
+            project.decisions,
+        )
     }
 
     @Test

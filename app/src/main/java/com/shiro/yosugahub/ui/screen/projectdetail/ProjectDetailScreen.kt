@@ -260,6 +260,7 @@ private fun GitHubStatusCard(
                     StatusLineGroup("作業中", status.inProgress)
                     StatusLineGroup("次のタスク", status.nextTasks)
                     StatusLineGroup("ブロッカー", status.blockers)
+                    StatusLineGroup("決定事項", status.decisions)
                     if (status.questionsForYosuga.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = "ヨスガへの質問", style = MaterialTheme.typography.titleSmall)
