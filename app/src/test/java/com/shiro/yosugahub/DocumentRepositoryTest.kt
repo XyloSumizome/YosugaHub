@@ -303,4 +303,23 @@ class DocumentRepositoryTest {
         assertEquals(1, docs.size)
         assertEquals(DocumentStatus.UNCLASSIFIED, docs.single().status)
     }
+
+    @Test
+    fun document_carries_history_newest_first_with_current_flagged() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repo = repository(dao)
+        val doc = repo.createSample()
+        repo.applyAiClassification(
+            doc.id, "1回目", "memo", 0.5, emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+        repo.approveWithEdits(
+            doc.id, "2回目(修正)", "design-discussion",
+            emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+
+        val loaded = repo.document(doc.id)!!
+        assertEquals(listOf("2回目(修正)", "1回目"), loaded.classificationHistory.map { it.summary })
+        assertEquals("2回目(修正)", loaded.currentClassification?.summary)
+        assertEquals(1, loaded.classificationHistory.count { it.isCurrent })
+    }
 }

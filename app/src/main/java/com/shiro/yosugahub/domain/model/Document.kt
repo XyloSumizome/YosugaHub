@@ -72,4 +72,6 @@ data class Document(
     val updatedAt: String,   // ISO 8601(状態・分類の変化で刻む。body は不変)
     val source: String,      // manual / share
     val currentClassification: DocumentClassification?,
+    /** 分類履歴(新しい順)。現行分類も含む。 */
+    val classificationHistory: List<DocumentClassification> = emptyList(),
 )

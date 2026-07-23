@@ -2,6 +2,43 @@
 
 ---
 
+## 2026-07-23: v4.1 AI分類ワークフロー — 文書UI + 分類レビューUI
+
+### 実施内容(記録タブ「文書」セクション / 5項目のうち ①②)
+
+- 記録タブを **7タブ化**(アイテム/決定/日記 + **文書**)。区分チップは横スクロールに変更
+- `DocumentAddDialog`: タイトル + 原文のみを入力。**保存後に原文を編集する手段は用意しない**
+  (分類・タグ付け・要約はヨスガの仕事、という役割分担をUIでも崩さない)
+- `DocumentDetailDialog`: 状態チップ / 現行分類 / **原文** / 分類履歴 を1画面で確認。
+  設計書v4.1「UI」の5操作を実装 —
+  **承認**(現行分類のまま確定)/ **修正**(ClassificationEditDialog)/
+  **保留**(閉じるだけ = needs_review 据え置き。ボタン文言も「保留して閉じる」に変わる)/
+  **再分類**(classification_pending へ戻す)/ **元文表示**(常時表示)。
+  承認・修正は現行分類があるときだけ出す(空の分類を確定させない)
+- `ClassificationEditDialog`: 要約・種別・プロジェクト・カテゴリ・タグを修正して承認。
+  関連実体は手入力させず元の値を維持(ヨスガが付けるもの)。承認するとユーザー修正レコードが積まれ、
+  AIの分類は履歴に残る
+- `DocumentFilters`(純粋関数): 状態絞込 / 検索(タイトル・原文・要約・タグ・カテゴリ)/
+  一覧プレビュー(分類済みは要約、未分類は原文冒頭)
+- `Document` に `classificationHistory` を追加。DAOは元々 @Relation で全分類行を取得しているため
+  追加コストなし。履歴が Flow で流れるので、修正承認するとダイアログの表示も追従する
+- 削除された文書を開いたままにしないよう、詳細ダイアログは ID で引き直す
+
+### テスト
+
+- `DocumentFiltersTest` 11件(状態絞込 / 検索の対象と大小文字 / プレビューの分岐・改行畳み・省略 /
+  信頼度の%表示とクランプ / 履歴1行の表示)、`DocumentRepositoryTest` に履歴の並び1件追加
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(**154件全成功**)
+
+### 未実装(次回)
+
+- `documents.json` のサーバー同期(AiExporter への追加 + `markUnclassifiedAsPending()` の接続)
+- 回答JSON v2 `proposals.classifications[]` の取込
+- `docs/yosuga_prompt.md` への分類指示の追記
+- 実機確認(Room v6 マイグレーション通し・文書の一連の操作)
+
+---
+
 ## 2026-07-23: v4.1 AI分類ワークフロー — データ層(Room v6)
 
 ### 経緯・決定(ユーザーと合意 / 設計書v4.1「未確定の論点」5点)
@@ -179,16 +216,15 @@
   Room v5 キャッシュと表示 / 状況JSONへの反映
 - **カレンダー連携**: CalendarContract で端末カレンダーを読む(OAuth不要)
 - **v4 Phase2**: AI用JSON 5分割(AiExporter)+ ロリポップ同期(SyncApi / server/ にPHP一式)
-- **v4.1 データ層**: Room v6(documents / document_classifications)+ DocumentRepository
-  (状態遷移・分類履歴。論点5点は合意済み — 本日のエントリ参照)
-- 仮データはすべて解消済み。テストは 142 件。
+- **v4.1 データ層 + 文書UI + 分類レビューUI**: Room v6(documents / document_classifications)+
+  DocumentRepository(状態遷移・分類履歴)+ 記録タブ「文書」セクション(承認/修正/保留/再分類/元文表示)。
+  論点5点は合意済み — 本日のエントリ参照
+- 仮データはすべて解消済み。テストは 154 件。
 
 ### ▶ 次にやること(このどちらかから)
 
 **A. AI分類ワークフローの続き**(`yosuga_hub_design_v4_1_classification.md` / 論点は合意済み)
-データ層(Room v6)は完了。残りは:
-1. 記録タブ「文書」セクション(作成・一覧・詳細・元文表示)
-2. 分類レビューUI(承認 / 修正 / 保留 / 再分類 — DocumentRepository のメソッドは用意済み)
+データ層・文書UI・レビューUI(①②)は完了。残りは:
 3. `documents.json` のサーバー同期(AiExporter に追加 + 同期成功時に
    `DocumentRepository.markUnclassifiedAsPending()` を呼ぶ)
 4. 回答JSON v2 `proposals.classifications[]` の取込(ResponseImporter →

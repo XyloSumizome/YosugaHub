@@ -33,10 +33,7 @@ class DocumentRepository(
 
     /** 分類履歴(新しい順)。現行・過去の両方を含む。 */
     suspend fun classificationHistory(id: String): List<DocumentClassification> =
-        dao.getDocument(id)?.classifications
-            .orEmpty()
-            .map { it.toDomain() }
-            .sortedByDescending { it.classifiedAt }
+        document(id)?.classificationHistory.orEmpty()
 
     /** 未整理文書の保存。必ず unclassified から始まる。 */
     suspend fun createDocument(title: String, body: String, source: String): Document {

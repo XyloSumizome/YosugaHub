@@ -140,20 +140,21 @@ fun DocumentClassificationEntity.toDomain(): DocumentClassification = DocumentCl
     isCurrent = isCurrent,
 )
 
-/** 現行分類は isCurrent の1件(複数あれば新しいものを採る)。 */
-fun DocumentWithClassifications.toDomain(): Document = Document(
-    id = document.id,
-    title = document.title,
-    body = document.body,
-    status = DocumentStatus.fromDb(document.status),
-    createdAt = document.createdAt,
-    updatedAt = document.updatedAt,
-    source = document.source,
-    currentClassification = classifications
-        .filter { it.isCurrent }
-        .maxByOrNull { it.classifiedAt }
-        ?.toDomain(),
-)
+/** 現行分類は isCurrent の1件(複数あれば新しいものを採る)。履歴は新しい順。 */
+fun DocumentWithClassifications.toDomain(): Document {
+    val history = classifications.map { it.toDomain() }.sortedByDescending { it.classifiedAt }
+    return Document(
+        id = document.id,
+        title = document.title,
+        body = document.body,
+        status = DocumentStatus.fromDb(document.status),
+        createdAt = document.createdAt,
+        updatedAt = document.updatedAt,
+        source = document.source,
+        currentClassification = history.firstOrNull { it.isCurrent },
+        classificationHistory = history,
+    )
+}
 
 /** タスクは編集可能なため、書き込み用の逆変換も持つ。 */
 fun Task.toEntity(): TaskEntity = TaskEntity(
