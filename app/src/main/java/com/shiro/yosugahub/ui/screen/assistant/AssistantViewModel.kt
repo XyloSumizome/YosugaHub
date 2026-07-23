@@ -8,20 +8,24 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import android.net.Uri
 import com.shiro.yosugahub.YosugaHubApplication
+import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ImportResult
+import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.Recommendation
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** ヨスガ連携画面が監視するUI状態。 */
 data class AssistantUiState(
+    val proposals: List<ProposalCardUi> = emptyList(),
     val recommendations: List<Recommendation> = emptyList(),
 )
 
@@ -29,7 +33,22 @@ class AssistantViewModel(
     private val assistantRepository: AssistantRepository,
     private val exportRepository: ExportRepository,
     private val importRepository: ImportRepository,
+    private val proposalRepository: ProposalRepository,
 ) : ViewModel() {
+
+    /** 提案を承認して本テーブルへ反映する。反映できない提案は棄却へ回る。 */
+    fun approveProposal(proposal: PendingProposal, onResult: (ApproveResult) -> Unit) {
+        viewModelScope.launch {
+            onResult(proposalRepository.approve(proposal))
+        }
+    }
+
+    /** 提案を棄却する(行は履歴として残る)。 */
+    fun rejectProposal(proposal: PendingProposal) {
+        viewModelScope.launch {
+            proposalRepository.reject(proposal.id)
+        }
+    }
 
     /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
     fun createExport(onResult: (Result<ExportResult>) -> Unit) {
@@ -45,13 +64,19 @@ class AssistantViewModel(
         }
     }
 
-    val uiState: StateFlow<AssistantUiState> = assistantRepository.recommendations()
-        .map { AssistantUiState(recommendations = it) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = AssistantUiState(),
+    val uiState: StateFlow<AssistantUiState> = combine(
+        proposalRepository.pending(),
+        assistantRepository.recommendations(),
+    ) { pending, recommendations ->
+        AssistantUiState(
+            proposals = pending.map { it.toCardUi() },
+            recommendations = recommendations,
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = AssistantUiState(),
+    )
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
@@ -61,6 +86,7 @@ class AssistantViewModel(
                     assistantRepository = app.container.assistantRepository,
                     exportRepository = app.container.exportRepository,
                     importRepository = app.container.importRepository,
+                    proposalRepository = app.container.proposalRepository,
                 )
             }
         }

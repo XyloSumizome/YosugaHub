@@ -2,6 +2,48 @@
 
 ---
 
+## 2026-07-23: v3-Step 2-c 提案レビューUI(ヨスガ画面を承認ハブ化)
+
+### 目的
+
+承認待ち提案をヨスガ画面にカード表示し、承認で本テーブルへ反映・棄却で履歴化する。
+v3 の中核「提案→ユーザー承認→保存」を初めて一気通貫にする。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `data/file/ProposalPayloads`: payloadJson の復号(壊れていたら null、クラッシュさせない)
+- `ProposalRepository`(新設): pending監視 / approve / reject
+  - 承認の反映先: task→`TaskRepository.create(source=assistant)` / item→`KnowledgeRepository.createItem`
+    (タグ・実体は名前解決で自動作成)/ diary→`DiaryRepository.add`(日付欠落は受信日で補完)/
+    health→`ProjectRepository.updateHealth`(新設。AI分析由来の自由値も受け入れ、lastUpdatedを刻む)
+  - 反映できない提案(壊れたpayload・対象プロジェクト不明)は rejected へ回す(`ApproveResult.NotApplicable`)
+- `TaskRepository.create` に `source` パラメータを追加(既定 manual)
+- `ProjectDao.updateHealth` を追加(更新行数を返す)
+- `ui/screen/assistant/ProposalCardUi`: 表示モデルへの純粋変換
+  - 種別ラベル(タスク/メモ/アイデア/決定事項/買い物/技術/観察日記/状態更新)、
+    タグは `#タグ名`、壊れたpayloadは「(読み取れない提案)」として承認ボタン無効化
+- `AssistantViewModel`: pending + recommendations を combine、approve/reject を追加
+- `AssistantScreen`: 「承認待ちの提案(N)」セクションを追加(種別チップ + 内容 + 棄却/承認ボタン、
+  結果は Toast)。既存の v1 提案一覧・JSON作成/取り込みはそのまま
+- `AppContainer`: proposalRepository を配線
+- テスト: `ProposalRepositoryTest`(7件: 4種の承認反映 / 不明プロジェクト / 壊れたpayload / 棄却)、
+  `ProposalCardUiTest`(5件)。既存 `ProjectRepositoryTest` の FakeProjectDao に updateHealth を追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### 次にやること
+
+- **2-d**: 「記録」タブ新設(アイテム一覧・タグ絞込・決定事項ログ・日記)
+- **2-e**: 状況JSONエクスポート v2(タスク・決定事項を含める)
+
+---
+
 ## 2026-07-23: v3-Step 2-b 回答JSON v2 の取り込み(pending_proposals へ)
 
 ### 経緯メモ

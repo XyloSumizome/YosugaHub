@@ -22,4 +22,8 @@ interface ProjectDao {
 
     @Upsert
     suspend fun upsert(project: ProjectEntity)
+
+    /** 健康状態のみ更新(提案承認用)。戻り値は更新行数。 */
+    @Query("UPDATE projects SET health = :health, lastUpdated = :lastUpdated WHERE id = :id")
+    suspend fun updateHealth(id: String, health: String, lastUpdated: String): Int
 }

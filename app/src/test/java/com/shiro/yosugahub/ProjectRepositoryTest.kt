@@ -27,6 +27,12 @@ class ProjectRepositoryTest {
             stored.removeAll { it.id == project.id }
             stored += project
         }
+
+        override suspend fun updateHealth(id: String, health: String, lastUpdated: String): Int {
+            val target = stored.firstOrNull { it.id == id } ?: return 0
+            stored[stored.indexOf(target)] = target.copy(health = health, lastUpdated = lastUpdated)
+            return 1
+        }
     }
 
     private val fixedNow = "2026-07-23 12:00"

@@ -30,6 +30,13 @@ class ProjectRepository(
         dao.upsert(project.copy(lastUpdated = now()).toEntity())
     }
 
+    /**
+     * 健康状態の更新(提案承認用・2-c)。AI分析由来の自由な値(タスク過多 等)も受け入れる。
+     * 対象プロジェクトが存在しない場合は false。
+     */
+    suspend fun updateHealth(projectId: String, health: String): Boolean =
+        dao.updateHealth(id = projectId, health = health, lastUpdated = now()) > 0
+
     private companion object {
         const val PLACEHOLDER_PRIORITY_TASK = "ANRI: メインシナリオ第2章の執筆を進める"
     }

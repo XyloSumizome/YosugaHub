@@ -25,7 +25,7 @@ class TaskRepository(
     fun tasksForProject(projectId: String): Flow<List<Task>> =
         dao.observeByProject(projectId).map { tasks -> tasks.map { it.toDomain() } }
 
-    /** 新規タスクを作成して保存する(1-c)。id・時刻はここで採番する。 */
+    /** 新規タスクを作成して保存する(1-c)。id・時刻はここで採番する。提案承認時は source=assistant。 */
     suspend fun create(
         projectId: String?,
         title: String,
@@ -33,6 +33,7 @@ class TaskRepository(
         priority: String,
         dueDate: String?,
         status: TaskStatus = TaskStatus.TODO,
+        source: String = "manual",
     ): Task {
         val timestamp = now()
         val task = Task(
@@ -46,7 +47,7 @@ class TaskRepository(
             createdAt = timestamp,
             updatedAt = timestamp,
             completedAt = if (status == TaskStatus.DONE) timestamp else null,
-            source = "manual",
+            source = source,
         )
         dao.upsert(task.toEntity())
         return task

@@ -14,6 +14,7 @@ import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,7 @@ interface AppContainer {
     val knowledgeRepository: KnowledgeRepository
     val diaryRepository: DiaryRepository
     val assistantRepository: AssistantRepository
+    val proposalRepository: ProposalRepository
     val userPreferencesRepository: UserPreferencesRepository
     val exportRepository: ExportRepository
     val importRepository: ImportRepository
@@ -69,6 +71,15 @@ class DefaultAppContainer(
     }
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())
+    }
+    override val proposalRepository: ProposalRepository by lazy {
+        ProposalRepository(
+            dao = database.pendingProposalDao(),
+            taskRepository = taskRepository,
+            knowledgeRepository = knowledgeRepository,
+            diaryRepository = diaryRepository,
+            projectRepository = projectRepository,
+        )
     }
     override val userPreferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(context.applicationContext)
