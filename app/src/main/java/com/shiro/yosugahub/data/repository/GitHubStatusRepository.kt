@@ -8,7 +8,12 @@ import com.shiro.yosugahub.domain.model.Project
 
 /** 1プロジェクト分の status.json 取得結果(取得〜検証まで)。 */
 sealed interface StatusFetchResult {
-    data class Success(val projectId: String, val status: ProjectStatus) : StatusFetchResult
+    /** rawJson は取得した本文そのもの(キャッシュに保存し、未知項目も失わない)。 */
+    data class Success(
+        val projectId: String,
+        val status: ProjectStatus,
+        val rawJson: String,
+    ) : StatusFetchResult
 
     /** リポジトリ未設定(取得対象外)。 */
     data class NotConfigured(val projectId: String) : StatusFetchResult
@@ -60,7 +65,7 @@ class GitHubStatusRepository(
     private fun toStatusResult(projectId: String, content: String): StatusFetchResult =
         when (val parsed = StatusParser.parse(content, expectedProjectId = projectId)) {
             is StatusParser.Result.Success ->
-                StatusFetchResult.Success(projectId, parsed.status)
+                StatusFetchResult.Success(projectId, parsed.status, content)
             is StatusParser.Result.InvalidJson ->
                 StatusFetchResult.InvalidJson(projectId, parsed.message)
             is StatusParser.Result.UnsupportedSchema ->

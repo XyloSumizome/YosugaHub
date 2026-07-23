@@ -2,6 +2,63 @@
 
 ---
 
+## 2026-07-23: GitHub連携 3-c キャッシュと表示(Room v5)
+
+### 目的
+
+取得した status.json を Room にキャッシュし、プロジェクト詳細に表示する。
+オフラインでも直近の進捗が見える状態にする。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 設計判断
+
+- **projects テーブルは上書きしない**。手動編集(1-d)と衝突させないため、GitHub 由来の情報は
+  詳細画面の独立セクション「GitHub 進捗」として表示する。health の更新は従来どおり
+  ヨスガの提案(承認フロー)経由で行う。
+- キャッシュには**取得した本文をそのまま**保存する(未知項目を失わない)。表示時にパースする。
+- 取得失敗時はキャッシュを更新しない → 直近の表示を壊さない。
+
+### 実施内容
+
+- **Room v4→v5**: `project_status_cache`(projectId PK / statusJson / fetchedAt)+ `MIGRATION_4_5`。
+  スキーマ `5.json` との一致を確認
+- `StatusFetchResult.Success` に `rawJson` を追加(キャッシュ保存用)
+- `domain/model/ProjectStatusSnapshot` + `StatusLine`: 表示用ドメインモデル
+  (通信DTOを UI へ渡さない方針を維持)
+- `data/github/StatusSnapshotMapper`(純粋ロジック): DTO → スナップショット変換。
+  空タイトルの項目は落とし、進捗率・優先度・深刻度を詳細行にまとめる
+- `ProjectStatusRepository`: `statuses(): Flow<Map<projectId, Snapshot>>`(壊れた行は読み飛ばす)/
+  `refresh(project)`(成功時のみキャッシュ更新)/ `refreshAll(projects)`(未設定は通信しない)。
+  fetch は関数で受けてテスト可能に
+- `ui/share/StatusMessage`: 取得結果 → ユーザー向け短文(次に何をすべきかを含む)、
+  一括更新のサマリ文
+- `ProjectDetailScreen`: 「GitHub 進捗」カード(要約 / 目標 / 作業中 / 次のタスク / ブロッカー /
+  ヨスガへの質問 / 取得・生成時刻 / 状態)+「GitHubから更新」ボタン(取得中は無効)。
+  リポジトリ未設定・未取得の案内も表示
+- `ProjectsScreen`: 「GitHubからすべて更新」ボタン(設定済みリポジトリがある場合のみ表示)
+- テスト: `ProjectStatusRepositoryTest` 6件(変換 / 成功時保存 / **失敗時にキャッシュを壊さない** /
+  Flow変換 / 壊れた行のスキップ / 未設定プロジェクトを通信しない)、`StatusMessageTest` 3件
+
+### 気づいた不具合(修正済み)
+
+- `MIGRATION_4_5` を `addMigrations` に登録し忘れていた。**コンパイルは通るが実機更新時に
+  起動クラッシュする**種類の不具合。マイグレーション追加時のチェックリストは
+  ①Migration定義 ②`@Database(version)` 更新 ③`addMigrations` 登録 ④スキーマJSON突き合わせ の4点。
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- **実通信・実機は未検証**。トークンと `.yosuga/status.json` を用意した実リポジトリで要確認。
+
+### 次にやること
+
+- **3-d**: 状況JSONエクスポートへ GitHub 由来の進捗を反映(statusMarkdown の実データ化)
+
+---
+
 ## 2026-07-23: GitHub連携 3-b Ktor で status.json を取得・検証
 
 ### 目的

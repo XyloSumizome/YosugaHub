@@ -1,5 +1,6 @@
 package com.shiro.yosugahub.ui.screen.projectdetail
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,13 +30,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.healthLabel
+import com.shiro.yosugahub.ui.share.statusFetchMessage
 
 /** プロジェクト詳細(1-b: 表示 / 1-c: タスクの追加・編集・完了・削除)。 */
 @Composable
@@ -44,6 +49,7 @@ fun ProjectDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: ProjectDetailViewModel = viewModel(factory = ProjectDetailViewModel.Factory),
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var showNewTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
@@ -103,6 +109,19 @@ fun ProjectDetailScreen(
                     }
                 }
             }
+        }
+
+        item {
+            GitHubStatusCard(
+                project = project,
+                status = uiState.status,
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = {
+                    viewModel.refreshStatus { result ->
+                        Toast.makeText(context, statusFetchMessage(result), Toast.LENGTH_LONG).show()
+                    }
+                },
+            )
         }
 
         item {
@@ -196,6 +215,101 @@ fun ProjectDetailScreen(
                 editingTask = null
             },
         )
+    }
+}
+
+/**
+ * GitHub 由来の進捗(.yosuga/status.json)。
+ * projects テーブルは上書きせず、独立したセクションとして表示する。
+ */
+@Composable
+private fun GitHubStatusCard(
+    project: com.shiro.yosugahub.domain.model.Project,
+    status: ProjectStatusSnapshot?,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SectionCard(title = "GitHub 進捗", modifier = modifier) {
+        Column {
+            when {
+                !project.hasRepository -> Text(
+                    text = "リポジトリ未設定。「プロジェクトを編集」で owner とリポジトリ名を入力すると、" +
+                        ".yosuga/status.json を取得できます。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                status == null -> Text(
+                    text = "まだ取得していません。",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                else -> {
+                    if (status.summary.isNotBlank()) {
+                        Text(text = status.summary, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                    if (status.goalTitle.isNotBlank()) {
+                        Text(
+                            text = "目標: ${status.goalTitle}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    StatusLineGroup("作業中", status.inProgress)
+                    StatusLineGroup("次のタスク", status.nextTasks)
+                    StatusLineGroup("ブロッカー", status.blockers)
+                    if (status.questionsForYosuga.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(text = "ヨスガへの質問", style = MaterialTheme.typography.titleSmall)
+                        status.questionsForYosuga.forEach { question ->
+                            Text(text = "・$question", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = buildList {
+                            add("取得: ${status.fetchedAt.take(16).replace('T', ' ')}")
+                            if (status.generatedAt.isNotBlank()) {
+                                add("生成: ${status.generatedAt.take(16).replace('T', ' ')}")
+                            }
+                            if (status.health.isNotBlank()) add("状態: ${status.health}")
+                        }.joinToString(" / "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            if (project.hasRepository) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onRefresh,
+                    enabled = !isRefreshing,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (isRefreshing) "取得中..." else "GitHubから更新")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusLineGroup(title: String, lines: List<StatusLine>) {
+    if (lines.isEmpty()) return
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(text = title, style = MaterialTheme.typography.titleSmall)
+    lines.forEach { line ->
+        Text(text = "・${line.title}", style = MaterialTheme.typography.bodyMedium)
+        if (line.detail.isNotBlank()) {
+            Text(
+                text = "　${line.detail}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

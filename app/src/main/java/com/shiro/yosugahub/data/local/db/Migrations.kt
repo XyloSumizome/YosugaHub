@@ -9,6 +9,16 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 新しいマイグレーションを書いたら、期待スキーマと一致するか出力JSONで確認すること。
  */
 
+/** v4 → v5: GitHub の status.json キャッシュを追加(GitHub連携 3-c)。 */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `project_status_cache` (`projectId` TEXT NOT NULL, " +
+                "`statusJson` TEXT NOT NULL, `fetchedAt` TEXT NOT NULL, PRIMARY KEY(`projectId`))"
+        )
+    }
+}
+
 /** v3 → v4: projects に GitHub リポジトリ情報を追加(v3-Step 3 / GitHub連携)。 */
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {

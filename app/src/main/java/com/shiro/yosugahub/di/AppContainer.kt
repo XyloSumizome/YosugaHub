@@ -6,6 +6,7 @@ import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
 import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
+import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
@@ -21,6 +22,7 @@ import com.shiro.yosugahub.data.repository.GitHubStatusRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.util.formatSyncTime
@@ -45,6 +47,7 @@ interface AppContainer {
     val userPreferencesRepository: UserPreferencesRepository
     val gitHubSettingsRepository: GitHubSettingsRepository
     val gitHubStatusRepository: GitHubStatusRepository
+    val projectStatusRepository: ProjectStatusRepository
     val exportRepository: ExportRepository
     val importRepository: ImportRepository
 }
@@ -60,7 +63,7 @@ class DefaultAppContainer(
         YosugaDatabase::class.java,
         "yosuga.db",
     )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
@@ -106,6 +109,12 @@ class DefaultAppContainer(
         GitHubStatusRepository(
             api = GitHubApi(),
             tokenProvider = { gitHubSettingsRepository.currentToken() },
+        )
+    }
+    override val projectStatusRepository: ProjectStatusRepository by lazy {
+        ProjectStatusRepository(
+            dao = database.projectStatusDao(),
+            fetch = { project -> gitHubStatusRepository.fetchStatus(project) },
         )
     }
     override val exportRepository: ExportRepository by lazy {
