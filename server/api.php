@@ -5,7 +5,24 @@
 require __DIR__ . '/config.php';
 header('Content-Type: application/json; charset=utf-8');
 
-$token = $_GET['token'] ?? ($_SERVER['HTTP_X_YOSUGA_TOKEN'] ?? '');
+$headerToken = $_SERVER['HTTP_X_YOSUGA_TOKEN'] ?? '';
+$queryToken  = $_GET['token'] ?? '';
+$token = $queryToken !== '' ? $queryToken : $headerToken;
+
+// 設定の切り分け用。トークンそのものは返さない(有無・長さ・一致だけ)。
+// GPT Actions が forbidden になるとき、ヘッダーが届いているかをここで確認する。
+if (($_GET['file'] ?? '') === 'selftest') {
+    echo json_encode([
+        'ok' => true,
+        'tokenConfigured' => $YOSUGA_TOKEN !== 'CHANGE_ME_TO_LONG_RANDOM_STRING',
+        'headerReceived' => $headerToken !== '',
+        'headerLength' => strlen($headerToken),
+        'queryReceived' => $queryToken !== '',
+        'matches' => $token !== '' && hash_equals($YOSUGA_TOKEN, $token),
+    ], JSON_PRETTY_PRINT);
+    exit;
+}
+
 if ($YOSUGA_TOKEN === 'CHANGE_ME_TO_LONG_RANDOM_STRING' || !hash_equals($YOSUGA_TOKEN, $token)) {
     http_response_code(403);
     echo json_encode(['ok' => false, 'error' => 'forbidden']);
