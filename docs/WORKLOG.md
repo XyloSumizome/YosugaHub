@@ -2,6 +2,44 @@
 
 ---
 
+## 2026-07-23: v3-Step 1-c タスクの追加・編集・完了・削除
+
+### 目的
+
+プロジェクト詳細画面のタスクを実際に操作できるようにする(初の書き込みUI)。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `TaskRepository` の書き込みを拡張
+  - `create()`: 新規タスクの採番・保存(`newId` を注入可能に。既定は UUID)。source は "manual"
+  - `upsert()`: completedAt を status と整合させるよう強化
+    (編集で DONE → 刻む / DONE 解除 → クリア / 既に DONE → 元の時刻を保持)
+- `ProjectDetailViewModel` に `addTask` / `updateTask` / `setTaskDone` / `deleteTask` を追加
+- `ui/screen/projectdetail/TaskEditDialog`: 新規・編集共用ダイアログ
+  - タイトル(必須)/ 詳細 / 優先度(高・中・低 FilterChip)/ 状態(未着手・進行中・完了)/
+    締切(yyyy-MM-dd テキスト入力、不正時はエラー表示と保存無効)/ 編集時のみ削除ボタン
+  - DatePicker は使わない(M3 では experimental API のため。個人アプリの入力頻度なら手入力で十分と判断)
+- `ui/screen/projectdetail/TaskForm`: 締切検証 `isValidDueDateInput`(LocalDate.parse で実在日チェック)と
+  `dueDateForSave`(空欄→null)を純粋関数として切り出し
+- `ProjectDetailScreen`: [タスクを追加] ボタン、行チェックボックス(完了⇄未着手)、行タップ→編集ダイアログ
+- テスト: `TaskFormTest`(空欄可 / ISO日付 / 不正・実在しない日付)、
+  `TaskRepositoryTest` に create の採番・時刻 / DONE作成時のcompletedAt / upsert のcompletedAt保持・クリアを追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- 実機での操作確認(追加→編集→完了→削除の一連)は未実施(Windows 側 Android Studio で確認する)
+
+### 次にやること
+
+- **1-d**: プロジェクト編集(name / currentGoal / health)→ これで v3-Step 1 完了
+
+---
+
 ## 2026-07-23: 追加仕様 v3.1(知識ベース・タグ・観察日記)を設計へ取り込み — 記録のみ
 
 ### 経緯

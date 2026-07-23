@@ -46,8 +46,10 @@ class TaskRepositoryTest {
     }
 
     private val fixedNow = "2026-07-23T12:00:00+09:00"
+    private val fixedId = "task-fixed-id"
 
-    private fun repository(dao: FakeTaskDao) = TaskRepository(dao, now = { fixedNow })
+    private fun repository(dao: FakeTaskDao) =
+        TaskRepository(dao, now = { fixedNow }, newId = { fixedId })
 
     @Test
     fun tasks_flow_maps_entities_to_domain_with_status_enum() = runBlocking {
@@ -89,6 +91,80 @@ class TaskRepositoryTest {
         assertEquals("todo", saved.status)
         assertEquals(fixedNow, saved.updatedAt)
         assertEquals("2026-07-23T09:00:00+09:00", saved.createdAt) // createdAt は変えない
+    }
+
+    @Test
+    fun create_assigns_id_and_stamps_times() = runBlocking {
+        val dao = FakeTaskDao()
+        val created = repository(dao).create(
+            projectId = "anri",
+            title = "新規タスク",
+            detail = "",
+            priority = "high",
+            dueDate = "2026-07-30",
+        )
+        assertEquals(fixedId, created.id)
+        assertEquals(TaskStatus.TODO, created.status)
+        assertEquals("manual", created.source)
+        val saved = dao.stored.single()
+        assertEquals(fixedNow, saved.createdAt)
+        assertEquals(fixedNow, saved.updatedAt)
+        assertNull(saved.completedAt)
+    }
+
+    @Test
+    fun create_with_done_status_stamps_completedAt() = runBlocking {
+        val dao = FakeTaskDao()
+        repository(dao).create(
+            projectId = null,
+            title = "もう終わったタスク",
+            detail = "",
+            priority = "low",
+            dueDate = null,
+            status = TaskStatus.DONE,
+        )
+        assertEquals(fixedNow, dao.stored.single().completedAt)
+    }
+
+    @Test
+    fun upsert_keeps_original_completedAt_when_still_done() = runBlocking {
+        val dao = FakeTaskDao()
+        val originalCompletedAt = "2026-07-20T10:00:00+09:00"
+        val task = Task(
+            id = "task-done-001",
+            projectId = null,
+            title = "完了済み",
+            detail = "",
+            status = TaskStatus.DONE,
+            priority = "medium",
+            dueDate = null,
+            createdAt = "2026-07-19T09:00:00+09:00",
+            updatedAt = "2026-07-20T10:00:00+09:00",
+            completedAt = originalCompletedAt,
+            source = "manual",
+        )
+        repository(dao).upsert(task)
+        assertEquals(originalCompletedAt, dao.stored.single().completedAt)
+    }
+
+    @Test
+    fun upsert_clears_completedAt_when_status_reverted() = runBlocking {
+        val dao = FakeTaskDao()
+        val task = Task(
+            id = "task-done-001",
+            projectId = null,
+            title = "やっぱり未完了",
+            detail = "",
+            status = TaskStatus.TODO,
+            priority = "medium",
+            dueDate = null,
+            createdAt = "2026-07-19T09:00:00+09:00",
+            updatedAt = "2026-07-20T10:00:00+09:00",
+            completedAt = "2026-07-20T10:00:00+09:00",
+            source = "manual",
+        )
+        repository(dao).upsert(task)
+        assertNull(dao.stored.single().completedAt)
     }
 
     @Test

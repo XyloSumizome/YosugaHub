@@ -11,11 +11,14 @@ import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.domain.model.Task
+import com.shiro.yosugahub.domain.model.TaskStatus
 import com.shiro.yosugahub.ui.navigation.ProjectDetailRoute
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** プロジェクト詳細画面が監視するUI状態。 */
 data class ProjectDetailUiState(
@@ -25,10 +28,40 @@ data class ProjectDetailUiState(
 )
 
 class ProjectDetailViewModel(
-    projectId: String,
+    private val projectId: String,
     projectRepository: ProjectRepository,
-    taskRepository: TaskRepository,
+    private val taskRepository: TaskRepository,
 ) : ViewModel() {
+
+    /** 新規タスクを追加する(このプロジェクトに紐付け)。 */
+    fun addTask(title: String, detail: String, priority: String, dueDate: String?, status: TaskStatus) {
+        viewModelScope.launch {
+            taskRepository.create(
+                projectId = projectId,
+                title = title,
+                detail = detail,
+                priority = priority,
+                dueDate = dueDate,
+                status = status,
+            )
+        }
+    }
+
+    /** 編集済みタスクを保存する(updatedAt / completedAt は Repository が整合させる)。 */
+    fun updateTask(task: Task) {
+        viewModelScope.launch { taskRepository.upsert(task) }
+    }
+
+    /** チェックボックスによる完了⇄未着手の切り替え。 */
+    fun setTaskDone(id: String, done: Boolean) {
+        viewModelScope.launch {
+            taskRepository.setStatus(id, if (done) TaskStatus.DONE else TaskStatus.TODO)
+        }
+    }
+
+    fun deleteTask(id: String) {
+        viewModelScope.launch { taskRepository.delete(id) }
+    }
 
     val uiState: StateFlow<ProjectDetailUiState> = combine(
         projectRepository.projects(),
