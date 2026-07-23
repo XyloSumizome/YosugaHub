@@ -2,6 +2,81 @@
 
 ---
 
+## ▶ 次回の再開ポイント(2026-07-23 時点 / GitHub連携まで実装完了)
+
+### 今どこ
+- 設計: v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)。アシスタント名は「ヨスガ」。
+- **v3-Step 1〜4 完了**(Task実体化 / 知識ベース+承認フロー / Obsidian連携 / ホームAI秘書再編)。
+- **GitHub連携 3-a〜3-d 完了**: リポジトリ設定 + トークンKeystore保管 / Ktorで status.json 取得 /
+  Room v5 キャッシュと表示 / 状況JSONへの反映。
+- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている。
+
+### 運用の始め方(実機/シミュレーターで)
+1. 各ゲームの Claude Code に **`docs/claude_code_onboarding.md`** を渡し `.yosuga/` 4ファイルを作らせる。
+2. GitHub で Fine-grained PAT(対象3リポジトリ / Contents: Read-only)を作成 → アプリの設定画面で保存。
+3. 各プロジェクトの編集画面で owner / リポジトリ名 を入力 → 「GitHubからすべて更新」。
+4. ChatGPT に **`docs/yosuga_prompt.md`** のプロンプトを貼る → 状況JSON作成 → 会話 →
+   回答JSON取り込み → ヨスガ画面で承認。
+
+### 未検証(実機・実通信が必要)
+- Room マイグレーション v1→v5 の通し(特に v4→v5)。
+- GitHub 実通信(認証・取得・エラー表示)。MockEngine では検証済み。
+- Keystore へのトークン保存→再起動後の復号。
+- Obsidian SAF 書き出し(`createFile("text/markdown")` の拡張子挙動はプロバイダ依存)。
+
+### WSL でビルドする場合
+```
+echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
+JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebugUnitTest --no-daemon
+```
+※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
+
+### 次の実装候補
+- **Google カレンダー連携(旧Phase 4)**: 現在のカレンダーは唯一の仮データ。
+- 積み残し: タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI / 観察日記のObsidian書き出し /
+  FileProvider共有 / status.json の decisions を提案へ流し込む。
+
+---
+
+## 2026-07-23: GitHub連携 3-d 状況JSONへGitHub進捗を反映 — GitHub連携 完了
+
+### 目的
+
+ヨスガが各ゲームの**実際の**進捗(ブロッカー・質問を含む)を踏まえて提案できるようにする。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `ProjectExport` に `source`("github" / "local")/ `health` / `blockers[]` /
+  `questionsForYosuga[]` を追加
+- `ContextExporter.build` に `statuses: Map<projectId, ProjectStatusSnapshot>` を追加
+  - 取得済みなら status.json 由来を優先し、`statusMarkdown` を設計書19.3 の見出し構成
+    (Summary / Current Goal / In Progress / Next Tasks / Blockers / Questions for Yosuga /
+    Source Commit)で生成
+  - `lastUpdated` は status の generatedAt を優先、`health` も status 側を優先
+  - 未取得なら従来どおり手元の値(source=local)。**未取得を取得済みに見せない**
+- `ExportRepository` がキャッシュを読み込んで渡す(`AppContainer` 配線)
+- `docs/yosuga_prompt.md` を更新: source / blockers / questionsForYosuga の読み方と、
+  「ブロッカー解消を優先度高めで提案」「質問には必ず応答し、決定したものだけ decision にする」を追記
+- テスト: `ContextExporterTest` に2件(GitHub由来の優先反映 / 未取得時のローカルフォールバック)
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### GitHub連携の完了状況
+
+- ✅ 3-a 設定の器(リポジトリ設定・トークンのKeystore保管)
+- ✅ 3-b Ktor で取得・検証(schemaVersion / projectId 突合)
+- ✅ 3-c Room v5 キャッシュと詳細画面表示・一括更新
+- ✅ 3-d 状況JSONへの反映
+- ⬜ 実通信・実機確認は未実施 → 再開ポイント参照
+
+---
+
 ## 2026-07-23: GitHub連携 3-c キャッシュと表示(Room v5)
 
 ### 目的
@@ -279,39 +354,6 @@ Obsidian Vault のノートへ追記できるようにする(v3設計書付録�
 ### 次にやること
 
 - ③ Obsidian連携(SAF・KnowledgeStore 抽象化)の実装(動作検証は実機入手後)
-
----
-
-## ▶ 次回の再開ポイント(2026-07-23 時点 / v3ロードマップ主要部分 完了)
-
-### 今どこ
-- 設計: v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)。アシスタント名は「ヨスガ」(カタカナ)。
-- **v3-Step 1 完了**(Task実体化 + プロジェクト詳細/編集)。実機確認済み。
-- **v3-Step 2 完了**(Room v3 / 回答JSON v2 / 提案レビューUI / 「記録」タブ / エクスポート v2)。
-- **v3-Step 3 完了(コードのみ)**: Obsidian連携(SAF・KnowledgeStore抽象化・targetNote承認時追記)。
-- **v3-Step 4 相当 完了**: ホームAI秘書再編(今日やること/承認待ち件数/最近の決定)。
-- 記録タブは手動追加・編集・検索に対応。`docs/yosuga_prompt.md` に ChatGPT 用プロンプト完備。
-- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている(新規ライブラリ: documentfile のみ)。
-
-### 実機入手後にやる確認
-1. Room v2→v3 マイグレーション(更新起動でデータ保持・クラッシュなし)。
-2. 「記録」タブ(切替・タグ絞込・検索・手動追加/編集)とホームの新カード。
-3. **提案→承認フローの一気通貫**(docs/yosuga_prompt.md のプロンプトを ChatGPT に貼って運用開始)。
-   手軽な確認は同ドキュメント末尾の最小サンプルJSONを取り込む。
-4. **Obsidian連携**: 設定画面で Vault 選択 → targetNote 付きアイテムを承認 → Obsidianアプリで
-   ノート追記を確認。`createFile("text/markdown")` の拡張子挙動はプロバイダ依存のため要確認。
-
-### WSL でビルドする場合
-```
-echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
-JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebugUnitTest --no-daemon
-```
-※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
-
-### 次の実装候補(ユーザーと相談して決める)
-- 積み残し(任意): タグのタスク適用、FileProvider共有、取り込み履歴画面、エンティティ閲覧UI、
-  観察日記のObsidian書き出し。
-- 将来: GitHub Knowledge Repository / Claude Code status統合 / Google Calendar連携(旧Phase 4)/ AI API直結。
 
 ---
 

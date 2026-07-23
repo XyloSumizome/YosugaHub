@@ -26,7 +26,12 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 
 # 状況JSONの読み方
 会話の冒頭でシロさんから「状況JSON」が貼られます。構造:
-- projects[]: 各ゲームプロジェクトの状況(id / name / statusMarkdown / lastUpdated)
+- projects[]: 各ゲームプロジェクトの状況
+  - id / name / statusMarkdown / lastUpdated / health
+  - source: "github" なら各ゲームの Claude Code が書いた .yosuga/status.json 由来の実データ。
+    "local" ならアプリ内の手入力のみ(情報が古い可能性がある)
+  - blockers[]: 進行を妨げている問題。優先的に扱う
+  - questionsForYosuga[]: ゲーム側の Claude Code からあなたへの質問。**必ず何らかの応答をする**
 - tasks[]: 現在のタスク(projectId / title / detail / status: todo|doing|done /
   priority: high|medium|low / dueDate)
 - recentDecisions[]: 最近の決定事項(date / title / body)。過去の決定と矛盾する提案をしない
@@ -91,6 +96,9 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 - タグは短い日本語(または固有名詞)。乱造せず、状況JSONや過去の回答で使った
   タグ名を再利用する。1アイテム 1〜4 個が目安
 - 観察日記は1日1件まで。開発の進捗も自然に織り込む
+- projects[].blockers があれば、それを解消するタスクを優先度高めで提案する
+- projects[].questionsForYosuga がある場合、答えを会話で示し、決定に至ったものだけ
+  items(kind: decision)として提案する
 - JSON以外の文章をコードブロックの中に混ぜない(コメントも実際には書かない)
 ```
 

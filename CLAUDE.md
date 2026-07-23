@@ -40,8 +40,13 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   回答JSON v2 取り込み(v1互換維持)、提案レビューUI(ヨスガ画面で承認→反映/棄却)、
   「記録」タブ(6タブ化: アイテム/決定/日記 + タグ絞込)、状況JSONエクスポート v2(tasks/recentDecisions)。
   Step 2 の実機確認は未実施(WORKLOG再開ポイント参照)。
-- 次: 実機確認 → Step 3 Obsidian連携(SAF・長文の書き出し先)や ホーム再編(AI秘書視点)をユーザーと相談。
-- 旧「Phase 3 GitHub進捗取得」は後ろへ延期(v3では将来構想の Knowledge Repository 側へ再配置)。
+- **v3-Step 3 完了**: Obsidian連携(SAFでVault選択・KnowledgeStore抽象化・targetNote承認時追記)。
+- **v3-Step 4 相当 完了**: ホームAI秘書再編(今日やること/承認待ち件数/最近の決定)。記録タブは手動追加・編集・検索対応。
+- **GitHub連携 完了**(3-a〜3-d): リポジトリ設定 + トークンKeystore保管 / Ktor で `.yosuga/status.json` 取得 /
+  Room v5 キャッシュと詳細画面表示・一括更新 / 状況JSONへの反映(source=github/local を明示)。
+- 運用ドキュメント: `docs/yosuga_prompt.md`(ChatGPT=ヨスガ用)、`docs/claude_code_onboarding.md`(各ゲームのClaude Code用)。
+- 未検証: 実通信・実機でのマイグレーション通し・Keystore復号・Obsidian SAF書き出し(WORKLOG再開ポイント参照)。
+- 次の候補: Googleカレンダー連携(旧Phase 4。カレンダーは現在唯一の仮データ)。
 - アシスタント名は「ヨスガ」(カタカナ表記)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。

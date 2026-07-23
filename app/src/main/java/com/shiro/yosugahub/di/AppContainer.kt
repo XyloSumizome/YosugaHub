@@ -124,6 +124,7 @@ class DefaultAppContainer(
             calendarRepository,
             taskRepository,
             knowledgeRepository,
+            projectStatusRepository,
         )
     }
     override val importRepository: ImportRepository by lazy {

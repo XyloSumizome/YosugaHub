@@ -50,12 +50,20 @@ data class EventExport(
     val description: String = "",
 )
 
+/**
+ * プロジェクトの状況。GitHub の `.yosuga/status.json` を取得済みならその内容を反映する。
+ * source は "github"(取得済み)/ "local"(手元の入力のみ)。
+ */
 @Serializable
 data class ProjectExport(
     val id: String,
     val name: String,
     val statusMarkdown: String,
     val lastUpdated: String,
+    val source: String = "local",
+    val health: String = "",
+    val blockers: List<String> = emptyList(),
+    val questionsForYosuga: List<String> = emptyList(),
 )
 
 /** タスクの現状(v2)。AIがタスク化・優先順位の提案をする材料。 */

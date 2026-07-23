@@ -6,6 +6,8 @@ import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import kotlinx.serialization.json.Json
@@ -55,6 +57,53 @@ class ContextExporterTest {
 
         val decoded = Json.decodeFromString<ContextExport>(jsonText)
         assertEquals(export, decoded)
+    }
+
+    @Test
+    fun github_status_replaces_local_markdown_and_carries_blockers() {
+        val snapshot = ProjectStatusSnapshot(
+            projectId = "anri",
+            summary = "第2章を執筆中",
+            health = "attention",
+            phase = "prototype",
+            goalTitle = "プロトタイプ完成",
+            goalDetail = "第2章まで",
+            inProgress = listOf(StatusLine("第2章の執筆", "50%")),
+            nextTasks = listOf(StatusLine("戦闘調整", "優先度: high")),
+            blockers = listOf(StatusLine("素材待ち", "深刻度: high")),
+            questionsForYosuga = listOf("難易度はどうすべきか"),
+            generatedAt = "2026-07-23T21:00:00+09:00",
+            sourceCommit = "abc123",
+            fetchedAt = "2026-07-23T22:00:00+09:00",
+        )
+        val export = ContextExporter.build(
+            projects, events, "2026-07-23T22:00:00+09:00",
+            statuses = mapOf("anri" to snapshot),
+        )
+        val project = export.projects.single()
+
+        assertEquals("github", project.source)
+        assertEquals("attention", project.health)          // status 側の health を優先
+        assertEquals("2026-07-23T21:00:00+09:00", project.lastUpdated)  // generatedAt を優先
+        assertTrue(project.statusMarkdown.contains("## Summary"))
+        assertTrue(project.statusMarkdown.contains("第2章を執筆中"))
+        assertTrue(project.statusMarkdown.contains("## Blockers"))
+        assertTrue(project.statusMarkdown.contains("素材待ち(深刻度: high)"))
+        assertTrue(project.statusMarkdown.contains("## Questions for Yosuga"))
+        assertTrue(project.statusMarkdown.contains("abc123"))
+        assertEquals(listOf("素材待ち(深刻度: high)"), project.blockers)
+        assertEquals(listOf("難易度はどうすべきか"), project.questionsForYosuga)
+    }
+
+    @Test
+    fun falls_back_to_local_fields_when_status_not_fetched() {
+        val export = ContextExporter.build(projects, events, "2026-07-23T22:00:00+09:00")
+        val project = export.projects.single()
+        assertEquals("local", project.source)
+        assertEquals("on_track", project.health)
+        assertEquals("2026-07-22 18:00", project.lastUpdated)
+        assertTrue(project.statusMarkdown.contains("プロトタイプの完成"))
+        assertTrue(project.blockers.isEmpty())
     }
 
     @Test

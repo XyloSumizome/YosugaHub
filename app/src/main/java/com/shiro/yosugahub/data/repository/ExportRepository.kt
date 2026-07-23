@@ -28,6 +28,7 @@ class ExportRepository(
     private val calendarRepository: CalendarRepository,
     private val taskRepository: TaskRepository,
     private val knowledgeRepository: KnowledgeRepository,
+    private val projectStatusRepository: ProjectStatusRepository,
 ) {
 
     /** 状況JSNを生成し `exports/` へ保存する。保存したファイル名とJSON本文を返す。 */
@@ -43,6 +44,9 @@ class ExportRepository(
             .filter { it.kind == ItemKind.DECISION }
             .take(MAX_DECISIONS)
 
+        // GitHub 由来の進捗(取得済みのものだけ)。未取得なら手元の値で出力される。
+        val statuses = projectStatusRepository.statuses().first()
+
         val now = OffsetDateTime.now()
         val export = ContextExporter.build(
             projects = projects,
@@ -50,6 +54,7 @@ class ExportRepository(
             generatedAt = now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
             tasks = tasks,
             decisions = decisions,
+            statuses = statuses,
         )
         val json = ContextExporter.toJson(export)
 
