@@ -2,6 +2,56 @@
 
 ---
 
+## 2026-07-23: v3-Step 1-a Task のデータ層(Entity/DAO/Migration/Repository/シード)
+
+### 目的
+
+v3-Step 1 の詳細設計(下記エントリ)どおり、Task を第一級エンティティとしてデータ層に導入。
+UIは一切変更していない(見た目は従来どおり)。UI は 1-b 以降で追加する。
+
+### 新規ライブラリ
+
+- **なし**(Room / coroutines 既存分で完結)
+
+### 実施内容
+
+- `domain/model/Task` + `TaskStatus`(enum: TODO/DOING/DONE、未知値は TODO へフォールバック)
+- `data/local/db/entity/TaskEntity`(テーブル `tasks`、`projectId` に index)
+  - 外部キー制約は張らない: プロジェクトは将来 GitHub 由来へ差し替わるため、参照切れでタスクを失わない方針
+- `data/local/db/dao/TaskDao`(observeAll / observeByProject / count / insertAll / upsert / updateStatus / deleteById)
+- **Room v1→v2**: `data/local/db/Migrations.kt` に `MIGRATION_1_2`(CREATE TABLE tasks + index、既存データ無傷)
+  - `exportSchema = true` 化 + `build.gradle.kts` に `ksp { arg("room.schemaLocation", "$projectDir/schemas") }`
+  - 出力された `app/schemas/.../2.json` の createSql がマイグレーションSQLと一致することを確認(Git管理する)
+  - v1 のスキーマJSONは存在しない(当時 exportSchema=false)。以後の変更は出力JSONで検証できる
+- `data/repository/TaskRepository`(tasks / tasksForProject / upsert / setStatus / delete)
+  - `now` を注入可能にしてテスト容易性を確保。upsert は updatedAt を刻む(createdAt は不変)
+  - setStatus: DONE で completedAt を刻み、戻したらクリア
+- `Mappers`: `TaskEntity.toDomain()` + 書き込み用の `Task.toEntity()`(status は enum⇄文字列変換)
+- `SampleSeed.tasks` 5件(3プロジェクトの nextTask/inProgress 相当 + 完了済み1件 + プロジェクト外1件 `projectId=null`)
+- `AppContainer`: `taskRepository` 追加、`addMigrations(MIGRATION_1_2)`、空のとき tasks もシード
+- テスト: `TaskRepositoryTest`(変換 / フィルタ / upsert の時刻刻印 / setStatus の completedAt 制御 / 未知status フォールバック)、
+  `SampleSeedTest` にタスク検証5件を追加(ID一意 / projectId 参照整合 / status・priority 語彙 / completedAt 整合)
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- **マイグレーション v1→v2 の実機検証は未実施**: 旧DBが入った端末/エミュレーターでの起動確認は
+  Windows 側 Android Studio での実行時に行う(Room の migration テストは instrumentation が必要なため
+  ユニットテストでは代替としてスキーマJSONとSQLの一致を確認した)
+
+### メモ(ビルド環境)
+
+- Windows 側 Android Studio のセットアップは完了済み(`local.properties` に Windows SDK パスが生成されていた)。
+  今回は WSL ビルドのため一時的に WSL 用へ差し替え、ビルド後に Windows 用へ戻した。
+- Windows 側で Gradle Sync に失敗する場合は `.gradle` / `build` / `app/build`(WSLビルドで再生成された
+  キャッシュ)を削除してから Sync し直すこと。
+
+### 次にやること
+
+- **1-b**: プロジェクト詳細画面(読み取りのみ: プロジェクト情報 + タスク一覧、初のネストナビ)
+
+---
+
 ## 2026-07-23: v3-Step 1(Task実体化)の詳細設計を確定 — 記録のみ(コード変更なし)
 
 ### ユーザーと合意した決定

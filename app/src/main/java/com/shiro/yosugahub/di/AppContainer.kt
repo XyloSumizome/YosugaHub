@@ -3,6 +3,7 @@ package com.shiro.yosugahub.di
 import android.content.Context
 import androidx.room.Room
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
+import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.repository.AssistantRepository
@@ -10,6 +11,7 @@ import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +26,7 @@ import java.time.LocalDateTime
 interface AppContainer {
     val calendarRepository: CalendarRepository
     val projectRepository: ProjectRepository
+    val taskRepository: TaskRepository
     val assistantRepository: AssistantRepository
     val userPreferencesRepository: UserPreferencesRepository
     val exportRepository: ExportRepository
@@ -40,13 +43,18 @@ class DefaultAppContainer(
         context.applicationContext,
         YosugaDatabase::class.java,
         "yosuga.db",
-    ).build()
+    )
+        .addMigrations(MIGRATION_1_2)
+        .build()
 
     override val calendarRepository: CalendarRepository by lazy {
         CalendarRepository(database.calendarEventDao())
     }
     override val projectRepository: ProjectRepository by lazy {
         ProjectRepository(database.projectDao())
+    }
+    override val taskRepository: TaskRepository by lazy {
+        TaskRepository(database.taskDao())
     }
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())
@@ -82,6 +90,10 @@ class DefaultAppContainer(
             }
             if (database.recommendationDao().count() == 0) {
                 database.recommendationDao().insertAll(SampleSeed.recommendations)
+                seededAnything = true
+            }
+            if (database.taskDao().count() == 0) {
+                database.taskDao().insertAll(SampleSeed.tasks)
                 seededAnything = true
             }
             if (seededAnything) {

@@ -41,6 +41,12 @@ android {
     }
 }
 
+// Room のスキーマJSONを出力(YosugaDatabase の exportSchema=true とセット)。
+// マイグレーション時の期待スキーマ検証に使うため app/schemas/ を Git 管理する。
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
