@@ -34,6 +34,10 @@ interface DocumentDao {
     @Query("SELECT COUNT(*) FROM documents")
     suspend fun countDocuments(): Int
 
+    /** ホームの「確認待ちの文書」用。件数だけ数える(分類行まで読まない)。 */
+    @Query("SELECT COUNT(*) FROM documents WHERE status = :status")
+    fun observeCountByStatus(status: String): Flow<Int>
+
     // --- 書き込み(部品) ---
 
     @Upsert

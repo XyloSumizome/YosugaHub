@@ -31,6 +31,10 @@ class DocumentRepository(
 
     suspend fun document(id: String): Document? = dao.getDocument(id)?.toDomain()
 
+    /** ユーザーの確認を待っている文書の件数(ホーム表示用)。 */
+    fun needsReviewCount(): Flow<Int> =
+        dao.observeCountByStatus(DocumentStatus.NEEDS_REVIEW.dbValue)
+
     /** 分類履歴(新しい順)。現行・過去の両方を含む。 */
     suspend fun classificationHistory(id: String): List<DocumentClassification> =
         document(id)?.classificationHistory.orEmpty()

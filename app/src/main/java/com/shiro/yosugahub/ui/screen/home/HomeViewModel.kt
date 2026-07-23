@@ -10,6 +10,7 @@ import android.net.Uri
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
+import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
@@ -36,6 +37,8 @@ data class HomeUiState(
     val lastSyncedAt: String = "",
     val todayTasks: List<Task> = emptyList(),
     val pendingProposalCount: Int = 0,
+    /** ヨスガの分類が届き、ユーザーの確認を待っている文書の件数(v4.1)。 */
+    val documentsNeedingReviewCount: Int = 0,
     val recentDecisions: List<KnowledgeItem> = emptyList(),
     val todayEvents: List<CalendarEvent> = emptyList(),
     val nextEvent: CalendarEvent? = null,
@@ -46,6 +49,7 @@ data class HomeUiState(
 private data class SecretaryData(
     val todayTasks: List<Task>,
     val pendingProposalCount: Int,
+    val documentsNeedingReviewCount: Int,
     val recentDecisions: List<KnowledgeItem>,
 )
 
@@ -58,6 +62,7 @@ class HomeViewModel(
     taskRepository: TaskRepository,
     proposalRepository: ProposalRepository,
     knowledgeRepository: KnowledgeRepository,
+    documentRepository: DocumentRepository,
     private val todayDate: () -> String = { LocalDate.now().toString() },
 ) : ViewModel() {
 
@@ -75,15 +80,17 @@ class HomeViewModel(
         }
     }
 
-    /** タスク・承認待ち件数・最近の決定を1本にまとめる(combine の5フロー制限対策)。 */
+    /** タスク・承認待ち件数・確認待ち文書・最近の決定を1本にまとめる(combine の5フロー制限対策)。 */
     private val secretaryFlow = combine(
         taskRepository.tasks(),
         proposalRepository.pendingCount(),
         knowledgeRepository.items(),
-    ) { tasks, pendingCount, items ->
+        documentRepository.needsReviewCount(),
+    ) { tasks, pendingCount, items, documentsNeedingReview ->
         SecretaryData(
             todayTasks = todayFocus(tasks, today = todayDate()),
             pendingProposalCount = pendingCount,
+            documentsNeedingReviewCount = documentsNeedingReview,
             recentDecisions = items.filter { it.kind == ItemKind.DECISION }.take(RECENT_DECISIONS),
         )
     }
@@ -100,6 +107,7 @@ class HomeViewModel(
             lastSyncedAt = lastSyncedAt.ifEmpty { "未同期" },
             todayTasks = secretary.todayTasks,
             pendingProposalCount = secretary.pendingProposalCount,
+            documentsNeedingReviewCount = secretary.documentsNeedingReviewCount,
             recentDecisions = secretary.recentDecisions,
             todayEvents = todayEvents,
             nextEvent = upcomingEvents.firstOrNull(),
@@ -126,6 +134,7 @@ class HomeViewModel(
                     taskRepository = app.container.taskRepository,
                     proposalRepository = app.container.proposalRepository,
                     knowledgeRepository = app.container.knowledgeRepository,
+                    documentRepository = app.container.documentRepository,
                 )
             }
         }

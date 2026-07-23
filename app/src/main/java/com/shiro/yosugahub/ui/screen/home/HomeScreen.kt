@@ -82,6 +82,17 @@ fun HomeScreen(
                 }
             }
         }
+        if (uiState.documentsNeedingReviewCount > 0) {
+            item {
+                SectionCard(title = "確認待ちの文書") {
+                    Text(
+                        text = "ヨスガが分類した文書が ${uiState.documentsNeedingReviewCount} 件あります。" +
+                            "記録タブの「文書」で確認してください。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
         item {
             SectionCard(title = "今日やること") {
                 if (uiState.todayTasks.isEmpty()) {

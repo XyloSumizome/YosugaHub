@@ -49,6 +49,9 @@ class DocumentRepositoryTest {
 
         override suspend fun countDocuments(): Int = documents.size
 
+        override fun observeCountByStatus(status: String): Flow<Int> =
+            flowOf(documents.values.count { it.status == status })
+
         override suspend fun upsertDocument(document: DocumentEntity) {
             documents[document.id] = document
         }
@@ -324,6 +327,28 @@ class DocumentRepositoryTest {
         val docs = repo.documents().first()
         assertEquals(1, docs.size)
         assertEquals(DocumentStatus.UNCLASSIFIED, docs.single().status)
+    }
+
+    /** ホームの「確認待ちの文書」は needs_review だけを数える。 */
+    @Test
+    fun needsReviewCount_counts_only_documents_awaiting_confirmation() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repo = repository(dao)
+        assertEquals(0, repo.needsReviewCount().first())
+
+        val awaiting = repo.createSample()
+        val approved = repo.createSample()
+        repo.createSample()  // 未整理のまま
+        repo.applyAiClassification(
+            awaiting.id, "確認待ち", "memo", 0.9, emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+        repo.applyAiClassification(
+            approved.id, "承認済み", "memo", 0.9, emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+        assertEquals(2, repo.needsReviewCount().first())
+
+        repo.approve(approved.id)
+        assertEquals(1, repo.needsReviewCount().first())
     }
 
     @Test
