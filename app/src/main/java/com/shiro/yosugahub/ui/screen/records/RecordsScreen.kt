@@ -31,11 +31,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.directiveStatusLabel
 import com.shiro.yosugahub.ui.component.documentStatusLabel
 import com.shiro.yosugahub.ui.component.entityTypeLabel
 import com.shiro.yosugahub.ui.component.itemKindLabel
@@ -47,11 +49,12 @@ private enum class RecordsSection(val label: String) {
     DIARY("日記"),
     DOCUMENTS("文書"),
     ENTITIES("関連"),
+    DIRECTIVES("指示"),
 }
 
 /**
- * 記録タブ(v3-Step 2-d / v4.1 で「文書」/ その後「関連」を追加)。
- * アイテム(タグ絞込)/ 決定事項ログ / 観察日記 / 未整理文書 / 実体 を切り替えて表示する。
+ * 記録タブ(v3-Step 2-d / v4.1「文書」/ その後「関連」/ v4.2「指示」を追加)。
+ * アイテム(タグ絞込)/ 決定事項ログ / 観察日記 / 未整理文書 / 実体 / 指示書 を切り替えて表示する。
  */
 @Composable
 fun RecordsScreen(
@@ -70,6 +73,8 @@ fun RecordsScreen(
     var openedDocumentId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingClassificationOf by remember { mutableStateOf<Document?>(null) }
     var entityType by rememberSaveable { mutableStateOf<EntityType?>(null) }
+    var directiveProjectId by rememberSaveable { mutableStateOf<String?>(null) }
+    var openedDirectiveId by rememberSaveable { mutableStateOf<String?>(null) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -281,6 +286,56 @@ fun RecordsScreen(
                     }
                 }
             }
+
+            RecordsSection.DIRECTIVES -> {
+                val targets = directiveTargetsPresent(uiState.directives, uiState.projects)
+                if (targets.size > 1) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FilterChip(
+                                selected = directiveProjectId == null,
+                                onClick = { directiveProjectId = null },
+                                label = { Text("すべて") },
+                            )
+                            targets.forEach { project ->
+                                FilterChip(
+                                    selected = directiveProjectId == project.id,
+                                    onClick = {
+                                        directiveProjectId =
+                                            if (directiveProjectId == project.id) null else project.id
+                                    },
+                                    label = { Text(project.name) },
+                                )
+                            }
+                        }
+                    }
+                }
+                val directives = sortDirectivesForDisplay(
+                    filterDirectivesByProject(uiState.directives, directiveProjectId)
+                )
+                if (directives.isEmpty()) {
+                    item {
+                        EmptyText(
+                            if (uiState.directives.isEmpty())
+                                "指示書はまだありません。ヨスガの提案を承認すると、ここから配信されます。"
+                            else "条件に合う指示書がありません"
+                        )
+                    }
+                } else {
+                    items(directives, key = { it.id }) { directive ->
+                        DirectiveCard(
+                            directive = directive,
+                            targetName = directiveTargetName(directive, uiState.projects),
+                            onClick = { openedDirectiveId = directive.id },
+                        )
+                    }
+                }
+            }
         }
     }
 
@@ -343,6 +398,30 @@ fun RecordsScreen(
             onArchive = {
                 viewModel.archiveDocument(document.id)
                 openedDocumentId = null
+            },
+        )
+    }
+
+    // 対象が消えていれば let が空振りしてダイアログは閉じる。
+    val openedDirective = openedDirectiveId?.let { id ->
+        uiState.directives.firstOrNull { it.id == id }
+    }
+    openedDirective?.let { directive ->
+        DirectiveDetailDialog(
+            directive = directive,
+            targetName = directiveTargetName(directive, uiState.projects),
+            onDismiss = { openedDirectiveId = null },
+            onMarkDone = {
+                viewModel.markDirectiveDone(directive.id)
+                openedDirectiveId = null
+            },
+            onReopen = {
+                viewModel.reopenDirective(directive.id)
+                openedDirectiveId = null
+            },
+            onDelete = {
+                viewModel.deleteDirective(directive.id)
+                openedDirectiveId = null
             },
         )
     }
@@ -443,6 +522,39 @@ private fun DocumentCard(document: Document, onClick: () -> Unit, modifier: Modi
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun DirectiveCard(
+    directive: Directive,
+    targetName: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    SectionCard(
+        title = directive.title.ifBlank { "$targetName への指示" },
+        modifier = modifier.clickable(onClick = onClick),
+    ) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$targetName / ${directive.createdAt.take(10)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AssistChip(onClick = {}, label = { Text(directiveStatusLabel(directive.status)) })
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = directive.body.lineSequence().firstOrNull { it.isNotBlank() }.orEmpty(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }

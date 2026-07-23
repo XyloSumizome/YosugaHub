@@ -8,12 +8,16 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.DiaryRepository
+import com.shiro.yosugahub.data.repository.DirectiveRepository
 import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
+import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
+import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.TrackedEntity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +32,24 @@ data class RecordsUiState(
     val diaryEntries: List<DiaryEntry> = emptyList(),
     val documents: List<Document> = emptyList(),
     val entities: List<TrackedEntity> = emptyList(),
+    val directives: List<Directive> = emptyList(),
+    /** 指示書の宛先表示に使う(名前解決)。 */
+    val projects: List<Project> = emptyList(),
+)
+
+/** アイテム・タグ・実体をまとめる中間データ(combine の5フロー制限対策)。 */
+private data class KnowledgeData(
+    val items: List<KnowledgeItem>,
+    val tagNames: List<String>,
+    val entities: List<TrackedEntity>,
 )
 
 class RecordsViewModel(
     private val knowledgeRepository: KnowledgeRepository,
     private val documentRepository: DocumentRepository,
+    private val directiveRepository: DirectiveRepository,
     diaryRepository: DiaryRepository,
+    projectRepository: ProjectRepository,
 ) : ViewModel() {
 
     /** 手動でアイテムを追加する(source=manual、実体の関連付けは AI 経由のみ)。 */
@@ -99,19 +115,45 @@ class RecordsViewModel(
         viewModelScope.launch { documentRepository.archive(id) }
     }
 
-    val uiState: StateFlow<RecordsUiState> = combine(
+    /**
+     * 指示書を対応済みにする(v4.2)。次の同期から配信されなくなる。
+     * 実際に配信を止めるにはサーバー同期が必要なことに注意(UI 側で案内する)。
+     */
+    fun markDirectiveDone(id: String) {
+        viewModelScope.launch { directiveRepository.markDone(id) }
+    }
+
+    fun reopenDirective(id: String) {
+        viewModelScope.launch { directiveRepository.reopen(id) }
+    }
+
+    fun deleteDirective(id: String) {
+        viewModelScope.launch { directiveRepository.delete(id) }
+    }
+
+    private val knowledgeFlow = combine(
         knowledgeRepository.items(),
         knowledgeRepository.tagNames(),
+        knowledgeRepository.entities(),
+    ) { items, tagNames, entities ->
+        KnowledgeData(items = items, tagNames = tagNames, entities = entities)
+    }
+
+    val uiState: StateFlow<RecordsUiState> = combine(
+        knowledgeFlow,
         diaryRepository.entries(),
         documentRepository.documents(),
-        knowledgeRepository.entities(),
-    ) { items, tagNames, diaryEntries, documents, entities ->
+        directiveRepository.directives(),
+        projectRepository.projects(),
+    ) { knowledge, diaryEntries, documents, directives, projects ->
         RecordsUiState(
-            items = items,
-            tagNames = tagNames,
+            items = knowledge.items,
+            tagNames = knowledge.tagNames,
             diaryEntries = diaryEntries,
             documents = documents,
-            entities = entities,
+            entities = knowledge.entities,
+            directives = directives,
+            projects = projects,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -126,7 +168,9 @@ class RecordsViewModel(
                 RecordsViewModel(
                     knowledgeRepository = app.container.knowledgeRepository,
                     documentRepository = app.container.documentRepository,
+                    directiveRepository = app.container.directiveRepository,
                     diaryRepository = app.container.diaryRepository,
+                    projectRepository = app.container.projectRepository,
                 )
             }
         }

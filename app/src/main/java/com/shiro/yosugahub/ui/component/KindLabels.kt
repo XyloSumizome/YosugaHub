@@ -1,6 +1,7 @@
 package com.shiro.yosugahub.ui.component
 
 import com.shiro.yosugahub.domain.model.ClassificationOrigin
+import com.shiro.yosugahub.domain.model.DirectiveStatus
 import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.ItemKind
@@ -13,6 +14,12 @@ fun itemKindLabel(kind: ItemKind): String = when (kind) {
     ItemKind.SHOPPING -> "買い物"
     ItemKind.TECH -> "技術"
     ItemKind.OTHER -> "その他"
+}
+
+/** 指示書の状態ラベル(v4.2)。配信中かどうかが一目で分かる言葉にする。 */
+fun directiveStatusLabel(status: DirectiveStatus): String = when (status) {
+    DirectiveStatus.OPEN -> "配信中"
+    DirectiveStatus.DONE -> "対応済み"
 }
 
 /** 実体の種別ラベル(v3.1 4章)。 */
