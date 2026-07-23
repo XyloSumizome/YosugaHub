@@ -16,11 +16,12 @@
 # Project Overview
 
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
-設計書: `yosuga_hub_android_design_v3.md`(必読 / 最上位方針)。
+設計書: `yosuga_hub_android_design_v3.md`(必読 / 最上位方針)+ `yosuga_hub_android_design_v3_1.md`(追加仕様: 知識ベース・タグ・観察日記)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
 
 v3の核心: **AI=頭脳 / Yosuga Hub=記憶・表示装置**。アプリは考えず、AIが整理した結果を保存・表示・編集・検索する。
-知識はObsidian(端末内Vault)、制作管理はHub。提案→ユーザーがOK→保存(自動更新しない・安全優先)。Android単体でクラウド同期なし。
+提案→ユーザーがOK→保存(自動更新しない・安全優先)。Android単体でクラウド同期なし。
+知識の置き場所(v3.1): Hub=構造化された短い知識(タグ付きアイテム・決定事項・保留アイデア・観察日記・エンティティ)、Obsidian=長文(設計思想・仕様書など)。
 
 - 技術構成: Kotlin + Jetpack Compose + Material 3 + Gradle Kotlin DSL
 - アーキテクチャ: UI / ViewModel / Repository / Data Source の分離
@@ -33,9 +34,10 @@ v3の核心: **AI=頭脳 / Yosuga Hub=記憶・表示装置**。アプリは考�
 - 土台(実装済み): 5画面の骨組み + Room + DataStore + ViewModel/Repository分離 + 状況JSONエクスポート/回答JSONインポート。
 - 確定した方針: AIブリッジは当面「手動JSONブリッジ」を継続 / Obsidian連携は SAF で Vault フォルダ選択 / 提案→承認→保存フロー。
 
-次の実装(v3ロードマップ / 詳細は設計書v3の付録・WORKLOG):
-- **v3-Step 1: Task を第一級エンティティ化**(TaskEntity/DAO/Repository + タスク/プロジェクト編集の最小UI)。
-- 以降: Step 2 提案→承認フロー / Step 3 Obsidian連携(SAF) / Step 4 統合表示。
+次の実装(v3ロードマップ / 詳細は設計書v3・v3.1の付録・WORKLOG):
+- **v3-Step 1: Task を第一級エンティティ化** — 1-a(データ層)/ 1-b(プロジェクト詳細画面)済み。残: 1-c(タスク編集)/ 1-d(プロジェクト編集)。
+- **Step 2: v3.1 を織り込んで再設計** — 情報アイテム+タグ(多対多)+エンティティ+観察日記のデータモデル、回答JSONスキーマv2、提案レビュー(承認/棄却)UI。
+- 以降: Step 3 Obsidian連携(SAF・長文の書き出し先) / Step 4 統合表示。
 - 旧「Phase 3 GitHub進捗取得」は後ろへ延期(v3では将来構想の Knowledge Repository 側へ再配置)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。
