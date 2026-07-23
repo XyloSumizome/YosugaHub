@@ -4,6 +4,8 @@ import com.shiro.yosugahub.data.file.model.AiExportFile
 import com.shiro.yosugahub.data.file.model.CalendarFile
 import com.shiro.yosugahub.data.file.model.ConversationsFile
 import com.shiro.yosugahub.data.file.model.DiaryExport
+import com.shiro.yosugahub.data.file.model.DocumentExport
+import com.shiro.yosugahub.data.file.model.DocumentsFile
 import com.shiro.yosugahub.data.file.model.EntityRefExport
 import com.shiro.yosugahub.data.file.model.EventExport
 import com.shiro.yosugahub.data.file.model.ExchangeExport
@@ -13,6 +15,8 @@ import com.shiro.yosugahub.data.file.model.ProjectsFile
 import com.shiro.yosugahub.data.file.model.TasksFile
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Document
+import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.Project
@@ -34,13 +38,20 @@ object AiExporter {
     const val FILE_KNOWLEDGE = "knowledge.json"
     const val FILE_CALENDAR = "calendar.json"
     const val FILE_CONVERSATIONS = "conversations.json"
+    const val FILE_DOCUMENTS = "documents.json"
+
+    /** ヨスガに分類してほしい文書の状態(v4.1)。分類済み・アーカイブは送らない。 */
+    private val CLASSIFIABLE_STATUSES = setOf(
+        DocumentStatus.UNCLASSIFIED,
+        DocumentStatus.CLASSIFICATION_PENDING,
+    )
 
     private val json = Json {
         prettyPrint = true
         encodeDefaults = true
     }
 
-    /** 5ファイルすべてを組み立てる。 */
+    /** 6ファイルすべてを組み立てる。 */
     fun buildAll(
         generatedAt: String,
         projects: List<Project>,
@@ -52,6 +63,7 @@ object AiExporter {
         upcomingEvents: List<CalendarEvent>,
         pastEvents: List<CalendarEvent>,
         exchanges: List<PendingProposal>,
+        documents: List<Document>,
     ): List<AiExportFile> = listOf(
         AiExportFile(
             FILE_PROJECTS,
@@ -101,6 +113,25 @@ object AiExporter {
                 )
             ),
         ),
+        AiExportFile(
+            FILE_DOCUMENTS,
+            json.encodeToString(
+                DocumentsFile(
+                    generatedAt = generatedAt,
+                    pendingClassification = documents
+                        .filter { it.status in CLASSIFIABLE_STATUSES }
+                        .map { it.toExport() },
+                )
+            ),
+        ),
+    )
+
+    private fun Document.toExport() = DocumentExport(
+        documentId = id,
+        title = title,
+        body = body,
+        status = status.dbValue,
+        createdAt = createdAt,
     )
 
     private fun KnowledgeItem.toExport() = KnowledgeItemExport(

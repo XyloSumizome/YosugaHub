@@ -26,9 +26,10 @@ class AiExportRepository(
     private val calendarRepository: CalendarRepository,
     private val projectStatusRepository: ProjectStatusRepository,
     private val pendingProposalDao: PendingProposalDao,
+    private val documentRepository: DocumentRepository,
 ) {
 
-    /** 5ファイルを生成してローカルへ保存し、内容を返す。 */
+    /** 6ファイルを生成してローカルへ保存し、内容を返す。 */
     suspend fun buildAndSave(): List<AiExportFile> = withContext(Dispatchers.IO) {
         val files = AiExporter.buildAll(
             generatedAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
@@ -42,6 +43,7 @@ class AiExportRepository(
             pastEvents = calendarRepository.pastEvents().first(),
             exchanges = pendingProposalDao.recent(EXCHANGE_LIMIT)
                 .mapNotNull { it.toDomainOrNull() },
+            documents = documentRepository.documents().first(),
         )
 
         val dir = File(context.filesDir, AI_DIR).apply { mkdirs() }

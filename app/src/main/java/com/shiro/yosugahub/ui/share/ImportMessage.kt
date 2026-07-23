@@ -7,7 +7,15 @@ fun importResultMessage(result: ImportResult): String = when (result) {
     is ImportResult.Success ->
         "取り込みました(提案 ${result.recommendationCount} 件)"
     is ImportResult.SuccessProposals ->
-        "提案を ${result.proposalCount} 件受け取りました。ヨスガ画面で承認してください。"
+        listOfNotNull(
+            "提案を ${result.proposalCount} 件受け取りました。ヨスガ画面で承認してください。"
+                .takeIf { result.proposalCount > 0 },
+            "文書 ${result.classificationCount} 件の分類を受け取りました。記録タブの「文書」で確認してください。"
+                .takeIf { result.classificationCount > 0 },
+            "宛先の文書が見つからない分類が ${result.unknownDocumentCount} 件ありました。"
+                .takeIf { result.unknownDocumentCount > 0 },
+        ).ifEmpty { listOf("受け取れる提案がありませんでした。") }
+            .joinToString("\n")
     is ImportResult.InvalidJson ->
         "JSONを読み取れませんでした。ファイルの内容を確認してください。"
     is ImportResult.UnsupportedSchema ->

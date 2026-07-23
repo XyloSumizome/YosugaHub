@@ -1,5 +1,6 @@
 package com.shiro.yosugahub.data.repository
 
+import com.shiro.yosugahub.data.file.model.AiExportFile
 import com.shiro.yosugahub.data.sync.SyncApi
 import com.shiro.yosugahub.data.sync.UploadResult
 
@@ -14,16 +15,19 @@ sealed interface SyncResult {
 }
 
 /**
- * AI向けJSONを生成してロリポップへ同期する(v4 Phase2)。
+ * AI向けJSONを生成してロリポップへ同期する(v4 Phase2 / v4.1 で文書の状態遷移を追加)。
  * URL・トークンは供給関数で受け、通信直前にのみ取り出す。
- * 成功時は onSynced(最終同期時刻の記録など)を呼ぶ。
+ * 成功時は onSynced(最終同期時刻の記録など)と onDocumentsUploaded を呼ぶ。
  */
 class ServerSyncRepository(
-    private val aiExportRepository: AiExportRepository,
+    /** AI向けJSONの生成(既定は AiExportRepository::buildAndSave)。 */
+    private val buildFiles: suspend () -> List<AiExportFile>,
     private val api: SyncApi,
     private val urlProvider: suspend () -> String,
     private val tokenProvider: suspend () -> String?,
     private val onSynced: suspend () -> Unit = {},
+    /** アップロード成功時に未整理文書を「分類待ち」へ進める(v4.1)。 */
+    private val onDocumentsUploaded: suspend () -> Unit = {},
 ) {
 
     suspend fun sync(): SyncResult {
@@ -32,11 +36,14 @@ class ServerSyncRepository(
         val token = tokenProvider() ?: return SyncResult.TokenMissing
 
         // 生成に失敗した場合は例外を伝播させず NetworkError 相当にしない(生成はローカル処理)。
-        val files = aiExportRepository.buildAndSave()
+        val files = buildFiles()
 
         return when (val result = api.upload(url, token, files)) {
             UploadResult.Ok -> {
                 onSynced()
+                // 送信後に追加された文書もここで pending になるが、pending も毎回送るため
+                // 次回の同期で必ずヨスガの手元に届く(取りこぼしにはならない)。
+                onDocumentsUploaded()
                 SyncResult.Success(files.size)
             }
             UploadResult.Unauthorized -> SyncResult.Unauthorized

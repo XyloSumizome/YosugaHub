@@ -56,13 +56,15 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v4 Phase2 完了**: AI用JSONを5ファイルに分割(AiExporter / AiExportRepository)、
   ロリポップ同期(SyncApi + ServerSyncRepository + 設定画面。トークンはKeystore、ヘッダー送信)。
   サーバーPHP一式は `server/`(設置手順は `server/README-server.md`)。
-- **v4.1 データ層 + 文書UI 完了**: AI分類ワークフローの Room v6(documents=原文不変 /
+- **v4.1 AI分類ワークフロー 実装完了**: Room v6(documents=原文不変 /
   document_classifications=分類履歴)+ DocumentRepository(状態遷移)+
-  記録タブ「文書」セクション(承認/修正/保留/再分類/元文表示)。記録タブは7区分に。
-  「未確定の論点」5点は合意済み(WORKLOG 2026-07-23 v4.1 エントリ参照)。
-- **次にやること**: ①AI分類ワークフローの残り(documents.json同期・回答JSON取込・
-  yosuga_prompt.md追記。WORKLOG 再開ポイント参照)、
-  ②実環境検証(ロリポップ設置・GitHub実通信・実機。手順は WORKLOG 冒頭の再開ポイント)。
+  記録タブ「文書」セクション(承認/修正/保留/再分類/元文表示。記録タブは7区分に)+
+  documents.json 同期(AiExporterは6ファイル)+ 回答JSON v2 `classifications[]` 取込 +
+  ヨスガ用プロンプトへの分類指示。「未確定の論点」5点は合意済み
+  (**分類結果は pending_proposals を経由せず文書へ直接適用**する調整あり。
+  理由は WORKLOG 2026-07-23 v4.1「設計判断」参照)。
+- **次にやること**: **実環境検証**(v4.1の通し確認・ロリポップ設置・GitHub実通信・実機。
+  手順は WORKLOG 冒頭の再開ポイント)。実装側の積み残しは WORKLOG 参照。
 - 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
 - アシスタント名は「ヨスガ」(カタカナ表記)。
 

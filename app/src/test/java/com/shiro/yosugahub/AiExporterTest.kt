@@ -3,11 +3,14 @@ package com.shiro.yosugahub
 import com.shiro.yosugahub.data.file.AiExporter
 import com.shiro.yosugahub.data.file.model.CalendarFile
 import com.shiro.yosugahub.data.file.model.ConversationsFile
+import com.shiro.yosugahub.data.file.model.DocumentsFile
 import com.shiro.yosugahub.data.file.model.KnowledgeFile
 import com.shiro.yosugahub.data.file.model.ProjectsFile
 import com.shiro.yosugahub.data.file.model.TasksFile
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Document
+import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.PendingProposal
@@ -65,15 +68,52 @@ class AiExporterTest {
                 status = ProposalStatus.REJECTED, receivedAt = generatedAt,
             ),
         ),
+        documents = listOf(
+            document("doc-new", DocumentStatus.UNCLASSIFIED),
+            document("doc-pending", DocumentStatus.CLASSIFICATION_PENDING),
+            document("doc-review", DocumentStatus.NEEDS_REVIEW),
+            document("doc-done", DocumentStatus.CLASSIFIED),
+            document("doc-old", DocumentStatus.ARCHIVED),
+        ),
+    )
+
+    private fun document(id: String, status: DocumentStatus) = Document(
+        id = id,
+        title = "文書 $id",
+        body = "原文 $id",
+        status = status,
+        createdAt = generatedAt,
+        updatedAt = generatedAt,
+        source = "manual",
+        currentClassification = null,
     )
 
     @Test
-    fun builds_five_named_files() {
+    fun builds_six_named_files() {
         val files = buildAll()
         assertEquals(
-            listOf("projects.json", "tasks.json", "knowledge.json", "calendar.json", "conversations.json"),
+            listOf(
+                "projects.json", "tasks.json", "knowledge.json",
+                "calendar.json", "conversations.json", "documents.json",
+            ),
             files.map { it.name },
         )
+    }
+
+    @Test
+    fun documents_file_carries_only_classifiable_documents_with_original_body() {
+        val files = buildAll().associateBy { it.name }
+        val documents = json.decodeFromString<DocumentsFile>(files["documents.json"]!!.content)
+
+        // 分類済み・確認待ち・アーカイブは送らない(再分類を誘発しない)。
+        assertEquals(
+            listOf("doc-new", "doc-pending"),
+            documents.pendingClassification.map { it.documentId },
+        )
+        assertEquals(1, documents.schemaVersion)
+        assertEquals(generatedAt, documents.generatedAt)
+        assertEquals("原文 doc-new", documents.pendingClassification.first().body)
+        assertEquals("unclassified", documents.pendingClassification.first().status)
     }
 
     @Test
@@ -118,6 +158,7 @@ class AiExporterTest {
             exchanges = listOf(
                 PendingProposal("p1", ProposalType.TASK, "{ broken", ProposalStatus.PENDING, generatedAt),
             ),
+            documents = emptyList(),
         )
         val conversations = json.decodeFromString<ConversationsFile>(
             files.single { it.name == "conversations.json" }.content

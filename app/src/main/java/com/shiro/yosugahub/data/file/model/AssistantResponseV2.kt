@@ -1,5 +1,6 @@
 package com.shiro.yosugahub.data.file.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -21,6 +22,31 @@ data class ProposalsImport(
     val items: List<ItemProposal> = emptyList(),
     val diary: List<DiaryProposal> = emptyList(),
     val projectHealth: List<HealthProposal> = emptyList(),
+    /** 文書の分類結果(v4.1)。他の提案と違い、取込時に文書へ適用して「確認待ち」にする。 */
+    val classifications: List<ClassificationProposal> = emptyList(),
+)
+
+/**
+ * AI分類結果(v4.1)。設計書の例に合わせて snake_case で受ける。
+ * 承認は文書の詳細画面で行うため、pending_proposals には積まない。
+ */
+@Serializable
+data class ClassificationProposal(
+    @SerialName("document_id") val documentId: String = "",
+    @SerialName("project_ids") val projectIds: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val tags: List<String> = emptyList(),
+    @SerialName("document_type") val documentType: String = "",
+    val summary: String = "",
+    @SerialName("related_entities") val relatedEntities: List<RelatedRefImport> = emptyList(),
+    val confidence: Double? = null,
+)
+
+/** 分類が参照する関連実体。type は自由文字列(既存 EntityType は拡張しない)。 */
+@Serializable
+data class RelatedRefImport(
+    val type: String = "",
+    val id: String = "",
 )
 
 /** タスク提案。承認で tasks テーブルへ(source=assistant)。 */

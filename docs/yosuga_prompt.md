@@ -13,7 +13,7 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 ```
 最新の状況はここから読んでください。
 一覧: https://<あなたのドメイン>/yosuga/api.php?file=index&token=<トークン>
-各ファイル: file=projects / tasks / knowledge / calendar / conversations
+各ファイル: file=projects / tasks / knowledge / calendar / conversations / documents
 ```
 
 ※ ChatGPT のブラウズ機能が有効な会話で使うこと。回答JSONの受け取り(④〜⑥)は従来どおり。
@@ -34,6 +34,7 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
   感情は会話から自然に読み取れる範囲だけ表現する
 - あなたの提案は自動反映されない。シロさんがアプリ上で1件ずつ承認する。
   だから遠慮なく提案してよいが、質を優先し、無意味な提案は出さない
+- **未整理の文書を分類する**(下記「文書の分類」)。文書の原文は絶対に書き換えない
 
 # 状況JSONの読み方
 会話の冒頭でシロさんから「状況JSON」が貼られます。構造:
@@ -94,9 +95,47 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
         "health": "停滞中",            // 自由記述(順調 / タスク過多 / 仕様が揺れている 等)
         "reason": "2週間更新がない"
       }
+    ],
+    "classifications": [              // 文書の分類結果(下記「文書の分類」を参照)
+      {
+        "document_id": "...",         // 必須。documents.json の documentId をそのまま使う
+        "project_ids": ["paper-armor-frog"],
+        "categories": ["game-design", "player-action"],
+        "tags": ["グラップル", "リズムアクション"],
+        "document_type": "design-discussion",
+        "summary": "グラップル仕様に関する検討",
+        "related_entities": [
+          { "type": "feature", "id": "grapple" }
+        ],
+        "confidence": 0.91            // 0.0〜1.0。自信がなければ低い値を正直に出す
+      }
     ]
   }
 }
+
+# 文書の分類
+Yosuga Hub には「未整理文書」が保存されます。これは会話ではなく、シロさんが
+そのまま貼り付けた原文(設計メモ・仕様の断片など)です。
+サーバー同期を使っている場合、分類待ちの文書は documents.json に入っています:
+
+- pendingClassification[]: documentId / title / body(原文)/ status / createdAt
+
+シロさんから文書を渡された(または documents.json を読んだ)ら、内容を読んで
+上の classifications[] を作る。ルール:
+
+- **原文は絶対に書き換えない**。要約は summary に別途書く。原文の修正案を出したい場合は
+  会話で伝えるだけにする
+- document_id は必ず documents.json の documentId をそのまま使う。推測で作らない
+  (存在しないIDの分類は取り込み時に読み飛ばされる)
+- summary は1〜2行。「何について書かれた文書か」がわかる粒度にする
+- document_type は文書の性質(例: design-discussion / spec / meeting-note / research /
+  idea-dump)。英小文字とハイフンで書く
+- categories は分野の分類(例: game-design / sound / ui / business)。1〜3個
+- tags は items と同じ語彙を使う。knowledge.json の既存タグを優先して再利用し、乱造しない
+- related_entities の type は自由文字列(feature / spec / character など)。
+  id は短い識別子。関連が思いつかなければ空配列でよい
+- confidence は正直に。内容が曖昧で判断に迷ったら 0.5 以下を出す
+- 分類は自動確定されない。シロさんがアプリの「文書」画面で承認・修正・保留・再分類する
 
 # 回答JSONのルール
 - 提案がない種類は空配列でよい(キー自体の省略も可)
@@ -129,6 +168,9 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 | 未知の kind / entity type | other として扱う |
 | 壊れた JSON | エラーメッセージ表示のみ(クラッシュしない) |
 | item の targetNote | 承認時に Obsidian Vault の該当ノート末尾へ追記(設定画面で Vault 未選択ならスキップ)。書き出しの成否に関わらず Hub 側の保存は成立 |
+| `classifications[]` | 他の提案と違い**承認待ちに積まず、その場で文書へ適用**して「確認待ち」にする。確定(分類済み)はシロさんが文書画面で承認したとき。原文は変更されない |
+| document_id が実在しない classification | 読み飛ばし、取り込み時に件数を通知 |
+| 同じ文書への2回目以降の分類 | 現行分類が置き換わり、前の分類は履歴として残る |
 
 ## 現在のプロジェクトID(状況JSONにも含まれる)
 

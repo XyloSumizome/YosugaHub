@@ -2,6 +2,64 @@
 
 ---
 
+## 2026-07-23: v4.1 AI分類ワークフロー — 同期・取込・プロンプト(③④⑤)= 実装完了
+
+### 設計判断(合意内容からの調整・要確認)
+
+論点3で「分類結果は回答JSON v2 の `proposals.classifications[]`(既存の取込→pending_proposals→
+レビューUIを再利用)」と合意したが、実装では **classifications だけ pending_proposals に積まず、
+取込時に文書へ直接適用**する形にした。理由:
+
+- 設計書v4.1 の状態遷移が `(分類結果を取込) → needs_review` / `(承認・修正して確定) → classified`
+  であり、取込=適用と定義されている
+- pending_proposals を経由すると「ヨスガ画面で提案を承認 → 文書画面でもう一度承認」と
+  **承認が二重**になる。文書のレビューUI(実装済み)が承認の唯一の入口である方が筋が通る
+- 「初期段階では自動確定せず、必ずユーザー確認を通す」は文書画面の承認で担保されている
+
+再利用したのは**運搬経路**(回答JSON v2 → ResponseImporter → ImportRepository)。
+この判断に違和感があれば pending_proposals 経由へ戻せる(ImportRepository の1メソッドの差)。
+
+### 実施内容
+
+**③ documents.json のサーバー同期**
+- `DocumentsFile` / `DocumentExport` を追加し、AiExporter を **6ファイル**構成に
+- 送るのは **unclassified / classification_pending のみ**(分類済み・確認待ち・アーカイブは
+  再分類を誘発するため送らない)。原文をそのまま渡す(要約はヨスガの仕事)
+- `ServerSyncRepository` に `onDocumentsUploaded` を追加し、**アップロード成功時のみ**
+  `markUnclassifiedAsPending()` を呼ぶ。失敗時は unclassified のまま残り、次回再送される
+- 同期中に追加された文書が pending になり得るが、pending も毎回送るため取りこぼさない(コメント済み)
+- サーバー側は変更不要(upload.php のファイル名検証は `^[a-z0-9_]+\.json$` の正規表現)
+- テスト容易性のため `ServerSyncRepository` の生成依存を `buildFiles: suspend () -> List<AiExportFile>`
+  に変更(既存の urlProvider / tokenProvider と同じ供給関数スタイル)。AppContainer で結線
+
+**④ 回答JSON v2 の分類取込**
+- `ClassificationProposal` / `RelatedRefImport` を追加。設計書v4.1の例に合わせ **snake_case**
+  (`document_id` / `project_ids` / `document_type` / `related_entities`)で受ける
+- `ImportRepository` が分類を `DocumentRepository.applyAiClassification()` へ流す。
+  document_id が空・実在しない分類は読み飛ばし、件数を結果に載せる
+- `ImportResult.SuccessProposals` に classificationCount / unknownDocumentCount を追加し、
+  取り込みメッセージで「記録タブの『文書』で確認してください」と案内
+
+**⑤ docs/yosuga_prompt.md**
+- 「# 文書の分類」節を追加(documents.json の読み方 / classifications[] の書式 /
+  原文を書き換えない / document_id を推測しない / confidence は正直に / 既存タグの再利用)
+- 取り込み仕様の表に classifications の挙動3行を追加。api.php の file 一覧に documents を追加
+
+### テスト
+
+- `ServerSyncRepositoryTest` 4件(成功時のみ副作用 / HTTPエラーで文書を進めない /
+  URL・トークン未設定で生成すら走らない)、`ImportMessageTest` 4件、
+  `ResponseImporterTest` +2件(snake_case の分類 / 分類なしの回答)、
+  `AiExporterTest` +1件と既存1件の更新(6ファイル / 送信対象の絞り込み)
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(**165件全成功**)
+
+### 未検証(実機・実通信が必要)
+
+- Room v6 マイグレーション通し / 文書の一連の操作 / documents.json の実アップロード /
+  ChatGPT が documents.json を読んで分類を返す一連の流れ
+
+---
+
 ## 2026-07-23: v4.1 AI分類ワークフロー — 文書UI + 分類レビューUI
 
 ### 実施内容(記録タブ「文書」セクション / 5項目のうち ①②)
@@ -216,20 +274,21 @@
   Room v5 キャッシュと表示 / 状況JSONへの反映
 - **カレンダー連携**: CalendarContract で端末カレンダーを読む(OAuth不要)
 - **v4 Phase2**: AI用JSON 5分割(AiExporter)+ ロリポップ同期(SyncApi / server/ にPHP一式)
-- **v4.1 データ層 + 文書UI + 分類レビューUI**: Room v6(documents / document_classifications)+
-  DocumentRepository(状態遷移・分類履歴)+ 記録タブ「文書」セクション(承認/修正/保留/再分類/元文表示)。
-  論点5点は合意済み — 本日のエントリ参照
-- 仮データはすべて解消済み。テストは 154 件。
+- **v4.1 AI分類ワークフロー(実装完了)**: Room v6(documents / document_classifications)+
+  DocumentRepository(状態遷移・分類履歴)+ 記録タブ「文書」セクション(承認/修正/保留/再分類/元文表示)
+  + documents.json 同期 + 回答JSON v2 `classifications[]` 取込 + ヨスガ用プロンプト。
+  論点5点は合意済み(取込の扱いのみ調整あり — 本日のエントリ「設計判断」参照)
+- 仮データはすべて解消済み。テストは 165 件。
 
-### ▶ 次にやること(このどちらかから)
+### ▶ 次にやること
 
-**A. AI分類ワークフローの続き**(`yosuga_hub_design_v4_1_classification.md` / 論点は合意済み)
-データ層・文書UI・レビューUI(①②)は完了。残りは:
-3. `documents.json` のサーバー同期(AiExporter に追加 + 同期成功時に
-   `DocumentRepository.markUnclassifiedAsPending()` を呼ぶ)
-4. 回答JSON v2 `proposals.classifications[]` の取込(ResponseImporter →
-   `DocumentRepository.applyAiClassification()`)
-5. `docs/yosuga_prompt.md` へ分類指示を追記
+**A. 実環境での検証**(ユーザー作業が必要 / v4.1 が実装完了したので次はこれが本命)
+下の「B. 実環境での検証」の手順に加え、v4.1 の通し確認:
+1. 記録タブ「文書」で文書を追加 → 設定で「今すぐ同期」→ 状態が「分類待ち」になるか
+2. ChatGPT に documents.json を読ませ、`classifications[]` を含む回答JSONをもらう
+3. 取り込み → 文書が「確認待ち」になり、分類内容が表示されるか
+4. 承認 / 修正して承認 / 再分類 を試し、履歴が積まれるか
+5. Room v1〜v6 のマイグレーション通し(既存端末の更新でクラッシュしないか)
 
 **B. 実環境での検証**(ユーザー作業が必要)
 1. ロリポップ設置: `server/README-server.md` の手順(トークン生成 → config.php → FTP → 同期)

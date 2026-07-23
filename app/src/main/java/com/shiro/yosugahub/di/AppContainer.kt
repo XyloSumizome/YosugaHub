@@ -149,6 +149,7 @@ class DefaultAppContainer(
             context.applicationContext,
             database.recommendationDao(),
             database.pendingProposalDao(),
+            documentRepository,
         )
     }
 
@@ -168,12 +169,13 @@ class DefaultAppContainer(
             calendarRepository = calendarRepository,
             projectStatusRepository = projectStatusRepository,
             pendingProposalDao = database.pendingProposalDao(),
+            documentRepository = documentRepository,
         )
     }
 
     override val serverSyncRepository: ServerSyncRepository by lazy {
         ServerSyncRepository(
-            aiExportRepository = aiExportRepository,
+            buildFiles = { aiExportRepository.buildAndSave() },
             api = SyncApi(),
             urlProvider = { syncSettingsRepository.baseUrl.first() },
             tokenProvider = { syncSettingsRepository.currentToken() },
@@ -182,6 +184,8 @@ class DefaultAppContainer(
                     formatSyncTime(LocalDateTime.now())
                 )
             },
+            // アップロードが届いた時点で未整理文書は「分類待ち」になる(v4.1)。
+            onDocumentsUploaded = { documentRepository.markUnclassifiedAsPending() },
         )
     }
 
