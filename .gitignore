@@ -9,3 +9,6 @@
 .cxx
 local.properties
 /app/build
+
+# Kotlin コンパイラのエラーログ(ビルド時に生成される)
+.kotlin/
