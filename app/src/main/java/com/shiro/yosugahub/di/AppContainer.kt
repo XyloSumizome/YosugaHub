@@ -77,7 +77,11 @@ class DefaultAppContainer(
         ExportRepository(context.applicationContext, projectRepository, calendarRepository)
     }
     override val importRepository: ImportRepository by lazy {
-        ImportRepository(context.applicationContext, database.recommendationDao())
+        ImportRepository(
+            context.applicationContext,
+            database.recommendationDao(),
+            database.pendingProposalDao(),
+        )
     }
 
     init {

@@ -6,6 +6,8 @@ import com.shiro.yosugahub.data.repository.ImportResult
 fun importResultMessage(result: ImportResult): String = when (result) {
     is ImportResult.Success ->
         "取り込みました(提案 ${result.recommendationCount} 件)"
+    is ImportResult.SuccessProposals ->
+        "提案を ${result.proposalCount} 件受け取りました。ヨスガ画面で承認してください。"
     is ImportResult.InvalidJson ->
         "JSONを読み取れませんでした。ファイルの内容を確認してください。"
     is ImportResult.UnsupportedSchema ->

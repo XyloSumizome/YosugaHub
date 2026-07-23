@@ -2,6 +2,48 @@
 
 ---
 
+## 2026-07-23: v3-Step 2-b 回答JSON v2 の取り込み(pending_proposals へ)
+
+### 経緯メモ
+
+- 実機確認(v1→v3マイグレーション・Step 1 の操作一連)をユーザーが Windows Studio で実施し、問題なし。
+- アシスタント名の表記を「よすが」→「ヨスガ」(カタカナ)に統一(UI 2箇所 + コメント + 設計書)。
+
+### 目的
+
+回答JSON v2(proposals)を取り込み、直接反映せず pending_proposals へ積む。
+v1(recommendations)の取り込み互換は維持。UIは変更なし(承認UIは 2-c)。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `data/file/model/AssistantResponseV2`: v2モデル(proposals.tasks / items / diary / projectHealth、
+  各項目デフォルト値付き・未知項目無視)
+- `ResponseImporter`: v1/v2 両対応(`SCHEMA_VERSION_V1/V2`、`ParseResult.SuccessV2` 追加)。
+  v3以上は従来どおり UnsupportedSchema
+- `data/file/ProposalMapper`(純粋オブジェクト): proposals → PendingProposalEntity 行へ変換
+  - 意味を持たない提案(空タイトル・空本文・projectId欠落health)は読み飛ばす
+  - payloadJson に提案1件分のJSONを保存(解釈は 2-c の承認処理)
+- `ImportRepository`: SuccessV2 経路を追加(履歴保存は v1 と共通化 → pending_proposals へ insert)。
+  `ImportResult.SuccessProposals(proposalCount, fileName)` を追加
+- `ImportMessage`: 「提案を N 件受け取りました。ヨスガ画面で承認してください。」
+- `AppContainer`: ImportRepository に pendingProposalDao を配線
+- テスト: `ResponseImporterTest` に v2 パース・proposals欠落デフォルト2件、
+  `ProposalMapperTest`(4種変換 / payload往復 / 無意味提案スキップ / 空)4件を追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### 次にやること
+
+- **2-c**: 提案レビューUI(ヨスガ画面を承認ハブ化、承認で本テーブルへ反映)
+
+---
+
 ## 2026-07-23: v3-Step 2-a 知識ベースのデータ層(Room v3)
 
 ### 目的

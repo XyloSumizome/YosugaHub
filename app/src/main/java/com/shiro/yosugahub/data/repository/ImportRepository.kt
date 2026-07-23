@@ -2,7 +2,9 @@ package com.shiro.yosugahub.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.shiro.yosugahub.data.file.ProposalMapper
 import com.shiro.yosugahub.data.file.ResponseImporter
+import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
 import com.shiro.yosugahub.data.local.db.dao.RecommendationDao
 import com.shiro.yosugahub.data.local.db.entity.RecommendationEntity
 import kotlinx.coroutines.Dispatchers
@@ -10,11 +12,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 /** 回答JSON取り込みの結果。UI はこれを見てメッセージを出す。 */
 sealed interface ImportResult {
+    /** v1: recommendations を直接反映した。 */
     data class Success(val recommendationCount: Int, val fileName: String) : ImportResult
+
+    /** v2: 提案を承認待ちに入れた(反映はユーザー承認後)。 */
+    data class SuccessProposals(val proposalCount: Int, val fileName: String) : ImportResult
+
     data class InvalidJson(val message: String) : ImportResult
     data class UnsupportedSchema(val version: Int) : ImportResult
     object ReadError : ImportResult
@@ -23,11 +31,14 @@ sealed interface ImportResult {
 /**
  * ChatGPT回答JSONの取り込みを担う Repository(設計書2.3 / 4.2 / 15章)。
  * 選択されたファイルを読み、検証し、成功時のみ履歴保存 + Room 反映する。
+ * v2 は pending_proposals へ入れて承認を待つ(v3 の提案→承認→保存フロー)。
  * 不正JSONでもクラッシュせず、結果を型で返す。
  */
 class ImportRepository(
     private val context: Context,
     private val recommendationDao: RecommendationDao,
+    private val pendingProposalDao: PendingProposalDao,
+    private val newId: () -> String = { java.util.UUID.randomUUID().toString() },
 ) {
 
     suspend fun importResponse(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
@@ -47,12 +58,7 @@ class ImportRepository(
                 ImportResult.UnsupportedSchema(result.version)
 
             is ResponseImporter.ParseResult.Success -> {
-                // 元ファイルは上書きせず履歴として保存する(設計書15章)。
-                val now = LocalDateTime.now()
-                val fileName = "response_${now.format(FILE_TIMESTAMP)}.json"
-                val dir = File(context.filesDir, "imports").apply { mkdirs() }
-                File(dir, fileName).writeText(text)
-
+                val fileName = saveHistory(text)
                 val entities = result.response.recommendations.map { rec ->
                     RecommendationEntity(
                         projectId = rec.projectId,
@@ -67,7 +73,28 @@ class ImportRepository(
 
                 ImportResult.Success(recommendationCount = entities.size, fileName = fileName)
             }
+
+            is ResponseImporter.ParseResult.SuccessV2 -> {
+                val fileName = saveHistory(text)
+                val rows = ProposalMapper.toPendingEntities(
+                    response = result.response,
+                    receivedAt = OffsetDateTime.now().toString(),
+                    newId = newId,
+                )
+                // 直接反映せず承認待ちに積む(v3: 提案→承認→保存)。
+                pendingProposalDao.insertAll(rows)
+
+                ImportResult.SuccessProposals(proposalCount = rows.size, fileName = fileName)
+            }
         }
+    }
+
+    /** 元ファイルは上書きせず履歴として保存する(設計書15章)。 */
+    private fun saveHistory(text: String): String {
+        val fileName = "response_${LocalDateTime.now().format(FILE_TIMESTAMP)}.json"
+        val dir = File(context.filesDir, "imports").apply { mkdirs() }
+        File(dir, fileName).writeText(text)
+        return fileName
     }
 
     private companion object {
