@@ -19,9 +19,6 @@ class ProjectRepository(
     private val now: () -> String = { formatSyncTime(LocalDateTime.now()) },
 ) {
 
-    /** 優先タスク(暫定)。後で提案・進捗から導出する。 */
-    val priorityTask: String get() = PLACEHOLDER_PRIORITY_TASK
-
     fun projects(): Flow<List<Project>> =
         dao.observeAll().map { projects -> projects.map { it.toDomain() } }
 
@@ -36,8 +33,4 @@ class ProjectRepository(
      */
     suspend fun updateHealth(projectId: String, health: String): Boolean =
         dao.updateHealth(id = projectId, health = health, lastUpdated = now()) > 0
-
-    private companion object {
-        const val PLACEHOLDER_PRIORITY_TASK = "ANRI: メインシナリオ第2章の執筆を進める"
-    }
 }

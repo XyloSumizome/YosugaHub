@@ -71,6 +71,45 @@ fun HomeScreen(
                 style = MaterialTheme.typography.headlineSmall,
             )
         }
+        if (uiState.pendingProposalCount > 0) {
+            item {
+                SectionCard(title = "承認待ちの提案") {
+                    Text(
+                        text = "ヨスガからの提案が ${uiState.pendingProposalCount} 件あります。" +
+                            "ヨスガ画面で確認してください。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        }
+        item {
+            SectionCard(title = "今日やること") {
+                if (uiState.todayTasks.isEmpty()) {
+                    Text(
+                        text = "未完了のタスクはありません",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    val projectNames = uiState.projects.associate { it.id to it.name }
+                    uiState.todayTasks.forEach { task ->
+                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                            Text(text = task.title, style = MaterialTheme.typography.bodyLarge)
+                            val meta = buildList {
+                                task.projectId?.let { add(projectNames[it] ?: it) }
+                                add(priorityLabel(task.priority))
+                                task.dueDate?.let { add("締切: $it") }
+                            }.joinToString(" / ")
+                            Text(
+                                text = meta,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+            }
+        }
         item {
             SectionCard(title = "今日の予定") {
                 uiState.todayEvents.forEach { EventRow(it) }
@@ -94,9 +133,20 @@ fun HomeScreen(
                 }
             }
         }
-        item {
-            SectionCard(title = "優先タスク") {
-                Text(text = uiState.priorityTask, style = MaterialTheme.typography.bodyLarge)
+        if (uiState.recentDecisions.isNotEmpty()) {
+            item {
+                SectionCard(title = "最近の決定") {
+                    uiState.recentDecisions.forEach { decision ->
+                        Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                            Text(text = decision.title, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = decision.createdAt.take(10),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
             }
         }
         item {
@@ -120,4 +170,11 @@ fun HomeScreen(
             }
         }
     }
+}
+
+private fun priorityLabel(priority: String): String = when (priority) {
+    "high" -> "優先度: 高"
+    "medium" -> "優先度: 中"
+    "low" -> "優先度: 低"
+    else -> "優先度: $priority"
 }

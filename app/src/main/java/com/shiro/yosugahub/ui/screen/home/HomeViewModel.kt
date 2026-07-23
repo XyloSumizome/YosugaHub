@@ -14,23 +14,39 @@ import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ImportResult
+import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.ItemKind
+import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.domain.model.Task
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-/** ホーム画面が監視するUI状態。 */
+/** ホーム画面が監視するUI状態(v3 ホーム再編: AI秘書視点)。 */
 data class HomeUiState(
     val today: String = "",
     val lastSyncedAt: String = "",
-    val priorityTask: String = "",
+    val todayTasks: List<Task> = emptyList(),
+    val pendingProposalCount: Int = 0,
+    val recentDecisions: List<KnowledgeItem> = emptyList(),
     val todayEvents: List<CalendarEvent> = emptyList(),
     val nextEvent: CalendarEvent? = null,
     val projects: List<Project> = emptyList(),
+)
+
+/** AI秘書系のフロー(タスク・承認待ち・決定事項)をまとめる中間データ。 */
+private data class SecretaryData(
+    val todayTasks: List<Task>,
+    val pendingProposalCount: Int,
+    val recentDecisions: List<KnowledgeItem>,
 )
 
 class HomeViewModel(
@@ -39,6 +55,10 @@ class HomeViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val exportRepository: ExportRepository,
     private val importRepository: ImportRepository,
+    taskRepository: TaskRepository,
+    proposalRepository: ProposalRepository,
+    knowledgeRepository: KnowledgeRepository,
+    private val todayDate: () -> String = { LocalDate.now().toString() },
 ) : ViewModel() {
 
     /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
@@ -55,16 +75,32 @@ class HomeViewModel(
         }
     }
 
+    /** タスク・承認待ち件数・最近の決定を1本にまとめる(combine の5フロー制限対策)。 */
+    private val secretaryFlow = combine(
+        taskRepository.tasks(),
+        proposalRepository.pendingCount(),
+        knowledgeRepository.items(),
+    ) { tasks, pendingCount, items ->
+        SecretaryData(
+            todayTasks = todayFocus(tasks, today = todayDate()),
+            pendingProposalCount = pendingCount,
+            recentDecisions = items.filter { it.kind == ItemKind.DECISION }.take(RECENT_DECISIONS),
+        )
+    }
+
     val uiState: StateFlow<HomeUiState> = combine(
         calendarRepository.todayEvents(),
         calendarRepository.upcomingEvents(),
         projectRepository.projects(),
         userPreferencesRepository.lastSyncedAt,
-    ) { todayEvents, upcomingEvents, projects, lastSyncedAt ->
+        secretaryFlow,
+    ) { todayEvents, upcomingEvents, projects, lastSyncedAt, secretary ->
         HomeUiState(
             today = calendarRepository.today,
             lastSyncedAt = lastSyncedAt.ifEmpty { "未同期" },
-            priorityTask = projectRepository.priorityTask,
+            todayTasks = secretary.todayTasks,
+            pendingProposalCount = secretary.pendingProposalCount,
+            recentDecisions = secretary.recentDecisions,
             todayEvents = todayEvents,
             nextEvent = upcomingEvents.firstOrNull(),
             projects = projects,
@@ -76,6 +112,8 @@ class HomeViewModel(
     )
 
     companion object {
+        private const val RECENT_DECISIONS = 3
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as YosugaHubApplication
@@ -85,6 +123,9 @@ class HomeViewModel(
                     userPreferencesRepository = app.container.userPreferencesRepository,
                     exportRepository = app.container.exportRepository,
                     importRepository = app.container.importRepository,
+                    taskRepository = app.container.taskRepository,
+                    proposalRepository = app.container.proposalRepository,
+                    knowledgeRepository = app.container.knowledgeRepository,
                 )
             }
         }
