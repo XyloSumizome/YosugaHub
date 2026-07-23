@@ -17,6 +17,7 @@
 
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
 設計書: `yosuga_hub_android_design_v4.md`(必読 / 最上位方針: AIプラットフォーム構想)
++ `yosuga_hub_design_v4_1_classification.md`(**追加指示: AI分類ワークフロー / 未実装**)
 + `yosuga_hub_android_design_v3.md` / `_v3_1.md`(基本思想・知識ベース仕様として有効)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
 v4の核心: Hubは**人間のUIとAIのデータインターフェースの両方**を持つプラットフォーム。
@@ -55,8 +56,10 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v4 Phase2 完了**: AI用JSONを5ファイルに分割(AiExporter / AiExportRepository)、
   ロリポップ同期(SyncApi + ServerSyncRepository + 設定画面。トークンはKeystore、ヘッダー送信)。
   サーバーPHP一式は `server/`(設置手順は `server/README-server.md`)。
-- 次の候補: ロリポップ実設置(ユーザー作業)、実機での通し確認、積み残し(タグのタスク適用 /
-  取り込み履歴画面 / エンティティ閲覧UI 等)。将来: MCP(v4 Phase4)。
+- **次にやること**: ①AI分類ワークフローの実装(`yosuga_hub_design_v4_1_classification.md`。
+  着手前に同ファイル末尾の「未確定の論点」5点をユーザーと合意すること)、
+  ②実環境検証(ロリポップ設置・GitHub実通信・実機。手順は WORKLOG 冒頭の再開ポイント)。
+- 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
 - アシスタント名は「ヨスガ」(カタカナ表記)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。

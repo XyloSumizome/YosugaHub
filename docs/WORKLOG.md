@@ -110,29 +110,45 @@
 
 ---
 
-## ▶ 次回の再開ポイント(2026-07-23 時点 / GitHub連携まで実装完了)
+## ▶ 次回の再開ポイント(2026-07-23 セッション終了時点)
 
-### 今どこ
-- 設計: v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)。アシスタント名は「ヨスガ」。
-- **v3-Step 1〜4 完了**(Task実体化 / 知識ベース+承認フロー / Obsidian連携 / ホームAI秘書再編)。
-- **GitHub連携 3-a〜3-d 完了**: リポジトリ設定 + トークンKeystore保管 / Ktorで status.json 取得 /
-  Room v5 キャッシュと表示 / 状況JSONへの反映。
-- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている。
+### 設計書の階層(読む順)
+1. `yosuga_hub_android_design_v4.md` — **最上位方針**(AIプラットフォーム構想)
+2. `yosuga_hub_design_v4_1_classification.md` — **追加指示: AI分類ワークフロー(未実装)**
+3. `yosuga_hub_android_design_v3.md` / `_v3_1.md` — 基本思想・知識ベース仕様(有効)
+4. `yosuga_hub_android_design_v2.md` — 技術資料(アーキテクチャ・ライブラリ候補)
 
-### 運用の始め方(実機/シミュレーターで)
-1. 各ゲームの Claude Code に **`docs/claude_code_onboarding.md`** を渡し `.yosuga/` 4ファイルを作らせる。
-2. GitHub で Fine-grained PAT(対象3リポジトリ / Contents: Read-only)を作成 → アプリの設定画面で保存。
-3. 各プロジェクトの編集画面で owner / リポジトリ名 を入力 → 「GitHubからすべて更新」。
-4. ChatGPT に **`docs/yosuga_prompt.md`** のプロンプトを貼る → 状況JSON作成 → 会話 →
-   回答JSON取り込み → ヨスガ画面で承認。
+### 実装済み(すべてビルド+テスト通過・最新コミット `0c02f21`)
+- **v3-Step 1〜4**: Task実体化 / 知識ベース+提案承認フロー / Obsidian連携(SAF) / ホームAI秘書再編
+- **GitHub連携 3-a〜3-d**: リポジトリ設定 + トークンKeystore保管 / Ktorで `.yosuga/status.json` 取得 /
+  Room v5 キャッシュと表示 / 状況JSONへの反映
+- **カレンダー連携**: CalendarContract で端末カレンダーを読む(OAuth不要)
+- **v4 Phase2**: AI用JSON 5分割(AiExporter)+ ロリポップ同期(SyncApi / server/ にPHP一式)
+- 仮データはすべて解消済み。テストは 145 件。
+
+### ▶ 次にやること(このどちらかから)
+
+**A. AI分類ワークフローの実装**(`yosuga_hub_design_v4_1_classification.md`)
+着手前に同ファイル末尾の「未確定の論点」5点をユーザーと合意すること。特に:
+- 今回の実装範囲(フル実装 / データ層まで / 設計のみ)
+- 文書の作成入口(記録タブに「文書」セクション新設が推奨)
+- 分類結果の受け取り方(回答JSON v2 の `proposals.classifications[]` に追加が推奨。
+  既存の取込→承認待ち→レビュー機構をそのまま再利用できる)
+状態遷移・データモデル(Room v6)の案も同ファイルに記載済み。
+
+**B. 実環境での検証**(ユーザー作業が必要)
+1. ロリポップ設置: `server/README-server.md` の手順(トークン生成 → config.php → FTP → 同期)
+2. 各ゲームの Claude Code に `docs/claude_code_onboarding.md` を渡し `.yosuga/` を作らせる
+3. GitHub Fine-grained PAT(Contents: Read-only)→ アプリ設定 → プロジェクト編集で owner/repo 入力
+4. ChatGPT に `docs/yosuga_prompt.md` を貼る → 状況JSON or サーバーAPI経由で運用開始
 
 ### 未検証(実機・実通信が必要)
-- Room マイグレーション v1→v5 の通し(特に v4→v5)。
-- GitHub 実通信(認証・取得・エラー表示)。MockEngine では検証済み。
-- Keystore へのトークン保存→再起動後の復号。
+- Room マイグレーション v1→v5 の通し。
+- GitHub 実通信 / Keystore のトークン保存→再起動後の復号。
 - Obsidian SAF 書き出し(`createFile("text/markdown")` の拡張子挙動はプロバイダ依存)。
-- **カレンダー**: READ_CALENDAR の権限ダイアログ、実際の予定取得、繰り返し予定の展開。
-  シミュレーターは Google アカウント未追加だと0件になる。
+- カレンダー(READ_CALENDAR 権限ダイアログ・繰り返し予定)。シミュレーターは
+  Googleアカウント未追加だと0件になる。
+- **ロリポップへの実設置と実通信**(MockEngine では検証済み)。
 
 ### WSL でビルドする場合
 ```
@@ -141,10 +157,14 @@ JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebug
 ```
 ※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
 
-### 次の実装候補
-- 積み残し: タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI / 観察日記のObsidian書き出し /
-  FileProvider共有 / status.json の decisions を提案へ流し込む / カレンダーの自動同期(起動時)。
-- ※ 主要ロードマップ(v3-Step 1〜4 / GitHub連携 / カレンダー)は実装完了。次は実機での通し確認が有益。
+### マイグレーション追加時のチェックリスト(2回踏んだ)
+①Migration定義 ②`@Database(version)` 更新 ③`addMigrations` 登録 ④スキーマJSON突き合わせ
+— ②③はコンパイルが通ってしまい、実機更新時にクラッシュする。
+
+### 積み残し(任意)
+タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI / 観察日記のObsidian書き出し /
+FileProvider共有 / status.json の decisions を提案へ流し込む / カレンダーの起動時自動同期 /
+MCP対応(v4 Phase4)。
 
 ---
 
