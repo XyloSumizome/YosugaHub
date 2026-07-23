@@ -33,7 +33,19 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.LAST_SYNCED_AT] = value }
     }
 
+    /** SAF で選択した Obsidian Vault のツリーURI。未設定なら空文字(v3-Step 3)。 */
+    val obsidianVaultUri: Flow<String> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.OBSIDIAN_VAULT_URI].orEmpty() }
+
+    suspend fun setObsidianVaultUri(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.OBSIDIAN_VAULT_URI] = value }
+    }
+
     private object Keys {
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
+        val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
     }
 }

@@ -1,18 +1,49 @@
 package com.shiro.yosugahub.ui.screen.settings
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.SectionCard
 
 @Composable
-fun SettingsScreen(modifier: Modifier = Modifier) {
+fun SettingsScreen(
+    modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
+) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Vault フォルダ選択。選択されたら読み書き権限を永続化して URI を保存する。
+    val vaultPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.saveVaultUri(uri.toString())
+        }
+    }
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -20,6 +51,25 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     ) {
         item {
             Text(text = "設定", style = MaterialTheme.typography.headlineSmall)
+        }
+        item {
+            SectionCard(title = "Obsidian Vault") {
+                Text(
+                    text = if (uiState.obsidianVaultUri.isEmpty()) {
+                        "未設定。承認した知識のObsidian書き出し(targetNote)に使います。"
+                    } else {
+                        "選択中: ${vaultDisplayName(uiState.obsidianVaultUri)}"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { vaultPicker.launch(null) },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (uiState.obsidianVaultUri.isEmpty()) "Vaultフォルダを選択" else "Vaultフォルダを変更")
+                }
+            }
         }
         item {
             SectionCard(title = "Googleアカウント") {
@@ -50,4 +100,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/** ツリーURIから表示用のフォルダ名を取り出す(例: primary:Obsidian/Vault → Obsidian/Vault)。 */
+private fun vaultDisplayName(uriString: String): String {
+    val lastSegment = Uri.parse(uriString).lastPathSegment ?: return uriString
+    return lastSegment.substringAfter(':').ifEmpty { lastSegment }
 }

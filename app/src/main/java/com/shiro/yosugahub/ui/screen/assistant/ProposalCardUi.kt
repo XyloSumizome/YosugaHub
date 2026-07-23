@@ -48,6 +48,7 @@ fun PendingProposal.toCardUi(): ProposalCardUi = when (type) {
                 p.entities.filter { it.name.isNotBlank() }
                     .takeIf { it.isNotEmpty() }
                     ?.joinToString(" / ", prefix = "関連: ") { it.name },
+                p.targetNote.takeIf { it.isNotBlank() }?.let { "Obsidian: $it" },
             ).joinToString("\n"),
             readable = true,
         )

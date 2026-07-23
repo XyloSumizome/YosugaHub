@@ -2,6 +2,54 @@
 
 ---
 
+## 2026-07-23: v3-Step 3 Obsidian連携(SAF)を実装 — 動作検証は実機入手後
+
+### 目的
+
+承認した知識のうち長文として残すべきもの(targetNote 指定)を、SAF で選択した
+Obsidian Vault のノートへ追記できるようにする(v3設計書付録の確定事項 2)。
+
+### 新規ライブラリ(追加理由)
+
+- **androidx.documentfile:documentfile 1.0.1**
+  - 理由: SAF のツリーURI(OpenDocumentTree で選択した Vault)配下のファイル探索・作成を
+    安全に行う公式ヘルパー。生の DocumentsContract より簡潔で、依存は極小。
+
+### 実施内容
+
+- `data/obsidian/KnowledgeStore`(interface)+ `AppendOutcome`(WRITTEN / NOT_CONFIGURED / FAILED)
+  - 書き出し先の抽象化。将来 GitHub / Drive へ差し替え可能(v3付録の方針)
+- `data/obsidian/ObsidianMarkdown`(純粋ロジック):
+  - `normalizeNoteName`(パス除去・`.md` 保証・空なら YosugaHub.md)
+  - `buildNoteAppendix`(## タイトル + 本文 + #タグ + 日付。タグ中の空白は `_` へ)
+- `data/obsidian/ObsidianVaultStore`: DocumentFile でノートを探索/作成し、
+  `openOutputStream(uri, "wa")` で末尾追記。権限失効等は FAILED(クラッシュしない)
+- `UserPreferencesRepository`: `obsidianVaultUri` を DataStore に追加
+- 設定画面: 「Obsidian Vault」セクション新設(OpenDocumentTree で選択 →
+  `takePersistableUriPermission` で読み書き権限を永続化 → URI保存。選択中フォルダ名を表示)。
+  `SettingsViewModel` を新設
+- 回答JSON v2 の `ItemProposal` に `targetNote`(任意)を追加
+  - 承認時: Room 保存後、targetNote があれば Vault の該当ノートへ追記
+  - **書き出しの成否に関わらず Room 保存は成立**(Obsidianは付加的)
+  - `ApproveResult.Applied` が書き出し結果を持ち、Toast で通知
+    (追記済み / Vault未設定 / 失敗)
+  - 提案カードに「Obsidian: ノート名」を表示
+- `docs/yosuga_prompt.md` に targetNote の書き方・挙動を追記
+- テスト: `ObsidianMarkdownTest` 3件、`ProposalRepositoryTest` に targetNote 3件
+  (書き出し+markdown内容 / Vault未設定でもRoom成立 / targetNote無しはスキップ)
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- **実機での動作検証は未実施**(SAF フォルダ選択・実 Vault への追記・Obsidian アプリでの表示確認)。
+  `createFile("text/markdown", "xxx.md")` の拡張子挙動はプロバイダ依存のため実機で要確認
+
+### 次にやること
+
+- ④ 記録タブの磨き込み(アイテムの手動追加・編集・検索)
+
+---
+
 ## 2026-07-23: ヨスガ用プロンプト仕様書 + ホームのAI秘書再編(v3-Step 4 相当)
 
 ### 経緯

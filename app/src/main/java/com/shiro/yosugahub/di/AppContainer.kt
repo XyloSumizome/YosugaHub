@@ -7,6 +7,8 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
+import com.shiro.yosugahub.data.obsidian.KnowledgeStore
+import com.shiro.yosugahub.data.obsidian.ObsidianVaultStore
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
@@ -72,6 +74,11 @@ class DefaultAppContainer(
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())
     }
+    /** 長文知識の書き出し先(初期実装は Obsidian Vault / SAF)。 */
+    private val knowledgeStore: KnowledgeStore by lazy {
+        ObsidianVaultStore(context.applicationContext, userPreferencesRepository)
+    }
+
     override val proposalRepository: ProposalRepository by lazy {
         ProposalRepository(
             dao = database.pendingProposalDao(),
@@ -79,6 +86,7 @@ class DefaultAppContainer(
             knowledgeRepository = knowledgeRepository,
             diaryRepository = diaryRepository,
             projectRepository = projectRepository,
+            knowledgeStore = knowledgeStore,
         )
     }
     override val userPreferencesRepository: UserPreferencesRepository by lazy {

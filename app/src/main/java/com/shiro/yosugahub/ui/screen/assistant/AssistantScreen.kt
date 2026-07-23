@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.obsidian.AppendOutcome
 import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.importResultMessage
@@ -104,7 +105,13 @@ fun AssistantScreen(
                     onApprove = {
                         viewModel.approveProposal(card.proposal) { result ->
                             val message = when (result) {
-                                ApproveResult.Applied -> "反映しました"
+                                is ApproveResult.Applied -> when (result.obsidian) {
+                                    null -> "反映しました"
+                                    AppendOutcome.WRITTEN -> "反映しました(Obsidianへ追記済み)"
+                                    AppendOutcome.NOT_CONFIGURED ->
+                                        "反映しました(Vault未設定のためObsidian書き出しなし)"
+                                    AppendOutcome.FAILED -> "反映しました(Obsidianへの書き出しに失敗)"
+                                }
                                 ApproveResult.NotApplicable -> "反映できない提案のため棄却しました"
                             }
                             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()

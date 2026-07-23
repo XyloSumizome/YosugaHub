@@ -16,6 +16,8 @@ import com.shiro.yosugahub.data.local.db.entity.TagEntity
 import com.shiro.yosugahub.data.local.db.entity.TaskEntity
 import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
 import com.shiro.yosugahub.data.local.db.SampleSeed
+import com.shiro.yosugahub.data.obsidian.AppendOutcome
+import com.shiro.yosugahub.data.obsidian.KnowledgeStore
 import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
@@ -112,6 +114,16 @@ class ProposalRepositoryTest {
         }
     }
 
+    private class FakeKnowledgeStore(
+        var outcome: AppendOutcome = AppendOutcome.WRITTEN,
+    ) : KnowledgeStore {
+        val appended = mutableListOf<Pair<String, String>>() // noteName to markdown
+        override suspend fun appendToNote(noteName: String, markdown: String): AppendOutcome {
+            appended += noteName to markdown
+            return outcome
+        }
+    }
+
     // --- セットアップ ---
 
     private val fixedNow = "2026-07-23T17:00:00+09:00"
@@ -123,6 +135,7 @@ class ProposalRepositoryTest {
         val knowledgeDao = FakeKnowledgeDao()
         val diaryDao = FakeDiaryDao()
         val projectDao = FakeProjectDao()
+        val knowledgeStore = FakeKnowledgeStore()
     }
 
     private fun repository(env: Env): ProposalRepository = ProposalRepository(
@@ -131,6 +144,7 @@ class ProposalRepositoryTest {
         knowledgeRepository = KnowledgeRepository(env.knowledgeDao, now = { fixedNow }, newId = { "k-${counter++}" }),
         diaryRepository = DiaryRepository(env.diaryDao, now = { fixedNow }, newId = { "d-${counter++}" }),
         projectRepository = ProjectRepository(env.projectDao, now = { fixedNow }),
+        knowledgeStore = env.knowledgeStore,
     )
 
     private fun proposal(type: ProposalType, payload: String) = PendingProposal(
@@ -149,7 +163,7 @@ class ProposalRepositoryTest {
         val result = repository(env).approve(
             proposal(ProposalType.TASK, """{"projectId":"anri","title":"戦闘調整","priority":"high"}""")
         )
-        assertEquals(ApproveResult.Applied, result)
+        assertEquals(ApproveResult.Applied(), result)
         val task = env.taskDao.stored.single()
         assertEquals("戦闘調整", task.title)
         assertEquals("assistant", task.source)
@@ -166,7 +180,7 @@ class ProposalRepositoryTest {
                 """{"kind":"decision","title":"ビート表示を採用","body":"理由","tags":["Yosuga Hub"]}""",
             )
         )
-        assertEquals(ApproveResult.Applied, result)
+        assertEquals(ApproveResult.Applied(), result)
         val item = env.knowledgeDao.items.single()
         assertEquals("decision", item.kind)
         assertEquals("assistant", item.source)
@@ -175,12 +189,51 @@ class ProposalRepositoryTest {
     }
 
     @Test
+    fun approve_item_with_target_note_appends_to_obsidian() = runBlocking {
+        val env = Env()
+        val result = repository(env).approve(
+            proposal(
+                ProposalType.ITEM,
+                """{"kind":"memo","title":"設計メモ","body":"本文","tags":["UI"],"targetNote":"GameDesign"}""",
+            )
+        )
+        assertEquals(ApproveResult.Applied(AppendOutcome.WRITTEN), result)
+        val (note, markdown) = env.knowledgeStore.appended.single()
+        assertEquals("GameDesign", note)
+        assertTrue(markdown.contains("## 設計メモ"))
+        assertTrue(markdown.contains("#UI"))
+        // Room 側の保存も成立している
+        assertEquals(1, env.knowledgeDao.items.size)
+    }
+
+    @Test
+    fun approve_item_when_vault_not_configured_still_applies_to_room() = runBlocking {
+        val env = Env()
+        env.knowledgeStore.outcome = AppendOutcome.NOT_CONFIGURED
+        val result = repository(env).approve(
+            proposal(ProposalType.ITEM, """{"kind":"memo","title":"メモ","targetNote":"Note"}""")
+        )
+        assertEquals(ApproveResult.Applied(AppendOutcome.NOT_CONFIGURED), result)
+        assertEquals(1, env.knowledgeDao.items.size)
+        assertEquals("approved", env.pendingDao.statuses["prop-1"])
+    }
+
+    @Test
+    fun approve_item_without_target_note_skips_obsidian() = runBlocking {
+        val env = Env()
+        repository(env).approve(
+            proposal(ProposalType.ITEM, """{"kind":"memo","title":"メモだけ"}""")
+        )
+        assertTrue(env.knowledgeStore.appended.isEmpty())
+    }
+
+    @Test
     fun approve_diary_falls_back_to_received_date_when_blank() = runBlocking {
         val env = Env()
         val result = repository(env).approve(
             proposal(ProposalType.DIARY, """{"body":"今日はシロさんが..."}""")
         )
-        assertEquals(ApproveResult.Applied, result)
+        assertEquals(ApproveResult.Applied(), result)
         assertEquals("2026-07-23", env.diaryDao.stored.single().date)
     }
 
@@ -190,7 +243,7 @@ class ProposalRepositoryTest {
         val result = repository(env).approve(
             proposal(ProposalType.HEALTH, """{"projectId":"gengenkyo","health":"停滞中"}""")
         )
-        assertEquals(ApproveResult.Applied, result)
+        assertEquals(ApproveResult.Applied(), result)
         assertEquals("gengenkyo" to "停滞中", env.projectDao.healthUpdates.single())
     }
 

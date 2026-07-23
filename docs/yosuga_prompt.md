@@ -60,7 +60,10 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
         "entities": [                 // 関連する実体(任意)
           { "name": "Yosuga Hub", "type": "project" }
           // type: project / person / tech / gear / event / other
-        ]
+        ],
+        "targetNote": "GameDesign"    // 任意。Obsidianにも残すべき知識ならノート名を指定
+                                      // (設計の話→GameDesign / 音楽→Music / 展示会→TGS など。
+                                      //  拡張子.mdは省略可。不要なら省略)
       }
     ],
     "diary": [
@@ -106,6 +109,7 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 | projectId が実在しない projectHealth | 承認時に「反映できない」として自動棄却 |
 | 未知の kind / entity type | other として扱う |
 | 壊れた JSON | エラーメッセージ表示のみ(クラッシュしない) |
+| item の targetNote | 承認時に Obsidian Vault の該当ノート末尾へ追記(設定画面で Vault 未選択ならスキップ)。書き出しの成否に関わらず Hub 側の保存は成立 |
 
 ## 現在のプロジェクトID(状況JSONにも含まれる)
 

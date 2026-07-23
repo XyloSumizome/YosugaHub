@@ -33,7 +33,10 @@ data class TaskProposal(
     val dueDate: String? = null,
 )
 
-/** 情報アイテム提案。承認で knowledge_items + タグ・実体へ。 */
+/**
+ * 情報アイテム提案。承認で knowledge_items + タグ・実体へ。
+ * targetNote が指定されていれば、承認時に Obsidian Vault の該当ノートへも追記する(v3-Step 3)。
+ */
 @Serializable
 data class ItemProposal(
     val kind: String = "memo",
@@ -41,6 +44,7 @@ data class ItemProposal(
     val body: String = "",
     val tags: List<String> = emptyList(),
     val entities: List<EntityRefImport> = emptyList(),
+    val targetNote: String = "",
 )
 
 @Serializable
