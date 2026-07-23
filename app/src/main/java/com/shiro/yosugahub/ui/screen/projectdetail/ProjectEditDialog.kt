@@ -1,9 +1,12 @@
 package com.shiro.yosugahub.ui.screen.projectdetail
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -21,25 +24,39 @@ import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.ui.component.healthLabel
 
 /**
- * プロジェクト編集ダイアログ(v3-Step 1-d)。
- * 編集対象は name / currentGoal / health のみ。
+ * プロジェクト編集ダイアログ(1-d + GitHub連携)。
+ * 編集対象は name / currentGoal / health と GitHub リポジトリ情報。
  * inProgress / nextTask はタスクからの導出へ置き換える予定のため編集させない。
  */
 @Composable
 fun ProjectEditDialog(
     original: Project,
     onDismiss: () -> Unit,
-    onSave: (name: String, currentGoal: String, health: String) -> Unit,
+    onSave: (
+        name: String,
+        currentGoal: String,
+        health: String,
+        repoOwner: String?,
+        repoName: String?,
+        repoBranch: String?,
+    ) -> Unit,
 ) {
     var name by remember(original) { mutableStateOf(original.name) }
     var currentGoal by remember(original) { mutableStateOf(original.currentGoal) }
     var health by remember(original) { mutableStateOf(original.health) }
+    var repoOwner by remember(original) { mutableStateOf(original.repoOwner.orEmpty()) }
+    var repoName by remember(original) { mutableStateOf(original.repoName.orEmpty()) }
+    var repoBranch by remember(original) { mutableStateOf(original.repoBranch.orEmpty()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("プロジェクトを編集") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // 項目が増えたためダイアログ内をスクロール可能にする
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            ) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -63,12 +80,46 @@ fun ProjectEditDialog(
                         )
                     }
                 }
+                Text(
+                    text = "GitHub(.yosuga/status.json の取得先。空欄なら取得しない)",
+                    style = MaterialTheme.typography.labelMedium,
+                )
+                OutlinedTextField(
+                    value = repoOwner,
+                    onValueChange = { repoOwner = it },
+                    label = { Text("owner") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = repoName,
+                    onValueChange = { repoName = it },
+                    label = { Text("リポジトリ名") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = repoBranch,
+                    onValueChange = { repoBranch = it },
+                    label = { Text("ブランチ(空欄なら main)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         confirmButton = {
             TextButton(
                 enabled = name.isNotBlank(),
-                onClick = { onSave(name.trim(), currentGoal.trim(), health) },
+                onClick = {
+                    onSave(
+                        name.trim(),
+                        currentGoal.trim(),
+                        health,
+                        repoOwner.trim().ifEmpty { null },
+                        repoName.trim().ifEmpty { null },
+                        repoBranch.trim().ifEmpty { null },
+                    )
+                },
             ) {
                 Text("保存")
             }

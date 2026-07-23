@@ -9,6 +9,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 新しいマイグレーションを書いたら、期待スキーマと一致するか出力JSONで確認すること。
  */
 
+/** v3 → v4: projects に GitHub リポジトリ情報を追加(v3-Step 3 / GitHub連携)。 */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoOwner` TEXT")
+        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoName` TEXT")
+        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoBranch` TEXT")
+    }
+}
+
 /** v2 → v3: 知識ベース関連の7テーブルを追加(v3-Step 2)。既存テーブルは変更しない。 */
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {

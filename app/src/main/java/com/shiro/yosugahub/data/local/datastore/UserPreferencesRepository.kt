@@ -44,8 +44,23 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.OBSIDIAN_VAULT_URI] = value }
     }
 
+    /**
+     * GitHub アクセストークンの**暗号化済み**文字列(v3-Step 3)。
+     * 平文は保存しない。復号は GitHubSettingsRepository が通信直前にのみ行う。
+     */
+    val gitHubTokenEncrypted: Flow<String> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.GITHUB_TOKEN_ENCRYPTED].orEmpty() }
+
+    suspend fun setGitHubTokenEncrypted(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.GITHUB_TOKEN_ENCRYPTED] = value }
+    }
+
     private object Keys {
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
+        val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")
     }
 }

@@ -147,9 +147,16 @@ fun ProjectDetailScreen(
             ProjectEditDialog(
                 original = project,
                 onDismiss = { showProjectEditDialog = false },
-                onSave = { name, currentGoal, health ->
+                onSave = { name, currentGoal, health, repoOwner, repoName, repoBranch ->
                     viewModel.updateProject(
-                        project.copy(name = name, currentGoal = currentGoal, health = health)
+                        project.copy(
+                            name = name,
+                            currentGoal = currentGoal,
+                            health = health,
+                            repoOwner = repoOwner,
+                            repoName = repoName,
+                            repoBranch = repoBranch,
+                        )
                     )
                     showProjectEditDialog = false
                 },

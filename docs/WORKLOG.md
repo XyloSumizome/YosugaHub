@@ -2,6 +2,58 @@
 
 ---
 
+## 2026-07-23: GitHub連携 3-a 設定の器(リポジトリ設定 + トークンのKeystore保管)
+
+### 経緯・決定
+
+- シミュレーターで動作確認済み(5画面 + 新機能)。実機は未入手。
+- ユーザーと合意: **HTTPクライアントは Ktor Client**(3-b で追加)、**リポジトリは private**
+  → アクセストークンが必須。
+- 各ゲームの Claude Code には `docs/claude_code_onboarding.md` を渡して `.yosuga/` を作らせる。
+
+### 新規ライブラリ
+
+- **なし**(3-a は保管と設定UIのみ。Ktor は 3-b で追加)
+- トークン保管に `androidx.security-crypto` は**使わない**。非推奨化の経緯があるため、
+  設計書9章のとおり **Android Keystore を直接利用**する(依存ゼロ)。
+
+### 実施内容
+
+- **Room v3→v4**: projects に `repoOwner` / `repoName` / `repoBranch`(いずれも nullable)を追加。
+  `MIGRATION_3_4`(ALTER TABLE ADD COLUMN ×3)。スキーマ `4.json` と一致することを確認
+  - ※ 途中 `@Database(version)` の更新漏れでスキーマJSONが生成されず気づいた。
+    マイグレーション追加時は version 更新とスキーマJSON生成の確認をセットで行うこと
+- `Project`(domain)に repo* と `hasRepository` を追加、Mapper 双方向対応
+- **トークン保管**(`data/security/`):
+  - `SecretEnvelope`(純粋ロジック): IV + 暗号文 を `Base64:Base64` で詰め替え。壊れた入力は null
+  - `TokenCrypto`(interface)/ `KeystoreTokenCrypto`: AndroidKeyStore の AES-256-GCM 鍵で暗号化。
+    鍵はKeystoreから取り出せない。例外時は null を返し、**平文を例外メッセージにも載せない**
+  - `UserPreferencesRepository.gitHubTokenEncrypted`(**暗号化済み文字列のみ**を DataStore へ)
+  - `GitHubSettingsRepository`: `hasToken: Flow<Boolean>`(UIへはトークン本体を出さない)/
+    `saveToken` / `clearToken` / `currentToken()`(通信直前にのみ復号)
+- 設定画面に「GitHub アクセストークン」セクション(PasswordVisualTransformation で伏字入力、
+  保存後は入力欄を即クリア、削除ボタン、Fine-grained PAT の作り方を案内)
+- プロジェクト編集ダイアログに owner / リポジトリ名 / ブランチ欄を追加(空欄は null = 取得対象外)。
+  項目増加に伴いダイアログ内を verticalScroll 化
+- テスト: `GitHubSettingsRepositoryTest`(封筒の往復 / 不正入力の拒否 / 暗号化契約)
+
+### セキュリティ上の注意(維持すること)
+
+- 平文トークンは DataStore にもログにも書かない。UI 状態にも保持しない(入力欄のみ、保存後クリア)。
+- `KeystoreTokenCrypto` は **ユニットテスト対象外**(Keystore が必要)。実機/エミュレーターで
+  保存→再起動→復号できることを確認する。端末バックアップ復元等で鍵が失われた場合は
+  復号失敗 → null → 「未設定」扱いになる(再入力で復旧)。
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### 次にやること
+
+- **3-b**: Ktor Client 追加 → GitHub Contents API で `.yosuga/status.json` を取得・パース・検証
+
+---
+
 ## 2026-07-23: 記録タブの磨き込み(手動追加・編集・検索)
 
 ### 目的

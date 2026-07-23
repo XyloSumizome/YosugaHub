@@ -2,23 +2,31 @@ package com.shiro.yosugahub.ui.screen.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.SectionCard
@@ -30,6 +38,8 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    // 入力中のトークンは画面ローカルにのみ保持し、保存後は即クリアする。
+    var tokenInput by remember { mutableStateOf("") }
 
     // Vault フォルダ選択。選択されたら読み書き権限を永続化して URI を保存する。
     val vaultPicker = rememberLauncherForActivityResult(
@@ -82,8 +92,63 @@ fun SettingsScreen(
             }
         }
         item {
-            SectionCard(title = "GitHub") {
-                Text("未設定(Phase 3 で実装予定)", style = MaterialTheme.typography.bodyMedium)
+            SectionCard(title = "GitHub アクセストークン") {
+                Text(
+                    text = if (uiState.hasGitHubToken) {
+                        "設定済み(端末のKeystoreで暗号化して保存)"
+                    } else {
+                        "未設定。非公開リポジトリの .yosuga/status.json 取得に必要です。"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = tokenInput,
+                    onValueChange = { tokenInput = it },
+                    label = { Text("トークンを入力して保存") },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    OutlinedButton(
+                        onClick = {
+                            viewModel.saveGitHubToken(tokenInput) { saved ->
+                                Toast.makeText(
+                                    context,
+                                    if (saved) "トークンを保存しました" else "保存に失敗しました",
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                                if (saved) tokenInput = ""
+                            }
+                        },
+                        enabled = tokenInput.isNotBlank(),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("保存")
+                    }
+                    if (uiState.hasGitHubToken) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OutlinedButton(
+                            onClick = {
+                                viewModel.clearGitHubToken()
+                                tokenInput = ""
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("削除")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "GitHub の Fine-grained personal access token を、対象リポジトリの " +
+                        "Contents: Read-only で作成してください。取得先の owner / リポジトリ名は " +
+                        "各プロジェクトの編集画面で設定します。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
         item {

@@ -32,6 +32,9 @@ fun ProjectEntity.toDomain(): Project = Project(
     nextTask = nextTask,
     lastUpdated = lastUpdated,
     health = health,
+    repoOwner = repoOwner,
+    repoName = repoName,
+    repoBranch = repoBranch,
 )
 
 /** プロジェクトは 1-d で編集可能になったため、書き込み用の逆変換も持つ。 */
@@ -43,6 +46,9 @@ fun Project.toEntity(): ProjectEntity = ProjectEntity(
     nextTask = nextTask,
     lastUpdated = lastUpdated,
     health = health,
+    repoOwner = repoOwner,
+    repoName = repoName,
+    repoBranch = repoBranch,
 )
 
 fun CalendarEventEntity.toDomain(): CalendarEvent = CalendarEvent(

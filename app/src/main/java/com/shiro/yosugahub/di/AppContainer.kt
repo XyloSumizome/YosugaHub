@@ -5,14 +5,17 @@ import androidx.room.Room
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
+import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
 import com.shiro.yosugahub.data.obsidian.ObsidianVaultStore
+import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
+import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
@@ -38,6 +41,7 @@ interface AppContainer {
     val assistantRepository: AssistantRepository
     val proposalRepository: ProposalRepository
     val userPreferencesRepository: UserPreferencesRepository
+    val gitHubSettingsRepository: GitHubSettingsRepository
     val exportRepository: ExportRepository
     val importRepository: ImportRepository
 }
@@ -53,7 +57,7 @@ class DefaultAppContainer(
         YosugaDatabase::class.java,
         "yosuga.db",
     )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
@@ -91,6 +95,9 @@ class DefaultAppContainer(
     }
     override val userPreferencesRepository: UserPreferencesRepository by lazy {
         UserPreferencesRepository(context.applicationContext)
+    }
+    override val gitHubSettingsRepository: GitHubSettingsRepository by lazy {
+        GitHubSettingsRepository(userPreferencesRepository, KeystoreTokenCrypto())
     }
     override val exportRepository: ExportRepository by lazy {
         ExportRepository(

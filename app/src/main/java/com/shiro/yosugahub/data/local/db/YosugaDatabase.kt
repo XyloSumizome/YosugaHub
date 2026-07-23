@@ -25,6 +25,7 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
  * v2: tasks テーブルを追加(v3-Step 1)。
  * v3: 知識ベース関連(knowledge_items / tags / item_tags / entities / item_entities /
  *     diary_entries / pending_proposals)を追加(v3-Step 2)。
+ * v4: projects に GitHub リポジトリ情報(repoOwner / repoName / repoBranch)を追加。
  * マイグレーションは Migrations.kt。スキーマJSONは app/schemas/ に出力される。
  */
 @Database(
@@ -41,7 +42,7 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
         DiaryEntryEntity::class,
         PendingProposalEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class YosugaDatabase : RoomDatabase() {
