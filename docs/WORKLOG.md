@@ -2,6 +2,45 @@
 
 ---
 
+## 2026-07-23: v3-Step 1-b プロジェクト詳細画面(読み取りのみ・初のネストナビ)
+
+### 目的
+
+プロジェクト一覧のカードをタップして詳細(プロジェクト情報 + タスク一覧)を見られるようにする。
+表示のみで編集はまだない(1-c / 1-d で追加)。下部ナビ外のネストルートを初導入。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `ui/navigation/ProjectDetailRoute`: ネストルート定義(`project_detail/{projectId}`)
+- `ui/screen/projectdetail/TaskGrouping`: 状態別グルーピング + 並び順(優先度 → 締切(なしは最後)→ タイトル)を
+  純粋関数 `groupTasks()` として切り出し(ユニットテスト可能)
+- `ui/screen/projectdetail/ProjectDetailViewModel`
+  - `SavedStateHandle`(`createSavedStateHandle()`)から projectId を受け取る初の ViewModel
+  - projects + tasksForProject を combine し `ProjectDetailUiState`(isLoading / project / GroupedTasks)を公開
+- `ui/screen/projectdetail/ProjectDetailScreen`
+  - 戻るボタン + プロジェクト情報カード + タスクを「進行中 / 未着手 / 完了」のセクション表示
+  - 完了タスクは打ち消し線 + 淡色。メタ行に優先度(高/中/低)・締切・詳細を表示
+  - プロジェクトが見つからない場合の表示、タスク0件の表示にも対応
+- `ui/component/ProjectHealth`: healthLabel を一覧・詳細で共用化(ProjectsScreen の private 版を削除)
+- `ProjectsScreen`: カードを `Card(onClick=...)` 化し `onProjectClick(projectId)` を公開
+- `YosugaHubApp`: NavHost に詳細ルートを追加、詳細表示中は「プロジェクト」タブを選択状態に維持
+- テスト: `TaskGroupingTest`(状態別グルーピング / 優先度→締切→タイトルの並び / 未知priorityは最後 / isEmpty)
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- 実機/エミュレーターでの画面遷移確認は未実施(Windows 側 Android Studio で確認する)
+
+### 次にやること
+
+- **1-c**: タスク追加・編集・完了・削除(編集ダイアログ、TaskRepository の書き込みを配線)
+
+---
+
 ## 2026-07-23: v3-Step 1-a Task のデータ層(Entity/DAO/Migration/Repository/シード)
 
 ### 目的

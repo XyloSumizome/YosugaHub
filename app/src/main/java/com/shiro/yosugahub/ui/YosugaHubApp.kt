@@ -14,10 +14,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.shiro.yosugahub.ui.navigation.ProjectDetailRoute
 import com.shiro.yosugahub.ui.navigation.YosugaDestination
 import com.shiro.yosugahub.ui.screen.assistant.AssistantScreen
 import com.shiro.yosugahub.ui.screen.calendar.CalendarScreen
 import com.shiro.yosugahub.ui.screen.home.HomeScreen
+import com.shiro.yosugahub.ui.screen.projectdetail.ProjectDetailScreen
 import com.shiro.yosugahub.ui.screen.projects.ProjectsScreen
 import com.shiro.yosugahub.ui.screen.settings.SettingsScreen
 
@@ -31,8 +33,12 @@ fun YosugaHubApp() {
         bottomBar = {
             NavigationBar {
                 YosugaDestination.entries.forEach { destination ->
+                    // 詳細画面(ネストルート)ではプロジェクトタブを選択状態のままにする
+                    val selected = currentRoute == destination.route ||
+                        (destination == YosugaDestination.Projects &&
+                            currentRoute == ProjectDetailRoute.PATTERN)
                     NavigationBarItem(
-                        selected = currentRoute == destination.route,
+                        selected = selected,
                         onClick = {
                             navController.navigate(destination.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -56,7 +62,16 @@ fun YosugaHubApp() {
         ) {
             composable(YosugaDestination.Home.route) { HomeScreen() }
             composable(YosugaDestination.Calendar.route) { CalendarScreen() }
-            composable(YosugaDestination.Projects.route) { ProjectsScreen() }
+            composable(YosugaDestination.Projects.route) {
+                ProjectsScreen(
+                    onProjectClick = { projectId ->
+                        navController.navigate(ProjectDetailRoute.create(projectId))
+                    },
+                )
+            }
+            composable(ProjectDetailRoute.PATTERN) {
+                ProjectDetailScreen(onBack = { navController.popBackStack() })
+            }
             composable(YosugaDestination.Assistant.route) { AssistantScreen() }
             composable(YosugaDestination.Settings.route) { SettingsScreen() }
         }

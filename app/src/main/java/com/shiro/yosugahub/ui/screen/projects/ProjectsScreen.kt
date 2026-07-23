@@ -22,9 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.ui.component.healthLabel
 
 @Composable
 fun ProjectsScreen(
+    onProjectClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ProjectsViewModel = viewModel(factory = ProjectsViewModel.Factory),
 ) {
@@ -39,14 +41,14 @@ fun ProjectsScreen(
             Text(text = "プロジェクト", style = MaterialTheme.typography.headlineSmall)
         }
         items(uiState.projects) { project ->
-            ProjectCard(project)
+            ProjectCard(project = project, onClick = { onProjectClick(project.id) })
         }
     }
 }
 
 @Composable
-private fun ProjectCard(project: Project, modifier: Modifier = Modifier) {
-    Card(modifier = modifier.fillMaxWidth()) {
+private fun ProjectCard(project: Project, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -70,12 +72,4 @@ private fun ProjectCard(project: Project, modifier: Modifier = Modifier) {
             )
         }
     }
-}
-
-private fun healthLabel(health: String): String = when (health) {
-    "on_track" -> "順調"
-    "attention" -> "要確認"
-    "blocked" -> "停滞"
-    "paused" -> "休止中"
-    else -> health
 }
