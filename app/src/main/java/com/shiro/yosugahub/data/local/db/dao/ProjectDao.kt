@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import com.shiro.yosugahub.data.local.db.entity.ProjectEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -18,4 +19,7 @@ interface ProjectDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(projects: List<ProjectEntity>)
+
+    @Upsert
+    suspend fun upsert(project: ProjectEntity)
 }

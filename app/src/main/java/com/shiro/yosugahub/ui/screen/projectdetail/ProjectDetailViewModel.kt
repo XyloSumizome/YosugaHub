@@ -29,9 +29,14 @@ data class ProjectDetailUiState(
 
 class ProjectDetailViewModel(
     private val projectId: String,
-    projectRepository: ProjectRepository,
+    private val projectRepository: ProjectRepository,
     private val taskRepository: TaskRepository,
 ) : ViewModel() {
+
+    /** プロジェクト編集の保存(1-d)。lastUpdated は Repository が刻む。 */
+    fun updateProject(project: Project) {
+        viewModelScope.launch { projectRepository.upsert(project) }
+    }
 
     /** 新規タスクを追加する(このプロジェクトに紐付け)。 */
     fun addTask(title: String, detail: String, priority: String, dueDate: String?, status: TaskStatus) {

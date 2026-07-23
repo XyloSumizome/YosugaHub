@@ -22,6 +22,17 @@ fun ProjectEntity.toDomain(): Project = Project(
     health = health,
 )
 
+/** プロジェクトは 1-d で編集可能になったため、書き込み用の逆変換も持つ。 */
+fun Project.toEntity(): ProjectEntity = ProjectEntity(
+    id = id,
+    name = name,
+    currentGoal = currentGoal,
+    inProgress = inProgress,
+    nextTask = nextTask,
+    lastUpdated = lastUpdated,
+    health = health,
+)
+
 fun CalendarEventEntity.toDomain(): CalendarEvent = CalendarEvent(
     title = title,
     start = start,

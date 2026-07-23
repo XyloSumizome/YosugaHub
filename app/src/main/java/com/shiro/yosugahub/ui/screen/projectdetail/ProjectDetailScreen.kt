@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
@@ -46,6 +47,7 @@ fun ProjectDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showNewTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
+    var showProjectEditDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -96,6 +98,9 @@ fun ProjectDetailScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    TextButton(onClick = { showProjectEditDialog = true }) {
+                        Text("プロジェクトを編集")
+                    }
                 }
             }
         }
@@ -133,6 +138,21 @@ fun ProjectDetailScreen(
                 tasks = uiState.tasks.done,
                 onToggleDone = viewModel::setTaskDone,
                 onClickTask = { editingTask = it },
+            )
+        }
+    }
+
+    if (showProjectEditDialog) {
+        uiState.project?.let { project ->
+            ProjectEditDialog(
+                original = project,
+                onDismiss = { showProjectEditDialog = false },
+                onSave = { name, currentGoal, health ->
+                    viewModel.updateProject(
+                        project.copy(name = name, currentGoal = currentGoal, health = health)
+                    )
+                    showProjectEditDialog = false
+                },
             )
         }
     }

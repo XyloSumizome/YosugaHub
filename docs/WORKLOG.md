@@ -2,6 +2,73 @@
 
 ---
 
+## ▶ 次回の再開ポイント(2026-07-23 時点)
+
+### 今どこ
+- **設計は v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)**。
+  設計書: `yosuga_hub_android_design_v3.md` / `yosuga_hub_android_design_v3_1.md`(v2は技術資料)。
+- **v3-Step 1(Task実体化)完了**: 1-a データ層 / 1-b プロジェクト詳細画面 / 1-c タスク編集 / 1-d プロジェクト編集。
+- コード検証は WSL の `assembleDebug` + `testDebugUnitTest` が通っている(BUILD SUCCESSFUL)。
+
+### 未実施の実機確認(次にやると良い)
+1. **Room v1→v2 マイグレーション**: 旧DBが入った端末/エミュレーターで更新起動し、既存データが残ることを確認。
+2. プロジェクト詳細画面の一連の操作(カードタップ→詳細→タスク追加/編集/チェック/削除→プロジェクト編集)。
+- Windows 側 Android Studio で実行(`local.properties` は Windows SDK パスの状態にしてある)。
+- Windows の Gradle Sync が失敗する場合は `.gradle` / `build` / `app/build` を削除して再Sync。
+
+### WSL でビルドする場合
+```
+echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
+JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebugUnitTest --no-daemon
+```
+※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
+
+### 次の実装: v3-Step 2 の詳細設計(v3.1統合)
+- 情報アイテム(kind: memo/idea/decision/shopping/tech…)+ タグ(多対多・AI管理)+
+  エンティティ + 観察日記のデータモデル(Room v3 へのマイグレーション)
+- 回答JSONスキーマ v2(タスク提案 + タグ付きアイテム / 決定事項 / 日記 / エンティティ関連付け / 健康状態)
+- 提案レビュー(承認/棄却)UI
+- 着手前に詳細設計をユーザーと合意すること(1ステップ=1コミットの進め方を維持)
+
+---
+
+## 2026-07-23: v3-Step 1-d プロジェクト編集 — v3-Step 1 完了
+
+### 目的
+
+プロジェクト情報(name / currentGoal / health)を編集できるようにし、v3-Step 1 を完了させる。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `ProjectDao.upsert()` を追加、`Mappers` に `Project.toEntity()` を追加
+- `ProjectRepository.upsert()`: lastUpdated をここで刻む(`now` 注入可能、表示形式は
+  既存の `formatSyncTime` と同じ "yyyy-MM-dd HH:mm")
+- `ProjectDetailViewModel.updateProject()` を追加
+- `ui/screen/projectdetail/ProjectEditDialog`: name(必須)/ 目標 / 状態(FilterChip 4値)
+  - **inProgress / nextTask は編集対象外**(タスクからの導出へ置き換える予定のため)
+  - 手動編集で選べる health は v2 語彙の4値のみ。AI分析由来の自由な値(v3.1)は表示のみで受け入れる
+- 詳細画面の情報カードに「プロジェクトを編集」ボタンを追加
+- テスト: `ProjectRepositoryTest` に upsert の lastUpdated 刻印・編集対象外フィールド保持を追加
+  (FakeProjectDao を書き込み対応に更新)
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### v3-Step 1 完了条件の達成状況
+
+- ✅ Task が第一級エンティティ(Room v2 / Repository / 追加・編集・完了・削除)
+- ✅ プロジェクト詳細画面(ネストナビ)+ プロジェクト編集
+- ⬜ 実機確認(マイグレーション・一連の操作)は未実施 → 次回の再開ポイント参照
+
+**→ v3-Step 1 完了。次は v3-Step 2(v3.1統合の詳細設計)。**
+
+---
+
 ## 2026-07-23: v3-Step 1-c タスクの追加・編集・完了・削除
 
 ### 目的
@@ -239,53 +306,6 @@ UIは一切変更していない(見た目は従来どおり)。UI は 1-b 以�
 ### 次にやること
 
 - v3-Step 1(Task実体化)の着手可否をユーザーと合意 → 合意後に最小実装 + ビルド確認。
-
----
-
-## ▶ 次回の再開ポイント(2026-07-22 時点)
-
-### 今どこ
-- **Phase 0 / 1 / 2 まで完了**。最新コミット: `570fc7d`(Phase 2-5)。作業ツリーはクリーン。
-- Phase 2 完了条件(状況JSON生成 / 回答JSON取り込み / 再起動後もデータ保持)はすべて達成。
-- コード検証は WSL 上の `assembleDebug` + `testDebugUnitTest` が通っている(BUILD SUCCESSFUL)。
-- **実機/エミュレーターでの起動確認は未実施**(次にやると良い)。
-
-### いま移行中の作業: Windows 側 Android Studio で開く
-- Android Studio 本体はインストール済み(`C:\Program Files\Android\Android Studio`)。
-  **ただし Android SDK は未ダウンロード**(初回セットアップウィザードが未完了)。
-- Windows で開くための下準備として、以下をこちら側で実施済み:
-  - `local.properties` を削除(WSL用に `sdk.dir=/home/note_xylo/android-sdk` を指していたため)。
-    → Windows の Android Studio が Sync 時に正しい `sdk.dir` を自動生成する。
-  - `.gradle` / `app/build` / `build`(WSL生成のキャッシュ)を削除(OS跨ぎ初回同期の安定化。再生成される)。
-- **ユーザーの次の操作**: ①Android Studio 起動→Setup Wizard(Standard)でSDK取得 →
-  ②`File > Open` で `C:\Users\note_\Desktop\Yosuga` を開く → ③Gradle Sync(不足SDKは同意して導入)→ ④▶実行。
-
-### 再び WSL でビルドしたい場合(Windows と併用する際の注意)
-- `local.properties` を復元する必要がある(Git管理外なので削除済み):
-  ```
-  echo "sdk.dir=/home/note_xylo/android-sdk" > local.properties
-  ```
-  ※ Windows の Android Studio で開くときは、逆に Windows 用 `sdk.dir` が入っている必要がある。
-    同じ `local.properties` を両OSで共有できないため、使う側に合わせて中身を差し替える。
-- WSL のビルド/テストコマンド(JDK・SDKは WSL 側に導入済み):
-  ```
-  JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug --no-daemon
-  JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew testDebugUnitTest --no-daemon
-  ```
-
-### 次にやること
-1. (推奨)実機/エミュレーターで起動確認し、5画面遷移・JSON作成/取り込みの動作を目視。
-2. **Phase 3(GitHub 進捗取得)** に着手:
-   - 各ゲームの `.yosuga/status.json` を GitHub(Contents API / Raw URL)から取得。
-   - まず1プロジェクトで接続確認 → Markdown/構造化表示 → キャッシュ(Room)→ 更新日時 →
-     エラー表示 → 3プロジェクトへ拡張(設計書 Phase 3 / 19〜27章)。
-   - **新規ライブラリの検討**(着手時に理由を説明): Retrofit または Ktor Client + kotlinx.serialization コンバータ。
-   - **セキュリティ**(設計書9章): 非公開リポジトリ用トークンは Android Keystore で保持。コード/ログ/Git に置かない。
-
-### 積み残し(任意の改善)
-- FileProvider によるファイル添付共有(現状はテキスト共有)。
-- Storage Access Framework での保存先フォルダ選択(現状は内部固定)。
-- 取り込み履歴一覧の画面表示。
 
 ---
 
