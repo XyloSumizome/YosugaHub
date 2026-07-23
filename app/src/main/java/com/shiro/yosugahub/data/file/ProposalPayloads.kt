@@ -1,6 +1,7 @@
 package com.shiro.yosugahub.data.file
 
 import com.shiro.yosugahub.data.file.model.DiaryProposal
+import com.shiro.yosugahub.data.file.model.DirectiveProposal
 import com.shiro.yosugahub.data.file.model.HealthProposal
 import com.shiro.yosugahub.data.file.model.ItemProposal
 import com.shiro.yosugahub.data.file.model.TaskProposal
@@ -22,6 +23,7 @@ object ProposalPayloads {
     fun decodeItem(payloadJson: String): ItemProposal? = decode(payloadJson)
     fun decodeDiary(payloadJson: String): DiaryProposal? = decode(payloadJson)
     fun decodeHealth(payloadJson: String): HealthProposal? = decode(payloadJson)
+    fun decodeDirective(payloadJson: String): DirectiveProposal? = decode(payloadJson)
 
     private inline fun <reified T> decode(payloadJson: String): T? = try {
         json.decodeFromString<T>(payloadJson)

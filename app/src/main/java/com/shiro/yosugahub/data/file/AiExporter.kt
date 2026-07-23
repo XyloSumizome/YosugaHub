@@ -4,6 +4,8 @@ import com.shiro.yosugahub.data.file.model.AiExportFile
 import com.shiro.yosugahub.data.file.model.CalendarFile
 import com.shiro.yosugahub.data.file.model.ConversationsFile
 import com.shiro.yosugahub.data.file.model.DiaryExport
+import com.shiro.yosugahub.data.file.model.DirectiveExport
+import com.shiro.yosugahub.data.file.model.DirectivesFile
 import com.shiro.yosugahub.data.file.model.DocumentExport
 import com.shiro.yosugahub.data.file.model.DocumentsFile
 import com.shiro.yosugahub.data.file.model.EntityRefExport
@@ -15,6 +17,7 @@ import com.shiro.yosugahub.data.file.model.ProjectsFile
 import com.shiro.yosugahub.data.file.model.TasksFile
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.KnowledgeItem
@@ -39,6 +42,7 @@ object AiExporter {
     const val FILE_CALENDAR = "calendar.json"
     const val FILE_CONVERSATIONS = "conversations.json"
     const val FILE_DOCUMENTS = "documents.json"
+    const val FILE_DIRECTIVES = "directives.json"
 
     /** ヨスガに分類してほしい文書の状態(v4.1)。分類済み・アーカイブは送らない。 */
     private val CLASSIFIABLE_STATUSES = setOf(
@@ -51,7 +55,7 @@ object AiExporter {
         encodeDefaults = true
     }
 
-    /** 6ファイルすべてを組み立てる。 */
+    /** 7ファイルすべてを組み立てる。 */
     fun buildAll(
         generatedAt: String,
         projects: List<Project>,
@@ -64,6 +68,7 @@ object AiExporter {
         pastEvents: List<CalendarEvent>,
         exchanges: List<PendingProposal>,
         documents: List<Document>,
+        directives: List<Directive>,
     ): List<AiExportFile> = listOf(
         AiExportFile(
             FILE_PROJECTS,
@@ -124,6 +129,24 @@ object AiExporter {
                 )
             ),
         ),
+        AiExportFile(
+            FILE_DIRECTIVES,
+            json.encodeToString(
+                DirectivesFile(
+                    generatedAt = generatedAt,
+                    directives = directives.map { it.toExport() },
+                )
+            ),
+        ),
+    )
+
+    private fun Directive.toExport() = DirectiveExport(
+        directiveId = id,
+        projectId = projectId,
+        title = title,
+        body = body,
+        priority = priority,
+        createdAt = createdAt,
     )
 
     private fun Document.toExport() = DocumentExport(
@@ -162,6 +185,7 @@ object AiExporter {
             ProposalType.DIARY -> ProposalPayloads.decodeDiary(payloadJson)?.date
             ProposalType.HEALTH -> ProposalPayloads.decodeHealth(payloadJson)
                 ?.let { "${it.projectId} → ${it.health}" }
+            ProposalType.DIRECTIVE -> ProposalPayloads.decodeDirective(payloadJson)?.title
         }.orEmpty(),
     )
 }

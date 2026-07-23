@@ -43,6 +43,12 @@ object ProposalMapper {
             .forEach { proposal ->
                 rows += row(ProposalType.HEALTH, json.encodeToString(proposal), receivedAt, newId)
             }
+        // 指示書は宛先と本文が要る(どちらか欠けたら Claude Code が動けない)。
+        response.proposals.directives
+            .filter { it.projectId.isNotBlank() && it.body.isNotBlank() }
+            .forEach { proposal ->
+                rows += row(ProposalType.DIRECTIVE, json.encodeToString(proposal), receivedAt, newId)
+            }
 
         return rows
     }

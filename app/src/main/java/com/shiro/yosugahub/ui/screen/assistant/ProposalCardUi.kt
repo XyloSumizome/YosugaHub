@@ -65,6 +65,20 @@ fun PendingProposal.toCardUi(): ProposalCardUi = when (type) {
         )
     }
 
+    ProposalType.DIRECTIVE -> {
+        val p = ProposalPayloads.decodeDirective(payloadJson)
+        if (p == null) unreadable("指示書") else ProposalCardUi(
+            proposal = this,
+            typeLabel = "指示書",
+            title = p.title.ifBlank { "${p.projectId} への指示" },
+            body = listOfNotNull(
+                "宛先: ${p.projectId} / 優先度: ${priorityLabel(p.priority)}",
+                p.body.takeIf { it.isNotBlank() },
+            ).joinToString("\n"),
+            readable = true,
+        )
+    }
+
     ProposalType.HEALTH -> {
         val p = ProposalPayloads.decodeHealth(payloadJson)
         if (p == null) unreadable("状態更新") else ProposalCardUi(

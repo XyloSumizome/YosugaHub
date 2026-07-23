@@ -64,6 +64,34 @@ data class DocumentsFile(
     val pendingClassification: List<DocumentExport> = emptyList(),
 )
 
+/**
+ * 各ゲームの Claude Code への指示書(v4.2)。
+ * **これは読み手が ChatGPT ではなく各ゲームの Claude Code** である点が他のファイルと違う。
+ * 承認済み・未完了のものだけを載せる。
+ */
+@Serializable
+data class DirectivesFile(
+    val schemaVersion: Int = AI_EXPORT_SCHEMA_VERSION,
+    val generatedAt: String,
+    /** 読み手への注意書き。ファイル単体で意味が通るようにする(v4方針)。 */
+    val note: String = DIRECTIVES_NOTE,
+    val directives: List<DirectiveExport> = emptyList(),
+)
+
+@Serializable
+data class DirectiveExport(
+    val directiveId: String,
+    val projectId: String,
+    val title: String,
+    val body: String,
+    val priority: String,
+    val createdAt: String,
+)
+
+const val DIRECTIVES_NOTE: String =
+    "各ゲームの Claude Code 向けの指示書。自分の projectId のものだけを読むこと。" +
+        "対応が済んだら .yosuga/status.json の recentChanges に directiveId を記録する。"
+
 /** 分類対象の文書1件。原文をそのまま渡す(要約するのはヨスガの仕事)。 */
 @Serializable
 data class DocumentExport(

@@ -37,6 +37,7 @@ class ProposalRepository(
     private val diaryRepository: DiaryRepository,
     private val projectRepository: ProjectRepository,
     private val knowledgeStore: KnowledgeStore,
+    private val directiveRepository: DirectiveRepository,
 ) {
 
     fun pending(): Flow<List<PendingProposal>> =
@@ -53,6 +54,8 @@ class ProposalRepository(
             ProposalType.ITEM -> applyItem(proposal)
             ProposalType.DIARY -> if (applyDiary(proposal)) ApproveResult.Applied() else null
             ProposalType.HEALTH -> if (applyHealth(proposal)) ApproveResult.Applied() else null
+            ProposalType.DIRECTIVE ->
+                if (applyDirective(proposal)) ApproveResult.Applied() else null
         }
         return if (result != null) {
             dao.updateStatus(proposal.id, ProposalStatus.APPROVED.dbValue)
@@ -121,6 +124,21 @@ class ProposalRepository(
         val date = payload.date.ifBlank { proposal.receivedAt.take(10) }
         diaryRepository.add(date = date, body = payload.body)
         return true
+    }
+
+    /**
+     * 指示書の反映。承認したものだけが directives へ入り、次の同期で配信される。
+     * 実在しないプロジェクト宛は反映しない(宛先のない指示を配信しても誰も読めない)。
+     */
+    private suspend fun applyDirective(proposal: PendingProposal): Boolean {
+        val payload = ProposalPayloads.decodeDirective(proposal.payloadJson) ?: return false
+        if (!projectRepository.exists(payload.projectId)) return false
+        return directiveRepository.create(
+            projectId = payload.projectId,
+            title = payload.title,
+            body = payload.body,
+            priority = payload.priority,
+        ) != null
     }
 
     private suspend fun applyHealth(proposal: PendingProposal): Boolean {

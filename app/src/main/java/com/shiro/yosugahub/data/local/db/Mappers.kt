@@ -2,6 +2,7 @@ package com.shiro.yosugahub.data.local.db
 
 import com.shiro.yosugahub.data.local.db.entity.CalendarEventEntity
 import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
+import com.shiro.yosugahub.data.local.db.entity.DirectiveEntity
 import com.shiro.yosugahub.data.local.db.entity.DocumentClassificationEntity
 import com.shiro.yosugahub.data.local.db.entity.PendingProposalEntity
 import com.shiro.yosugahub.data.local.db.entity.ProjectEntity
@@ -11,6 +12,8 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.ClassificationOrigin
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Directive
+import com.shiro.yosugahub.domain.model.DirectiveStatus
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentClassification
 import com.shiro.yosugahub.domain.model.DocumentStatus
@@ -124,6 +127,17 @@ fun PendingProposalEntity.toDomainOrNull(): PendingProposal? {
         receivedAt = receivedAt,
     )
 }
+
+fun DirectiveEntity.toDomain(): Directive = Directive(
+    id = id,
+    projectId = projectId,
+    title = title,
+    body = body,
+    priority = priority,
+    status = DirectiveStatus.fromDb(status),
+    createdAt = createdAt,
+    updatedAt = updatedAt,
+)
 
 fun DocumentClassificationEntity.toDomain(): DocumentClassification = DocumentClassification(
     id = id,

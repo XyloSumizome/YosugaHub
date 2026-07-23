@@ -17,6 +17,10 @@ interface ProjectDao {
     @Query("SELECT COUNT(*) FROM projects")
     suspend fun count(): Int
 
+    /** 宛先の妥当性確認用(指示書の承認など)。 */
+    @Query("SELECT COUNT(*) FROM projects WHERE id = :id")
+    suspend fun countById(id: String): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(projects: List<ProjectEntity>)
 

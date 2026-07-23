@@ -9,6 +9,22 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 新しいマイグレーションを書いたら、期待スキーマと一致するか出力JSONで確認すること。
  */
 
+/** v6 → v7: Claude Code への指示書(v4.2)の directives を追加。 */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `directives` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, " +
+                "`title` TEXT NOT NULL, `body` TEXT NOT NULL, `priority` TEXT NOT NULL, " +
+                "`status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, `updatedAt` TEXT NOT NULL, " +
+                "PRIMARY KEY(`id`))"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_directives_status` ON `directives` (`status`)")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_directives_projectId` ON `directives` (`projectId`)"
+        )
+    }
+}
+
 /** v5 → v6: AI分類ワークフロー(v4.1)の documents / document_classifications を追加。 */
 val MIGRATION_5_6 = object : Migration(5, 6) {
     override fun migrate(db: SupportSQLiteDatabase) {

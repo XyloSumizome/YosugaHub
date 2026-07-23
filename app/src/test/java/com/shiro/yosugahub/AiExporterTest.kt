@@ -3,12 +3,15 @@ package com.shiro.yosugahub
 import com.shiro.yosugahub.data.file.AiExporter
 import com.shiro.yosugahub.data.file.model.CalendarFile
 import com.shiro.yosugahub.data.file.model.ConversationsFile
+import com.shiro.yosugahub.data.file.model.DirectivesFile
 import com.shiro.yosugahub.data.file.model.DocumentsFile
 import com.shiro.yosugahub.data.file.model.KnowledgeFile
 import com.shiro.yosugahub.data.file.model.ProjectsFile
 import com.shiro.yosugahub.data.file.model.TasksFile
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Directive
+import com.shiro.yosugahub.domain.model.DirectiveStatus
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.ItemKind
@@ -75,6 +78,13 @@ class AiExporterTest {
             document("doc-done", DocumentStatus.CLASSIFIED),
             document("doc-old", DocumentStatus.ARCHIVED),
         ),
+        directives = listOf(
+            Directive(
+                id = "dir-1", projectId = "anri", title = "戦闘の当たり判定を見直す",
+                body = "## 目的\n手触りの改善", priority = "high",
+                status = DirectiveStatus.OPEN, createdAt = generatedAt, updatedAt = generatedAt,
+            ),
+        ),
     )
 
     private fun document(id: String, status: DocumentStatus) = Document(
@@ -89,12 +99,12 @@ class AiExporterTest {
     )
 
     @Test
-    fun builds_six_named_files() {
+    fun builds_seven_named_files() {
         val files = buildAll()
         assertEquals(
             listOf(
                 "projects.json", "tasks.json", "knowledge.json",
-                "calendar.json", "conversations.json", "documents.json",
+                "calendar.json", "conversations.json", "documents.json", "directives.json",
             ),
             files.map { it.name },
         )
@@ -114,6 +124,22 @@ class AiExporterTest {
         assertEquals(generatedAt, documents.generatedAt)
         assertEquals("原文 doc-new", documents.pendingClassification.first().body)
         assertEquals("unclassified", documents.pendingClassification.first().status)
+    }
+
+    /** 指示書は各ゲームの Claude Code が読む。宛先と本文がそのまま届くこと。 */
+    @Test
+    fun directives_file_carries_body_and_reader_note() {
+        val files = buildAll().associateBy { it.name }
+        val directives = json.decodeFromString<DirectivesFile>(files["directives.json"]!!.content)
+
+        val directive = directives.directives.single()
+        assertEquals("dir-1", directive.directiveId)
+        assertEquals("anri", directive.projectId)
+        assertEquals("## 目的\n手触りの改善", directive.body)  // Markdown をそのまま運ぶ
+        assertEquals("high", directive.priority)
+        // ファイル単体で読み手が何をすべきか分かるようにする(v4方針)
+        assertTrue(directives.note.contains("projectId"))
+        assertEquals(1, directives.schemaVersion)
     }
 
     @Test
@@ -159,6 +185,7 @@ class AiExporterTest {
                 PendingProposal("p1", ProposalType.TASK, "{ broken", ProposalStatus.PENDING, generatedAt),
             ),
             documents = emptyList(),
+            directives = emptyList(),
         )
         val conversations = json.decodeFromString<ConversationsFile>(
             files.single { it.name == "conversations.json" }.content

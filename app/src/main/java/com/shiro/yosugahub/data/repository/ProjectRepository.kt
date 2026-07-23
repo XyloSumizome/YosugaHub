@@ -22,6 +22,10 @@ class ProjectRepository(
     fun projects(): Flow<List<Project>> =
         dao.observeAll().map { projects -> projects.map { it.toDomain() } }
 
+    /** 実在するプロジェクトIDか(指示書の宛先確認など)。 */
+    suspend fun exists(projectId: String): Boolean =
+        projectId.isNotBlank() && dao.countById(projectId) > 0
+
     /** プロジェクト編集の保存(1-d)。lastUpdated はここで刻む。 */
     suspend fun upsert(project: Project) {
         dao.upsert(project.copy(lastUpdated = now()).toEntity())

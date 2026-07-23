@@ -13,7 +13,7 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 ```
 最新の状況はここから読んでください。
 一覧: https://<あなたのドメイン>/yosuga/api.php?file=index&token=<トークン>
-各ファイル: file=projects / tasks / knowledge / calendar / conversations / documents
+各ファイル: file=projects / tasks / knowledge / calendar / conversations / documents / directives
 ```
 
 ※ ChatGPT のブラウズ機能が有効な会話で使うこと。回答JSONの受け取り(④〜⑥)は従来どおり。
@@ -96,6 +96,14 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
         "reason": "2週間更新がない"
       }
     ],
+    "directives": [                   // 各ゲームのClaude Codeへの指示書(下記「指示書」を参照)
+      {
+        "projectId": "anri",          // 必須。実在する projects[].id のみ
+        "title": "戦闘の当たり判定を見直す",
+        "body": "## 目的\n...\n## やること\n1. ...",  // 必須。Markdown
+        "priority": "high"            // high / medium / low
+      }
+    ],
     "classifications": [              // 文書の分類結果(下記「文書の分類」を参照)
       {
         "document_id": "...",         // 必須。documents.json の documentId をそのまま使う
@@ -112,6 +120,18 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
     ]
   }
 }
+
+# 指示書(各ゲームの Claude Code への作業依頼)
+シロさんが「ANRIのClaude Codeに指示を出して」のように言ったら、`directives[]` を作る。
+これは**シロさんが読む提案ではなく、各ゲームのリポジトリで作業する Claude Code への作業依頼**。
+
+- 承認されるとサーバーへ配信され、各ゲームの Claude Code がセッション開始時に読む
+- **読み手はコードを直接触れるAI**。曖昧な依頼ではなく、目的と受け入れ条件を書く
+- body の構成: `## 目的` / `## やること`(番号付き) / `## 完了条件` / `## 注意`
+- 実装方法を過度に指定しない。**何を達成したいか**を書き、手段は現場に委ねる
+- 既存の blockers や questionsForYosuga に答える形の指示は特に有効
+- 1回の回答で出す指示書は多くて2〜3件。優先度の低い依頼を並べない
+- projectId は実在するものだけ(存在しないIDの指示は取り込み時に棄却される)
 
 # 文書の分類
 Yosuga Hub には「未整理文書」が保存されます。これは会話ではなく、シロさんが
@@ -171,6 +191,9 @@ Yosuga Hub には「未整理文書」が保存されます。これは会話で
 | `classifications[]` | 他の提案と違い**承認待ちに積まず、その場で文書へ適用**して「確認待ち」にする。確定(分類済み)はシロさんが文書画面で承認したとき。原文は変更されない |
 | document_id が実在しない classification | 読み飛ばし、取り込み時に件数を通知 |
 | 確定済み(分類済み)・アーカイブ済みの文書への分類 | **適用しない**(シロさんが決着させたものを揺り戻さない)。やり直しは文書画面の「再分類」から |
+| `directives[]` | 承認待ちに積む。**承認したものだけ** directives.json として配信される |
+| projectId が実在しない directive | 承認時に「反映できない」として自動棄却 |
+| 取り込み成功時 | サーバー同期が設定済みなら**自動で再アップロード**される(ヨスガが読む側が古いままにならない) |
 | 確認待ちの文書への2回目以降の分類 | 現行分類が置き換わり、前の分類は履歴として残る |
 
 ## 現在のプロジェクトID(状況JSONにも含まれる)

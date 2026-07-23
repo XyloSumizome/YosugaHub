@@ -24,6 +24,21 @@ data class ProposalsImport(
     val projectHealth: List<HealthProposal> = emptyList(),
     /** 文書の分類結果(v4.1)。他の提案と違い、取込時に文書へ適用して「確認待ち」にする。 */
     val classifications: List<ClassificationProposal> = emptyList(),
+    /** 各ゲームの Claude Code への指示書(v4.2)。承認するとサーバーへ配信される。 */
+    val directives: List<DirectiveProposal> = emptyList(),
+)
+
+/**
+ * ゲーム側の Claude Code への指示書(v4.2)。
+ * 承認されるまで配信しない(勝手に作業を始めさせない)。
+ * body は Markdown。Claude Code がそのまま読める粒度で書かせる。
+ */
+@Serializable
+data class DirectiveProposal(
+    val projectId: String = "",
+    val title: String = "",
+    val body: String = "",
+    val priority: String = "medium",
 )
 
 /**

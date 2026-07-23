@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.shiro.yosugahub.data.local.db.dao.CalendarEventDao
 import com.shiro.yosugahub.data.local.db.dao.DiaryDao
+import com.shiro.yosugahub.data.local.db.dao.DirectiveDao
 import com.shiro.yosugahub.data.local.db.dao.DocumentDao
 import com.shiro.yosugahub.data.local.db.dao.KnowledgeDao
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
@@ -13,6 +14,7 @@ import com.shiro.yosugahub.data.local.db.dao.RecommendationDao
 import com.shiro.yosugahub.data.local.db.dao.TaskDao
 import com.shiro.yosugahub.data.local.db.entity.CalendarEventEntity
 import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
+import com.shiro.yosugahub.data.local.db.entity.DirectiveEntity
 import com.shiro.yosugahub.data.local.db.entity.DocumentClassificationEntity
 import com.shiro.yosugahub.data.local.db.entity.DocumentEntity
 import com.shiro.yosugahub.data.local.db.entity.ItemEntityCrossRef
@@ -33,6 +35,7 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
  * v4: projects に GitHub リポジトリ情報(repoOwner / repoName / repoBranch)を追加。
  * v5: project_status_cache(GitHub の status.json キャッシュ)を追加。
  * v6: AI分類ワークフロー(v4.1)の documents / document_classifications を追加。
+ * v7: Claude Code への指示書(v4.2)の directives を追加。
  * マイグレーションは Migrations.kt。スキーマJSONは app/schemas/ に出力される。
  */
 @Database(
@@ -51,8 +54,9 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
         ProjectStatusCacheEntity::class,
         DocumentEntity::class,
         DocumentClassificationEntity::class,
+        DirectiveEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class YosugaDatabase : RoomDatabase() {
@@ -65,4 +69,5 @@ abstract class YosugaDatabase : RoomDatabase() {
     abstract fun pendingProposalDao(): PendingProposalDao
     abstract fun projectStatusDao(): ProjectStatusDao
     abstract fun documentDao(): DocumentDao
+    abstract fun directiveDao(): DirectiveDao
 }

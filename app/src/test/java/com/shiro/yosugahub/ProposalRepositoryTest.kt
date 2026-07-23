@@ -19,7 +19,10 @@ import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.obsidian.AppendOutcome
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
 import com.shiro.yosugahub.data.repository.ApproveResult
+import com.shiro.yosugahub.data.local.db.dao.DirectiveDao
+import com.shiro.yosugahub.data.local.db.entity.DirectiveEntity
 import com.shiro.yosugahub.data.repository.DiaryRepository
+import com.shiro.yosugahub.data.repository.DirectiveRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
@@ -105,6 +108,7 @@ class ProposalRepositoryTest {
         private val knownIds = SampleSeed.projects.map { it.id }.toSet()
         override fun observeAll(): Flow<List<ProjectEntity>> = flowOf(emptyList())
         override suspend fun count(): Int = 0
+        override suspend fun countById(id: String): Int = if (id in knownIds) 1 else 0
         override suspend fun insertAll(projects: List<ProjectEntity>) = Unit
         override suspend fun upsert(project: ProjectEntity) = Unit
         override suspend fun updateHealth(id: String, health: String, lastUpdated: String): Int {
@@ -137,6 +141,22 @@ class ProposalRepositoryTest {
         val diaryDao = FakeDiaryDao()
         val projectDao = FakeProjectDao()
         val knowledgeStore = FakeKnowledgeStore()
+        val directiveDao = FakeDirectiveDao()
+    }
+
+    /** 指示書の保存先(v4.2)。 */
+    private class FakeDirectiveDao : DirectiveDao {
+        val stored = mutableListOf<DirectiveEntity>()
+        override fun observeAll(): Flow<List<DirectiveEntity>> = flowOf(stored)
+        override suspend fun getByStatus(status: String): List<DirectiveEntity> =
+            stored.filter { it.status == status }
+        override fun observeCountByStatus(status: String): Flow<Int> =
+            flowOf(stored.count { it.status == status })
+        override suspend fun upsert(directive: DirectiveEntity) {
+            stored += directive
+        }
+        override suspend fun updateStatus(id: String, status: String, updatedAt: String) = Unit
+        override suspend fun delete(id: String) = Unit
     }
 
     private fun repository(env: Env): ProposalRepository = ProposalRepository(
@@ -146,6 +166,9 @@ class ProposalRepositoryTest {
         diaryRepository = DiaryRepository(env.diaryDao, now = { fixedNow }, newId = { "d-${counter++}" }),
         projectRepository = ProjectRepository(env.projectDao, now = { fixedNow }),
         knowledgeStore = env.knowledgeStore,
+        directiveRepository = DirectiveRepository(
+            env.directiveDao, now = { fixedNow }, newId = { "dir-${counter++}" },
+        ),
     )
 
     private fun proposal(type: ProposalType, payload: String) = PendingProposal(
@@ -268,6 +291,44 @@ class ProposalRepositoryTest {
         assertEquals(ApproveResult.NotApplicable, result)
         assertEquals("rejected", env.pendingDao.statuses["prop-1"])
         assertTrue(env.taskDao.stored.isEmpty())
+    }
+
+    // --- 指示書(v4.2)---
+
+    /** 承認して初めて directives に入る(承認前に配信しない)。 */
+    @Test
+    fun approve_directive_stores_it_for_delivery() = runBlocking {
+        val env = Env()
+        val projectId = SampleSeed.projects.first().id
+        val result = repository(env).approve(
+            proposal(
+                ProposalType.DIRECTIVE,
+                """{"projectId":"$projectId","title":"当たり判定の調整",""" +
+                    """"body":"## 目的\n手触りの改善","priority":"high"}""",
+            )
+        )
+
+        assertEquals(ApproveResult.Applied(), result)
+        assertEquals("approved", env.pendingDao.statuses["prop-1"])
+        val stored = env.directiveDao.stored.single()
+        assertEquals(projectId, stored.projectId)
+        assertEquals("## 目的\n手触りの改善", stored.body)
+        assertEquals("open", stored.status)
+    }
+
+    /** 宛先のプロジェクトが実在しない指示は配信しない。 */
+    @Test
+    fun approve_directive_for_unknown_project_is_rejected() = runBlocking {
+        val env = Env()
+        val result = repository(env).approve(
+            proposal(
+                ProposalType.DIRECTIVE,
+                """{"projectId":"ghost","title":"宛先不明","body":"本文"}""",
+            )
+        )
+        assertEquals(ApproveResult.NotApplicable, result)
+        assertEquals("rejected", env.pendingDao.statuses["prop-1"])
+        assertTrue(env.directiveDao.stored.isEmpty())
     }
 
     @Test

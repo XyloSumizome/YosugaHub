@@ -19,7 +19,12 @@ import java.time.format.DateTimeFormatter
 /** 回答JSON取り込みの結果。UI はこれを見てメッセージを出す。 */
 sealed interface ImportResult {
     /** v1: recommendations を直接反映した。 */
-    data class Success(val recommendationCount: Int, val fileName: String) : ImportResult
+    data class Success(
+        val recommendationCount: Int,
+        val fileName: String,
+        /** 取り込み後の自動同期の結果。未配線なら null。 */
+        val sync: SyncResult? = null,
+    ) : ImportResult
 
     /**
      * v2: 提案を承認待ちに入れた(反映はユーザー承認後)。
@@ -32,6 +37,8 @@ sealed interface ImportResult {
         val fileName: String,
         val classificationCount: Int = 0,
         val skippedClassificationCount: Int = 0,
+        /** 取り込み後の自動同期の結果。未配線なら null。 */
+        val sync: SyncResult? = null,
     ) : ImportResult
 
     data class InvalidJson(val message: String) : ImportResult
@@ -58,6 +65,11 @@ class ImportRepository(
     private val recommendationDao: RecommendationDao,
     private val pendingProposalDao: PendingProposalDao,
     private val documentRepository: DocumentRepository,
+    /**
+     * 取り込みが成立した直後にサーバーへ反映する(v4.1 運用)。
+     * ヨスガが読む側のデータを古いまま放置しないため。未配線なら null を返す。
+     */
+    private val syncAfterImport: suspend () -> SyncResult? = { null },
     private val newId: () -> String = { java.util.UUID.randomUUID().toString() },
 ) {
 
@@ -91,7 +103,11 @@ class ImportRepository(
                 recommendationDao.deleteAll()
                 recommendationDao.insertAll(entities)
 
-                ImportResult.Success(recommendationCount = entities.size, fileName = fileName)
+                ImportResult.Success(
+                    recommendationCount = entities.size,
+                    fileName = fileName,
+                    sync = syncAfterImport(),
+                )
             }
 
             is ResponseImporter.ParseResult.SuccessV2 -> {
@@ -112,6 +128,8 @@ class ImportRepository(
                     fileName = fileName,
                     classificationCount = classified.applied,
                     skippedClassificationCount = classified.skipped,
+                    // Room への反映が済んでから同期する(送る内容に取り込み結果を含めるため)。
+                    sync = syncAfterImport(),
                 )
             }
         }

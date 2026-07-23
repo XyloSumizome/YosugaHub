@@ -5,7 +5,9 @@ enum class ProposalType(val dbValue: String) {
     TASK("task"),
     ITEM("item"),
     DIARY("diary"),
-    HEALTH("health");
+    HEALTH("health"),
+    /** 各ゲームの Claude Code への指示書(v4.2)。承認で directives へ。 */
+    DIRECTIVE("directive");
 
     companion object {
         fun fromDb(value: String): ProposalType? =

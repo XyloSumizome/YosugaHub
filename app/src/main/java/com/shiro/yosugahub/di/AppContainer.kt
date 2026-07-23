@@ -9,6 +9,7 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
 import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
 import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
 import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
+import com.shiro.yosugahub.data.local.db.MIGRATION_6_7
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
@@ -17,6 +18,7 @@ import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
+import com.shiro.yosugahub.data.repository.DirectiveRepository
 import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.github.GitHubApi
@@ -51,6 +53,7 @@ interface AppContainer {
     val knowledgeRepository: KnowledgeRepository
     val diaryRepository: DiaryRepository
     val documentRepository: DocumentRepository
+    val directiveRepository: DirectiveRepository
     val assistantRepository: AssistantRepository
     val proposalRepository: ProposalRepository
     val userPreferencesRepository: UserPreferencesRepository
@@ -74,7 +77,10 @@ class DefaultAppContainer(
         YosugaDatabase::class.java,
         "yosuga.db",
     )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        .addMigrations(
+            MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
+            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+        )
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
@@ -98,6 +104,9 @@ class DefaultAppContainer(
     override val documentRepository: DocumentRepository by lazy {
         DocumentRepository(database.documentDao())
     }
+    override val directiveRepository: DirectiveRepository by lazy {
+        DirectiveRepository(database.directiveDao())
+    }
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())
     }
@@ -114,6 +123,7 @@ class DefaultAppContainer(
             diaryRepository = diaryRepository,
             projectRepository = projectRepository,
             knowledgeStore = knowledgeStore,
+            directiveRepository = directiveRepository,
         )
     }
     override val userPreferencesRepository: UserPreferencesRepository by lazy {
@@ -150,6 +160,8 @@ class DefaultAppContainer(
             database.recommendationDao(),
             database.pendingProposalDao(),
             documentRepository,
+            // 取り込んだ内容をヨスガが読む側へすぐ反映する(未設定なら sync が即座に返る)。
+            syncAfterImport = { serverSyncRepository.sync() },
         )
     }
 
@@ -170,6 +182,7 @@ class DefaultAppContainer(
             projectStatusRepository = projectStatusRepository,
             pendingProposalDao = database.pendingProposalDao(),
             documentRepository = documentRepository,
+            directiveRepository = directiveRepository,
         )
     }
 

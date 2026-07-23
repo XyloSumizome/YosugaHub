@@ -114,6 +114,22 @@
 内容は数字のみ:
 1
 
+=== 指示書の受け取り(任意・サーバー同期を使っている場合のみ) ===
+
+Yosuga Hub からこのプロジェクト宛の指示書が届くことがある。
+URLとトークンはユーザーから受け取ること(このファイルには書かない)。
+
+セッション開始時、および長い作業の区切りで確認する:
+
+curl -s "https://<ドメイン>/yosuga/api.php?file=directives&token=<トークン>"
+
+- `directives[]` のうち **projectId が自分のものだけ** を読む。他プロジェクト宛は無視する
+- 指示書は Markdown の body を持つ。内容が現在のコードと矛盾する場合は
+  **勝手に始めず**、questionsForYosuga に疑問を書いて確認を求める
+- 対応したら `.yosuga/status.json` の recentChanges に `directiveId` を記録する
+  (Yosuga Hub 側で「対応済み」にする判断材料になる)
+- 指示書は承認済みのものだけが配信される。届いていない = まだ承認されていない
+
 === 更新タイミング ===
 
 次のときに .yosuga/ を更新する(小さな変更ごとに毎回は不要。意味のある作業単位で):
@@ -147,6 +163,11 @@
 
 ## Validation
 更新後はJSONの構文と必須フィールドを検証する。検証に失敗したファイルをコミットしない。
+
+## Directives (Yosuga Hub からの指示書)
+サーバー同期が設定されている場合、セッション開始時に directives を確認する。
+自分の projectId 宛のものだけを読み、対応したら recentChanges に directiveId を記録する。
+指示内容が現在のコードと矛盾する場合は着手せず questionsForYosuga で確認する。
 
 ## Git rules
 - 秘密情報・アクセストークン・APIキー・個人情報・ローカル絶対パスを `.yosuga/` に含めない。

@@ -19,6 +19,7 @@ class ProjectRepositoryTest {
 
         override fun observeAll(): Flow<List<ProjectEntity>> = flowOf(stored.toList())
         override suspend fun count(): Int = stored.size
+        override suspend fun countById(id: String): Int = stored.count { it.id == id }
         override suspend fun insertAll(projects: List<ProjectEntity>) {
             stored += projects
         }

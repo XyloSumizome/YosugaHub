@@ -27,9 +27,10 @@ class AiExportRepository(
     private val projectStatusRepository: ProjectStatusRepository,
     private val pendingProposalDao: PendingProposalDao,
     private val documentRepository: DocumentRepository,
+    private val directiveRepository: DirectiveRepository,
 ) {
 
-    /** 6ファイルを生成してローカルへ保存し、内容を返す。 */
+    /** 7ファイルを生成してローカルへ保存し、内容を返す。 */
     suspend fun buildAndSave(): List<AiExportFile> = withContext(Dispatchers.IO) {
         val files = AiExporter.buildAll(
             generatedAt = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
@@ -44,6 +45,8 @@ class AiExportRepository(
             exchanges = pendingProposalDao.recent(EXCHANGE_LIMIT)
                 .mapNotNull { it.toDomainOrNull() },
             documents = documentRepository.documents().first(),
+            // 配信するのは未完了のものだけ(完了済みを読ませて二度手間にしない)。
+            directives = directiveRepository.openDirectives(),
         )
 
         val dir = File(context.filesDir, AI_DIR).apply { mkdirs() }
