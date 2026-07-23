@@ -2,6 +2,62 @@
 
 ---
 
+## 2026-07-23: GitHub連携 3-b Ktor で status.json を取得・検証
+
+### 目的
+
+GitHub Contents API から各ゲームの `.yosuga/status.json` を取得し、検証してモデル化する。
+UI への反映は 3-c(この段階では取得層のみ)。
+
+### 新規ライブラリ(追加理由)
+
+- **Ktor Client 3.0.3**(`ktor-client-core` / `ktor-client-okhttp` /
+  `ktor-client-content-negotiation` / `ktor-serialization-kotlinx-json`)
+  - 理由: ユーザーと合意した HTTP クライアント。kotlinx.serialization(導入済み)と統合でき、
+    エンジン差し替えで MockEngine によるユニットテストが書ける。Android は OkHttp エンジンを使用。
+- **ktor-client-mock 3.0.3**(testImplementation): 実通信なしで応答を差し替えるため。
+- **kotlinx-coroutines-test 1.9.0**(testImplementation): コルーチンテストの標準ユーティリティ。
+
+### 実施内容
+
+- `AndroidManifest.xml` に **INTERNET 権限**を追加(GitHub 取得に必須)
+- `data/github/model/ProjectStatus`: 設計書19.2 の status.json モデル
+  (必須は schemaVersion のみ、他はデフォルト値付き。currentGoal / completed / inProgress /
+  nextTasks / blockers / recentChanges / risks / decisions / questionsForYosuga)
+- `data/github/StatusParser`(純粋ロジック): `ignoreUnknownKeys` で未知項目を無視、
+  schemaVersion 検証(1のみ対応)、**projectId の突き合わせ**(設計書20章の必須条件)。
+  結果は sealed(Success / InvalidJson / UnsupportedSchema / ProjectIdMismatch)
+- `data/github/GitHubApi`: Contents API から `Accept: application/vnd.github.raw` で本文を直接取得
+  (Base64デコード不要)。`X-GitHub-Api-Version` 付与、タイムアウト設定、ブランチ指定は `?ref=`。
+  HTTPステータスを FetchResult(Success/Unauthorized/NotFound/HttpError/NetworkError)へ分類。
+  **例外メッセージを伝播させない**(トークンが載る事故を防ぐ)
+- `data/repository/GitHubStatusRepository`: リポジトリ未設定・トークン未設定を**通信前に**判定し、
+  取得〜検証結果を `StatusFetchResult` へ集約
+  - トークンは `tokenProvider: suspend () -> String?` で受ける(Keystore/DataStore に依存せずテスト可能。
+    当初 GitHubSettingsRepository を直接受けていたが、final クラスでフェイク化できず設計変更)
+- `AppContainer` に gitHubStatusRepository を配線(tokenProvider は復号関数を渡す)
+- テスト: `StatusParserTest` 7件(正常/未知項目無視/最小/壊れたJSON/schemaVersion欠落/非対応版/ID不一致)、
+  `GitHubStatusRepositoryTest` 9件(MockEngine で URL・Authorization・Accept ヘッダー検証、
+  ref パラメータ、未設定時は通信しない、401/403/404/500/オフライン、JSON異常の分類)
+
+### 詰まった点
+
+- Ktor 3 の MockEngine ハンドラは `MockRequestHandleScope` レシーバが必要で、
+  素のラムダ型では `respond` が解決できない。テストの関数型を
+  `MockRequestHandleScope.(HttpRequestData) -> HttpResponseData` に修正して解決。
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- **実通信は未検証**(実機とトークンが必要)。MockEngine による分岐検証のみ。
+
+### 次にやること
+
+- **3-c**: 取得結果を Room にキャッシュして表示(プロジェクト詳細に status 表示 /
+  最終取得時刻 / エラー表示 / 全プロジェクト一括更新)
+
+---
+
 ## 2026-07-23: GitHub連携 3-a 設定の器(リポジトリ設定 + トークンのKeystore保管)
 
 ### 経緯・決定

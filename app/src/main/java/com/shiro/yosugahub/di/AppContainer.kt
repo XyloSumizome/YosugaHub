@@ -15,7 +15,9 @@ import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
+import com.shiro.yosugahub.data.github.GitHubApi
 import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
+import com.shiro.yosugahub.data.repository.GitHubStatusRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
@@ -42,6 +44,7 @@ interface AppContainer {
     val proposalRepository: ProposalRepository
     val userPreferencesRepository: UserPreferencesRepository
     val gitHubSettingsRepository: GitHubSettingsRepository
+    val gitHubStatusRepository: GitHubStatusRepository
     val exportRepository: ExportRepository
     val importRepository: ImportRepository
 }
@@ -98,6 +101,12 @@ class DefaultAppContainer(
     }
     override val gitHubSettingsRepository: GitHubSettingsRepository by lazy {
         GitHubSettingsRepository(userPreferencesRepository, KeystoreTokenCrypto())
+    }
+    override val gitHubStatusRepository: GitHubStatusRepository by lazy {
+        GitHubStatusRepository(
+            api = GitHubApi(),
+            tokenProvider = { gitHubSettingsRepository.currentToken() },
+        )
     }
     override val exportRepository: ExportRepository by lazy {
         ExportRepository(
