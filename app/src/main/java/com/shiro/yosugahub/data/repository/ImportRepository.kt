@@ -5,11 +5,9 @@ import android.net.Uri
 import com.shiro.yosugahub.data.file.ImportHistoryNames
 import com.shiro.yosugahub.data.file.ProposalMapper
 import com.shiro.yosugahub.data.file.ResponseImporter
-import com.shiro.yosugahub.data.file.model.ClassificationProposal
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
 import com.shiro.yosugahub.data.local.db.dao.RecommendationDao
 import com.shiro.yosugahub.data.local.db.entity.RecommendationEntity
-import com.shiro.yosugahub.domain.model.RelatedRef
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -106,7 +104,8 @@ class ImportRepository(
                 // 直接反映せず承認待ちに積む(v3: 提案→承認→保存)。
                 pendingProposalDao.insertAll(rows)
 
-                val classified = applyClassifications(result.response.proposals.classifications)
+                val classified =
+                    classificationApplier.apply(result.response.proposals.classifications)
 
                 ImportResult.SuccessProposals(
                     proposalCount = rows.size,
@@ -118,38 +117,8 @@ class ImportRepository(
         }
     }
 
-    private data class ClassificationOutcome(val applied: Int, val skipped: Int)
-
-    /**
-     * 分類結果を文書へ適用する(v4.1)。
-     * 他の提案と違い pending_proposals には積まない — 文書は「確認待ち」になり、
-     * 承認・修正は文書の詳細画面で行う(承認を二重に求めない)。
-     * document_id が空、宛先の文書が無い、アーカイブ済みのものは読み飛ばす。
-     */
-    private suspend fun applyClassifications(
-        classifications: List<ClassificationProposal>,
-    ): ClassificationOutcome {
-        var applied = 0
-        var skipped = 0
-        classifications
-            .filter { it.documentId.isNotBlank() }
-            .forEach { classification ->
-                val result = documentRepository.applyAiClassification(
-                    documentId = classification.documentId,
-                    summary = classification.summary,
-                    documentType = classification.documentType,
-                    confidence = classification.confidence,
-                    projectIds = classification.projectIds,
-                    categories = classification.categories,
-                    tags = classification.tags,
-                    relatedEntities = classification.relatedEntities
-                        .filter { it.type.isNotBlank() && it.id.isNotBlank() }
-                        .map { RelatedRef(type = it.type, id = it.id) },
-                )
-                if (result != null) applied++ else skipped++
-            }
-        return ClassificationOutcome(applied = applied, skipped = skipped)
-    }
+    /** 分類の適用は ClassificationApplier(ファイル入出力を持たない)へ委譲する。 */
+    private val classificationApplier = ClassificationApplier(documentRepository)
 
     /** 元ファイルは上書きせず履歴として保存する(設計書15章)。 */
     private fun saveHistory(text: String): String {
