@@ -101,6 +101,7 @@ tasks.json
 knowledge.json
 calendar.json
 conversations.json
+documents.json   ← v4.1(未整理文書。分類待ちのものだけを原文のまま載せる)
 ```
 
 巨大なJSON一つにはしない。
@@ -117,6 +118,7 @@ GET /api/tasks
 GET /api/knowledge
 GET /api/calendar
 GET /api/conversations
+GET /api/documents
 ```
 
 返却形式はJSON。Androidも将来的にはこのAPIを利用できる構造にする。
@@ -237,9 +239,9 @@ Yosuga Hubとは
 ## Phase と現状実装の対応
 
 - **Phase1: 完了**(v3-Step 1〜4 で達成)
-- **Phase2: 今回実装**
+- **Phase2: 実装済み**
   - Export Repository の用途別分離(巨大な単一JSONをやめ、projects / tasks / knowledge /
-    calendar / conversations の5ファイルへ)
+    calendar / conversations の5ファイルへ。**v4.1 で documents を加えて6ファイル**)
   - ローカルJSON出力(AI Interface の初期実装)
   - ロリポップ同期(Ktor で POST。サーバーPHPは `server/` ディレクトリに同梱)
   - ※ 従来の「状況JSON」(手動ブリッジ)は互換のため残す。サーバー同期が使えない場面の

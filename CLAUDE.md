@@ -17,7 +17,7 @@
 
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
 設計書: `yosuga_hub_android_design_v4.md`(必読 / 最上位方針: AIプラットフォーム構想)
-+ `yosuga_hub_design_v4_1_classification.md`(**追加指示: AI分類ワークフロー / 未実装**)
++ `yosuga_hub_design_v4_1_classification.md`(追加指示: AI分類ワークフロー / **実装完了・実機未検証**)
 + `yosuga_hub_android_design_v3.md` / `_v3_1.md`(基本思想・知識ベース仕様として有効)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
 v4の核心: Hubは**人間のUIとAIのデータインターフェースの両方**を持つプラットフォーム。

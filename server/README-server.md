@@ -37,7 +37,7 @@ server/
 ```
 最新の状況はここから読めます。
 一覧: https://あなたのドメイン/yosuga/api.php?file=index&token=トークン
-各ファイル: file=projects / tasks / knowledge / calendar / conversations
+各ファイル: file=projects / tasks / knowledge / calendar / conversations / documents
 ```
 
 ## セキュリティのメモ
