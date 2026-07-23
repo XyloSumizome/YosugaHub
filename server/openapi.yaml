@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: Yosuga Hub API
+  description: |
+    シロさんの制作管理アプリ「Yosuga Hub」が同期した、AI向けの状況データを配信する。
+    用途ごとに分割されているので、必要なファイルだけを取得すること
+    (巨大な単一JSONを毎回読まない)。
+  version: "1.0.0"
+servers:
+  # ★ あなたのドメインに書き換えてから GPT に登録する
+  - url: https://YOUR-DOMAIN.example.com/yosuga
+paths:
+  /api.php:
+    get:
+      operationId: getYosugaFile
+      summary: 指定した種類の状況データを取得する
+      description: |
+        file に指定できる値と内容:
+        - index: どのファイルがいつ更新されたかの一覧。まず最初にこれを見るとよい
+        - projects: 各ゲームプロジェクトの状況(blockers / questionsForYosuga を含む)
+        - tasks: 現在のタスク一覧
+        - knowledge: 情報アイテムと観察日記。既存タグの語彙もここで分かる
+        - calendar: 直近の予定(今日 / 今後 / 過去)
+        - conversations: 回答JSONの取込・承認の履歴
+        - documents: **未整理文書**。pendingClassification[] を分類して回答JSONへ返す
+        - directives: 各ゲームの Claude Code へ配信中の指示書(既出の指示を重複させないため)
+      parameters:
+        - name: file
+          in: query
+          required: true
+          description: 取得するデータの種類
+          schema:
+            type: string
+            enum:
+              - index
+              - projects
+              - tasks
+              - knowledge
+              - calendar
+              - conversations
+              - documents
+              - directives
+      responses:
+        "200":
+          description: 取得したJSON(構造は file により異なる)
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          description: file の指定が不正
+        "403":
+          description: トークンが一致しない
+        "404":
+          description: そのファイルはまだ同期されていない
+components:
+  securitySchemes:
+    yosugaToken:
+      type: apiKey
+      in: header
+      name: X-Yosuga-Token
+security:
+  - yosugaToken: []

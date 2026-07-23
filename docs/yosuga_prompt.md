@@ -16,7 +16,16 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 各ファイルは projects / tasks / knowledge / calendar / conversations / documents / directives に分割して管理する。必要なものだけ取得してよい。
 ```
 
-※ ChatGPT のブラウズ機能が有効な会話で使うこと。回答JSONの受け取り(④〜⑥)は従来どおり。
+⚠ **ただし通常のチャットのブラウズは検索インデックス経由のことがあり、
+認証付きの api.php には到達できない場合がある**(2026-07-23 実地確認。サーバー側の問題ではない)。
+その場合は次のどちらかにする:
+
+- **カスタムGPTの Actions として登録する**(推奨)。検索ではなく本物のHTTPリクエストになり、
+  トークンもヘッダーで渡せるので安全。手順は `server/README-server.md` の「A」、
+  定義ファイルは `server/openapi.yaml`
+- **ブラウザで開いたJSONをコピーして会話に貼る**(手動。これでも運用できる)
+
+回答JSONの受け取り(④〜⑥)はどちらの方法でも変わらず動く。
 
 ---
 
