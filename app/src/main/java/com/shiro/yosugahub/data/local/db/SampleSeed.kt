@@ -1,9 +1,15 @@
 package com.shiro.yosugahub.data.local.db
 
 import com.shiro.yosugahub.data.local.db.entity.CalendarEventEntity
+import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
+import com.shiro.yosugahub.data.local.db.entity.ItemEntityCrossRef
+import com.shiro.yosugahub.data.local.db.entity.ItemTagCrossRef
+import com.shiro.yosugahub.data.local.db.entity.KnowledgeItemEntity
 import com.shiro.yosugahub.data.local.db.entity.ProjectEntity
 import com.shiro.yosugahub.data.local.db.entity.RecommendationEntity
+import com.shiro.yosugahub.data.local.db.entity.TagEntity
 import com.shiro.yosugahub.data.local.db.entity.TaskEntity
+import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
 
 /**
  * DB を初回起動時にシードするための仮データ(Phase 1 の DummyData 相当)。
@@ -125,6 +131,72 @@ object SampleSeed {
             updatedAt = SEEDED_AT,
             completedAt = null,
             source = "manual",
+        ),
+    )
+
+    /** 仮の情報アイテム(v3-Step 2)。承認フロー実装後は AI 提案由来の実データに置き換わる。 */
+    val knowledgeItems: List<KnowledgeItemEntity> = listOf(
+        KnowledgeItemEntity(
+            id = "item-001",
+            kind = "shopping",
+            title = "USB-Cハブを購入",
+            body = "展示会デモ用。HDMI出力付きのものを選ぶ。",
+            createdAt = SEEDED_AT,
+            updatedAt = SEEDED_AT,
+            source = "manual",
+        ),
+        KnowledgeItemEntity(
+            id = "item-002",
+            kind = "decision",
+            title = "設計をv3(AIファースト)へ転換",
+            body = "AI=頭脳 / Hub=記憶・表示装置の役割分担にする。",
+            createdAt = SEEDED_AT,
+            updatedAt = SEEDED_AT,
+            source = "manual",
+        ),
+        KnowledgeItemEntity(
+            id = "item-003",
+            kind = "idea",
+            title = "ビート表示のアイデア",
+            body = "リズムに合わせて進捗が脈打つ表示。今は採用しないが面白い。",
+            createdAt = SEEDED_AT,
+            updatedAt = SEEDED_AT,
+            source = "manual",
+        ),
+    )
+
+    val tags: List<TagEntity> = listOf(
+        TagEntity(id = "tag-001", name = "買い物"),
+        TagEntity(id = "tag-002", name = "展示会準備"),
+        TagEntity(id = "tag-003", name = "Yosuga Hub"),
+    )
+
+    val itemTags: List<ItemTagCrossRef> = listOf(
+        ItemTagCrossRef(itemId = "item-001", tagId = "tag-001"),
+        ItemTagCrossRef(itemId = "item-001", tagId = "tag-002"),
+        ItemTagCrossRef(itemId = "item-002", tagId = "tag-003"),
+        ItemTagCrossRef(itemId = "item-003", tagId = "tag-003"),
+    )
+
+    val entities: List<TrackedEntityEntity> = listOf(
+        TrackedEntityEntity(id = "entity-001", name = "東京ゲームショウ", type = "event"),
+        TrackedEntityEntity(id = "entity-002", name = "Yosuga Hub", type = "project"),
+    )
+
+    val itemEntities: List<ItemEntityCrossRef> = listOf(
+        ItemEntityCrossRef(itemId = "item-001", entityId = "entity-001"),
+        ItemEntityCrossRef(itemId = "item-002", entityId = "entity-002"),
+    )
+
+    /** 仮の観察日記(Yosuga視点の文例)。 */
+    val diaryEntries: List<DiaryEntryEntity> = listOf(
+        DiaryEntryEntity(
+            id = "diary-001",
+            date = "2026-07-23",
+            body = "今日はシロさんがYosuga Hubの設計を大きく前進させた。" +
+                "タグの考え方が整理されて嬉しそうだった。" +
+                "小さな出来事も、このプロジェクトの一部になっているように感じた。",
+            createdAt = SEEDED_AT,
         ),
     )
 

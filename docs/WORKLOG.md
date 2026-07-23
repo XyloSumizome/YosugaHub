@@ -2,6 +2,51 @@
 
 ---
 
+## 2026-07-23: v3-Step 2-a 知識ベースのデータ層(Room v3)
+
+### 目的
+
+Step 2 設計(下記エントリ)のデータモデルを Room に実装。UIは変更なし。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- ドメインモデル: `KnowledgeItem`(+`ItemKind`/`EntityRef`)/ `TrackedEntity`(+`EntityType`)/
+  `DiaryEntry` / `PendingProposal`(+`ProposalType`/`ProposalStatus`)
+  - enum は未知値フォールバック(ItemKind→OTHER 等)。ProposalType のみ null 返却で読み飛ばし
+  - Room の Entity と紛らわしいため実体は Tracked を冠して `TrackedEntity` と命名
+- Roomエンティティ7つ: `knowledge_items` / `tags`(name unique)/ `item_tags`(複合PK)/
+  `entities`((name,type) unique)/ `item_entities` / `diary_entries`(date index)/ `pending_proposals`
+- **Room v2→v3**: `MIGRATION_2_3`(7テーブル+5インデックス追加、既存データ無傷)。
+  出力スキーマ `3.json` と SQL の完全一致を確認済み
+- `KnowledgeDao`: アイテム+タグ+実体を1つのDAOに集約
+  - `observeItemsWithRefs()`(@Relation + Junction で3者をまとめて読む)
+  - `saveItemWithRefs()`(@Transaction default メソッド): タグ・実体を名前で解決し
+    未登録なら候補を登録、中間テーブルは張り直し
+- `DiaryDao` / `PendingProposalDao`(status別監視・件数Flow)
+- `KnowledgeRepository`: `createItem`(タグの trim・空除去・重複除去)/ `updateItem`(createdAt不変)/
+  `deleteItem`(リンクは消しタグ本体は残す=タグの統合・削除はAIの仕事)
+- `DiaryRepository`: `entries` / `add` / `delete`
+- `SampleSeed`: 仮アイテム3件(買い物/決定/アイデア)+タグ3+実体2+観察日記1(Yosuga視点の文例)
+- `AppContainer`: 両Repository追加、`MIGRATION_2_3` 登録、空のときシード
+- テスト: `KnowledgeRepositoryTest`(フェイクDAOで default メソッドの実ロジックを検証:
+  タグ名解決・再利用 / 正規化 / リンク張り直し / 削除でタグ残存 / ドメイン変換)、
+  `SampleSeedTest` に知識ベース検証5件を追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+- マイグレーション v2→v3 の実機検証は未実施(v1→v2 と合わせて Windows Studio で確認)
+
+### 次にやること
+
+- **2-b**: 回答JSON v2 パース → pending_proposals へ(v1互換維持)
+
+---
+
 ## 2026-07-23: v3-Step 2(v3.1統合)の詳細設計を確定 — 記録のみ
 
 ### ユーザーと合意した決定

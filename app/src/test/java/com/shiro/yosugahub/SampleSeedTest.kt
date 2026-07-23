@@ -52,4 +52,37 @@ class SampleSeedTest {
     fun completedAt_is_set_only_for_done_tasks() {
         assertTrue(SampleSeed.tasks.all { (it.status == "done") == (it.completedAt != null) })
     }
+
+    @Test
+    fun knowledge_items_and_tags_have_unique_ids_and_names() {
+        assertEquals(SampleSeed.knowledgeItems.size, SampleSeed.knowledgeItems.map { it.id }.toSet().size)
+        assertEquals(SampleSeed.tags.size, SampleSeed.tags.map { it.id }.toSet().size)
+        assertEquals(SampleSeed.tags.size, SampleSeed.tags.map { it.name }.toSet().size)
+    }
+
+    @Test
+    fun item_cross_refs_reference_seeded_rows() {
+        val itemIds = SampleSeed.knowledgeItems.map { it.id }.toSet()
+        val tagIds = SampleSeed.tags.map { it.id }.toSet()
+        val entityIds = SampleSeed.entities.map { it.id }.toSet()
+        assertTrue(SampleSeed.itemTags.all { it.itemId in itemIds && it.tagId in tagIds })
+        assertTrue(SampleSeed.itemEntities.all { it.itemId in itemIds && it.entityId in entityIds })
+    }
+
+    @Test
+    fun knowledge_items_use_only_known_kinds() {
+        val known = setOf("memo", "idea", "decision", "shopping", "tech", "other")
+        assertTrue(SampleSeed.knowledgeItems.all { it.kind in known })
+    }
+
+    @Test
+    fun entities_use_only_known_types() {
+        val known = setOf("project", "person", "tech", "gear", "event", "other")
+        assertTrue(SampleSeed.entities.all { it.type in known })
+    }
+
+    @Test
+    fun diary_entries_use_iso_date() {
+        assertTrue(SampleSeed.diaryEntries.all { it.date.matches(Regex("""\d{4}-\d{2}-\d{2}""")) })
+    }
 }

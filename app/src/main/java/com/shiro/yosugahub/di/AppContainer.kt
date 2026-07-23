@@ -4,12 +4,15 @@ import android.content.Context
 import androidx.room.Room
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
+import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
+import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
+import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.util.formatSyncTime
@@ -27,6 +30,8 @@ interface AppContainer {
     val calendarRepository: CalendarRepository
     val projectRepository: ProjectRepository
     val taskRepository: TaskRepository
+    val knowledgeRepository: KnowledgeRepository
+    val diaryRepository: DiaryRepository
     val assistantRepository: AssistantRepository
     val userPreferencesRepository: UserPreferencesRepository
     val exportRepository: ExportRepository
@@ -44,7 +49,7 @@ class DefaultAppContainer(
         YosugaDatabase::class.java,
         "yosuga.db",
     )
-        .addMigrations(MIGRATION_1_2)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
@@ -55,6 +60,12 @@ class DefaultAppContainer(
     }
     override val taskRepository: TaskRepository by lazy {
         TaskRepository(database.taskDao())
+    }
+    override val knowledgeRepository: KnowledgeRepository by lazy {
+        KnowledgeRepository(database.knowledgeDao())
+    }
+    override val diaryRepository: DiaryRepository by lazy {
+        DiaryRepository(database.diaryDao())
     }
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())
@@ -94,6 +105,18 @@ class DefaultAppContainer(
             }
             if (database.taskDao().count() == 0) {
                 database.taskDao().insertAll(SampleSeed.tasks)
+                seededAnything = true
+            }
+            if (database.knowledgeDao().countItems() == 0) {
+                SampleSeed.knowledgeItems.forEach { database.knowledgeDao().upsertItem(it) }
+                SampleSeed.tags.forEach { database.knowledgeDao().insertTag(it) }
+                SampleSeed.entities.forEach { database.knowledgeDao().insertEntity(it) }
+                SampleSeed.itemTags.forEach { database.knowledgeDao().insertItemTag(it) }
+                SampleSeed.itemEntities.forEach { database.knowledgeDao().insertItemEntity(it) }
+                seededAnything = true
+            }
+            if (database.diaryDao().count() == 0) {
+                database.diaryDao().insertAll(SampleSeed.diaryEntries)
                 seededAnything = true
             }
             if (seededAnything) {
