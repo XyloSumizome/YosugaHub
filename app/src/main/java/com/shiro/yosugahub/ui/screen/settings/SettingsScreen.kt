@@ -13,13 +13,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +48,10 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val importHistory by viewModel.importHistory.collectAsState()
+    // ファイル一覧は Flow ではないので、画面を開いたときに読み直す。
+    LaunchedEffect(Unit) { viewModel.refreshImportHistory() }
+    var openedHistory by remember { mutableStateOf<Pair<String, String>?>(null) }
     // 入力中のトークンは画面ローカルにのみ保持し、保存後は即クリアする。
     var tokenInput by remember { mutableStateOf("") }
     var syncTokenInput by remember { mutableStateOf("") }
@@ -244,10 +256,66 @@ fun SettingsScreen(
             }
         }
         item {
+            SectionCard(title = "取り込み履歴") {
+                if (importHistory.isEmpty()) {
+                    Text(
+                        "まだありません。回答JSONを取り込むとここに残ります。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    Column {
+                        importHistory.forEachIndexed { position, entry ->
+                            if (position > 0) HorizontalDivider()
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        viewModel.readImportHistory(entry.fileName) { text ->
+                                            openedHistory = entry.fileName to
+                                                (text ?: "ファイルを読めませんでした。")
+                                        }
+                                    },
+                            ) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = entry.savedAt.ifEmpty { entry.fileName },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                                Text(
+                                    text = "${entry.sizeBytes} バイト",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item {
             SectionCard(title = "診断情報") {
                 Text("アプリバージョン: 0.1.0", style = MaterialTheme.typography.bodyMedium)
             }
         }
+    }
+
+    openedHistory?.let { (fileName, content) ->
+        AlertDialog(
+            onDismissRequest = { openedHistory = null },
+            title = { Text(fileName) },
+            text = {
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { openedHistory = null }) { Text("閉じる") }
+            },
+        )
     }
 }
 

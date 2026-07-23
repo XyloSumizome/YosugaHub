@@ -9,6 +9,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
+import com.shiro.yosugahub.data.repository.ImportHistoryEntry
+import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncResult
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
@@ -33,9 +35,26 @@ class SettingsViewModel(
     private val gitHubSettingsRepository: GitHubSettingsRepository,
     private val syncSettingsRepository: SyncSettingsRepository,
     private val serverSyncRepository: ServerSyncRepository,
+    private val importRepository: ImportRepository,
 ) : ViewModel() {
 
     private val syncing = MutableStateFlow(false)
+
+    /**
+     * 取り込み履歴。ファイル一覧は Flow ではないので、
+     * 画面を開いたとき・取り込み後に読み直す(uiState の combine は5フロー上限のため独立させる)。
+     */
+    private val _importHistory = MutableStateFlow<List<ImportHistoryEntry>>(emptyList())
+    val importHistory: StateFlow<List<ImportHistoryEntry>> = _importHistory
+
+    fun refreshImportHistory() {
+        viewModelScope.launch { _importHistory.value = importRepository.history() }
+    }
+
+    /** 履歴の中身を読む(何を取り込んだかの確認用)。 */
+    fun readImportHistory(fileName: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch { onResult(importRepository.readHistory(fileName)) }
+    }
 
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.obsidianVaultUri,
@@ -109,6 +128,7 @@ class SettingsViewModel(
                     gitHubSettingsRepository = app.container.gitHubSettingsRepository,
                     syncSettingsRepository = app.container.syncSettingsRepository,
                     serverSyncRepository = app.container.serverSyncRepository,
+                    importRepository = app.container.importRepository,
                 )
             }
         }
