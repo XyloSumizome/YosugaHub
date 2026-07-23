@@ -41,7 +41,8 @@ class ImportMessageTest {
         )
         assertEquals(3, message.lines().size)
         assertTrue(message.contains("適用できなかった分類が 1 件"))
-        assertTrue(message.contains("アーカイブ済み"))
+        // 次に何をすればよいかを書く(設計書8章)
+        assertTrue(message.contains("再分類"))
     }
 
     @Test

@@ -202,9 +202,12 @@ class ClassificationImportTest {
         assertEquals(1, reloaded.classificationHistory.count { it.isCurrent })
     }
 
-    /** 承認して確定させた後に古い回答を取り込むと、確認待ちに戻る(意図した挙動)。 */
+    /**
+     * 承認して確定させた文書は、あとから分類が届いても揺り戻さない。
+     * やり直すときはユーザーが明示的に「再分類」を押す。
+     */
     @Test
-    fun classification_after_approval_returns_document_to_review() = runBlocking {
+    fun classification_does_not_disturb_an_approved_document() = runBlocking {
         val dao = FakeDocumentDao()
         val repository = repository(dao)
         val document = repository.createDocument("メモ", "原文", "manual")
@@ -215,8 +218,36 @@ class ClassificationImportTest {
         repository.approve(document.id)
         assertEquals(DocumentStatus.CLASSIFIED, repository.document(document.id)!!.status)
 
+        val outcome = applier.apply(classificationsOf(json))
+
+        assertEquals(0, outcome.applied)
+        assertEquals(DocumentStatus.CLASSIFIED, repository.document(document.id)!!.status)
+        // 確定済みの分類はそのまま(履歴も増えない)
+        assertEquals(1, repository.classificationHistory(document.id).size)
+    }
+
+    /** 「再分類」を押した後なら、新しい分類を受け取れる(やり直しの経路が塞がっていないこと)。 */
+    @Test
+    fun reclassification_reopens_an_approved_document_for_new_results() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repository = repository(dao)
+        val document = repository.createDocument("メモ", "原文", "manual")
+        val json = responseJson.replace("doc-grapple", document.id)
+        val applier = ClassificationApplier(repository)
+
         applier.apply(classificationsOf(json))
+        repository.approve(document.id)
+        repository.requestReclassification(document.id)
+        assertEquals(
+            DocumentStatus.CLASSIFICATION_PENDING,
+            repository.document(document.id)!!.status,
+        )
+
+        val outcome = applier.apply(classificationsOf(json))
+
+        assertEquals(1, outcome.applied)
         assertEquals(DocumentStatus.NEEDS_REVIEW, repository.document(document.id)!!.status)
+        assertEquals(2, repository.classificationHistory(document.id).size)
     }
 
     /** アーカイブ済みは復活しない(自己レビューで直した挙動を経路ごと固定する)。 */

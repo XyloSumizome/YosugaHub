@@ -189,6 +189,7 @@ Yosuga Hubが保存・表示・承認管理する。
 | 分類結果のJSON | 回答JSON v2 `proposals.classifications[]`(snake_case) |
 | UI(承認/修正/保留/再分類/元文表示) | `DocumentDetailDialog` + `ClassificationEditDialog` |
 | 自動確定しない | 取込は `needs_review` まで。確定はユーザーの承認後 |
+| ユーザーの決着を尊重 | `classified` / `archived` の文書には取込で分類を適用しない。やり直しは明示的な「再分類」から |
 
 ## 未実装(将来拡張 / 指示書「将来拡張」節)
 

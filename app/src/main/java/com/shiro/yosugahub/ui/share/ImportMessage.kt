@@ -13,7 +13,8 @@ fun importResultMessage(result: ImportResult): String = when (result) {
             "文書 ${result.classificationCount} 件の分類を受け取りました。記録タブの「文書」で確認してください。"
                 .takeIf { result.classificationCount > 0 },
             ("適用できなかった分類が ${result.skippedClassificationCount} 件ありました" +
-                "(宛先の文書が見つからない、またはアーカイブ済み)。")
+                "(宛先の文書が見つからない、または確定済み・アーカイブ済み)。" +
+                "やり直すには文書画面で「再分類」を押してください。")
                 .takeIf { result.skippedClassificationCount > 0 },
         ).ifEmpty { listOf("受け取れる提案がありませんでした。") }
             .joinToString("\n")

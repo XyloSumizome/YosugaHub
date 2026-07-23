@@ -25,7 +25,7 @@ sealed interface ImportResult {
      * v2: 提案を承認待ちに入れた(反映はユーザー承認後)。
      * 分類結果は文書へ適用済み(状態は「確認待ち」で、確定はユーザーの承認後)。
      * skippedClassificationCount は適用できず読み飛ばした件数
-     * (宛先の文書が見つからない / アーカイブ済み)。
+     * (宛先の文書が見つからない / ユーザーが決着させた文書 = 確定済み・アーカイブ済み)。
      */
     data class SuccessProposals(
         val proposalCount: Int,

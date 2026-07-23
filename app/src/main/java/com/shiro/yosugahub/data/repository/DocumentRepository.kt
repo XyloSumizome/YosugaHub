@@ -84,8 +84,10 @@ class DocumentRepository(
      * AI分類結果の取り込み。分類レコードを現行として積み、needs_review へ進める。
      * 原文には一切触れない。次の場合は適用せず null を返す(取込側で読み飛ばす):
      * - 文書が存在しない
-     * - **アーカイブ済み**。古い回答JSONを取り込んだときに、片付けたはずの文書を
-     *   勝手に復活させないため(再開したいときはユーザーが明示的に再分類する)
+     * - **ユーザーが決着させた文書**(classified / archived)。古い回答JSONを取り込んだときに、
+     *   確定させた分類を勝手に揺り戻したり、片付けた文書を復活させたりしないため。
+     *   やり直したいときはユーザーが明示的に「再分類」を押す
+     *   (→ classification_pending へ戻り、次の同期でヨスガへ渡る)
      */
     suspend fun applyAiClassification(
         documentId: String,
@@ -98,7 +100,7 @@ class DocumentRepository(
         relatedEntities: List<RelatedRef>,
     ): Document? {
         val existing = dao.getDocument(documentId) ?: return null
-        if (DocumentStatus.fromDb(existing.document.status) == DocumentStatus.ARCHIVED) return null
+        if (DocumentStatus.fromDb(existing.document.status) in SETTLED_STATUSES) return null
         saveClassification(
             documentId = documentId,
             summary = summary,
@@ -167,6 +169,14 @@ class DocumentRepository(
     /** 文書を分類履歴ごと削除する。 */
     suspend fun deleteDocument(documentId: String) {
         dao.deleteDocumentWithClassifications(documentId)
+    }
+
+    private companion object {
+        /**
+         * ユーザーが決着させた状態。取り込みで勝手に動かさない。
+         * ここから戻すのは明示的な操作(再分類)だけ。
+         */
+        val SETTLED_STATUSES = setOf(DocumentStatus.CLASSIFIED, DocumentStatus.ARCHIVED)
     }
 
     private suspend fun saveClassification(

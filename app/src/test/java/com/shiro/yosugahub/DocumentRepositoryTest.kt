@@ -248,6 +248,28 @@ class DocumentRepositoryTest {
         assertEquals(DocumentStatus.CLASSIFIED.dbValue, dao.documents[classified.id]?.status)
     }
 
+    /** 確定させた文書は取り込みで揺り戻さない(やり直しは明示的な再分類だけ)。 */
+    @Test
+    fun applyAiClassification_skips_classified_document() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repo = repository(dao)
+        val doc = repo.createSample()
+        repo.applyAiClassification(
+            doc.id, "承認した分類", "memo", 0.9, emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+        repo.approve(doc.id)
+
+        val result = repo.applyAiClassification(
+            doc.id, "あとから届いた分類", "memo", 0.9,
+            emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+
+        assertNull(result)
+        assertEquals(DocumentStatus.CLASSIFIED.dbValue, dao.documents[doc.id]?.status)
+        assertEquals("承認した分類", repo.document(doc.id)?.currentClassification?.summary)
+        assertEquals(1, repo.classificationHistory(doc.id).size)
+    }
+
     /** 古い回答JSONを取り込んでも、片付けた文書を勝手に復活させない。 */
     @Test
     fun applyAiClassification_skips_archived_document() = runBlocking {

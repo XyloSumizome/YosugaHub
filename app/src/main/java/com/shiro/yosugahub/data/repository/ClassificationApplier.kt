@@ -40,7 +40,7 @@ class ClassificationApplier(
                     .filter { it.type.isNotBlank() && it.id.isNotBlank() }
                     .map { RelatedRef(type = it.type, id = it.id) },
             )
-            // 宛先の文書が無い、またはアーカイブ済み。
+            // 宛先の文書が無い、またはユーザーが決着させた文書(確定済み・アーカイブ済み)。
             if (result != null) applied++ else skipped++
         }
         return Outcome(applied = applied, skipped = skipped)
