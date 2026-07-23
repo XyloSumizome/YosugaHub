@@ -2,6 +2,7 @@ package com.shiro.yosugahub.ui.component
 
 import com.shiro.yosugahub.domain.model.ClassificationOrigin
 import com.shiro.yosugahub.domain.model.DocumentStatus
+import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.ItemKind
 
 /** 情報アイテム種別の表示ラベル(提案カードと記録タブで共用)。 */
@@ -12,6 +13,16 @@ fun itemKindLabel(kind: ItemKind): String = when (kind) {
     ItemKind.SHOPPING -> "買い物"
     ItemKind.TECH -> "技術"
     ItemKind.OTHER -> "その他"
+}
+
+/** 実体の種別ラベル(v3.1 4章)。 */
+fun entityTypeLabel(type: EntityType): String = when (type) {
+    EntityType.PROJECT -> "プロジェクト"
+    EntityType.PERSON -> "人物"
+    EntityType.TECH -> "技術"
+    EntityType.GEAR -> "機材"
+    EntityType.EVENT -> "イベント"
+    EntityType.OTHER -> "その他"
 }
 
 /** 文書の状態ラベル(v4.1)。ユーザーから見た意味で表示する。 */

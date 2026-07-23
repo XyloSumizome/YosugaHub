@@ -33,9 +33,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentStatus
+import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.documentStatusLabel
+import com.shiro.yosugahub.ui.component.entityTypeLabel
 import com.shiro.yosugahub.ui.component.itemKindLabel
 
 /** 記録タブの表示区分。 */
@@ -44,11 +46,12 @@ private enum class RecordsSection(val label: String) {
     DECISIONS("決定"),
     DIARY("日記"),
     DOCUMENTS("文書"),
+    ENTITIES("関連"),
 }
 
 /**
- * 記録タブ(v3-Step 2-d / v4.1 で「文書」を追加)。
- * アイテム(タグ絞込)/ 決定事項ログ / 観察日記 / 未整理文書 を切り替えて表示する。
+ * 記録タブ(v3-Step 2-d / v4.1 で「文書」/ その後「関連」を追加)。
+ * アイテム(タグ絞込)/ 決定事項ログ / 観察日記 / 未整理文書 / 実体 を切り替えて表示する。
  */
 @Composable
 fun RecordsScreen(
@@ -66,6 +69,7 @@ fun RecordsScreen(
     var showNewDocumentDialog by remember { mutableStateOf(false) }
     var openedDocumentId by rememberSaveable { mutableStateOf<String?>(null) }
     var editingClassificationOf by remember { mutableStateOf<Document?>(null) }
+    var entityType by rememberSaveable { mutableStateOf<EntityType?>(null) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -233,6 +237,50 @@ fun RecordsScreen(
                     }
                 }
             }
+
+            RecordsSection.ENTITIES -> {
+                val index = buildEntityIndex(uiState.entities, uiState.items)
+                val types = entityTypesPresent(index)
+                if (types.size > 1) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            FilterChip(
+                                selected = entityType == null,
+                                onClick = { entityType = null },
+                                label = { Text("すべて") },
+                            )
+                            types.forEach { candidate ->
+                                FilterChip(
+                                    selected = entityType == candidate,
+                                    onClick = {
+                                        entityType = if (entityType == candidate) null else candidate
+                                    },
+                                    label = { Text(entityTypeLabel(candidate)) },
+                                )
+                            }
+                        }
+                    }
+                }
+                val filtered = filterEntitiesByType(index, entityType)
+                if (filtered.isEmpty()) {
+                    item {
+                        EmptyText(
+                            if (index.isEmpty())
+                                "関連はまだありません。ヨスガが会話から関連付けると増えていきます。"
+                            else "条件に合う関連がありません"
+                        )
+                    }
+                } else {
+                    items(filtered, key = { it.entity.id }) { entry ->
+                        EntityCard(entry)
+                    }
+                }
+            }
         }
     }
 
@@ -393,6 +441,34 @@ private fun DocumentCard(document: Document, onClick: () -> Unit, modifier: Modi
                     text = tags.joinToString(" ") { "#$it" },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** 実体1件と、その実体に関連付けられたアイテムの見出し。 */
+@Composable
+private fun EntityCard(entry: EntityIndex, modifier: Modifier = Modifier) {
+    SectionCard(title = entry.entity.name, modifier = modifier) {
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "関連 ${entry.items.size} 件",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AssistChip(onClick = {}, label = { Text(entityTypeLabel(entry.entity.type)) })
+            }
+            if (entry.items.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = entry.items.joinToString("\n") { "・${it.title}" },
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }

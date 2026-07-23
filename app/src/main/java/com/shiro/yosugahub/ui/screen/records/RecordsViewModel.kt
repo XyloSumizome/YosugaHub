@@ -14,6 +14,7 @@ import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
+import com.shiro.yosugahub.domain.model.TrackedEntity
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -26,6 +27,7 @@ data class RecordsUiState(
     val tagNames: List<String> = emptyList(),
     val diaryEntries: List<DiaryEntry> = emptyList(),
     val documents: List<Document> = emptyList(),
+    val entities: List<TrackedEntity> = emptyList(),
 )
 
 class RecordsViewModel(
@@ -102,12 +104,14 @@ class RecordsViewModel(
         knowledgeRepository.tagNames(),
         diaryRepository.entries(),
         documentRepository.documents(),
-    ) { items, tagNames, diaryEntries, documents ->
+        knowledgeRepository.entities(),
+    ) { items, tagNames, diaryEntries, documents, entities ->
         RecordsUiState(
             items = items,
             tagNames = tagNames,
             diaryEntries = diaryEntries,
             documents = documents,
+            entities = entities,
         )
     }.stateIn(
         scope = viewModelScope,
