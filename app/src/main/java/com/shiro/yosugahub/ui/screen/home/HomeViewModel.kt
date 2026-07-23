@@ -80,6 +80,13 @@ class HomeViewModel(
         }
     }
 
+    /** 貼り付けられた回答JSONを取り込む(v4.3: ファイルを作らず直接貼る)。 */
+    fun importResponseText(text: String, onResult: (ImportResult) -> Unit) {
+        viewModelScope.launch {
+            onResult(importRepository.importResponseText(text))
+        }
+    }
+
     /** タスク・承認待ち件数・確認待ち文書・最近の決定を1本にまとめる(combine の5フロー制限対策)。 */
     private val secretaryFlow = combine(
         taskRepository.tasks(),

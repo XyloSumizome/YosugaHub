@@ -20,7 +20,7 @@ fun importResultMessage(result: ImportResult): String = when (result) {
         ).ifEmpty { listOf("受け取れる提案がありませんでした。") }
             .joinToString("\n") + syncSuffix(result.sync)
     is ImportResult.InvalidJson ->
-        "JSONを読み取れませんでした。ファイルの内容を確認してください。"
+        "JSONを読み取れませんでした。貼り付けた内容(またはファイル)を確認してください。"
     is ImportResult.UnsupportedSchema ->
         "未対応のバージョンです(schemaVersion: ${result.version})。"
     ImportResult.ReadError ->

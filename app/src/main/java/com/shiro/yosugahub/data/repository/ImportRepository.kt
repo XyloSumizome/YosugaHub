@@ -3,6 +3,7 @@ package com.shiro.yosugahub.data.repository
 import android.content.Context
 import android.net.Uri
 import com.shiro.yosugahub.data.file.ImportHistoryNames
+import com.shiro.yosugahub.data.file.PastedJson
 import com.shiro.yosugahub.data.file.ProposalMapper
 import com.shiro.yosugahub.data.file.ResponseImporter
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
@@ -81,6 +82,20 @@ class ImportRepository(
         } catch (e: IOException) {
             null
         } ?: return@withContext ImportResult.ReadError
+
+        importResponseText(text)
+    }
+
+    /**
+     * 貼り付けられたテキストの取り込み(v4.3 運用: ファイルを作らず直接貼る)。
+     * コードブロックの囲いは外し、以降はファイル取り込みと完全に同じ経路を通る
+     * (履歴保存・承認待ちへの積み込み・分類適用・自動同期)。
+     */
+    suspend fun importResponseText(raw: String): ImportResult = withContext(Dispatchers.IO) {
+        val text = PastedJson.normalize(raw)
+        if (text.isBlank()) {
+            return@withContext ImportResult.InvalidJson("内容が空です。回答JSONを貼り付けてください。")
+        }
 
         when (val result = ResponseImporter.parse(text)) {
             is ResponseImporter.ParseResult.InvalidJson ->

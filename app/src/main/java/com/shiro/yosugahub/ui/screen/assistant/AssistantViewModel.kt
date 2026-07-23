@@ -64,6 +64,13 @@ class AssistantViewModel(
         }
     }
 
+    /** 貼り付けられた回答JSONを取り込む(v4.3: ファイルを作らず直接貼る)。 */
+    fun importResponseText(text: String, onResult: (ImportResult) -> Unit) {
+        viewModelScope.launch {
+            onResult(importRepository.importResponseText(text))
+        }
+    }
+
     val uiState: StateFlow<AssistantUiState> = combine(
         proposalRepository.pending(),
         assistantRepository.recommendations(),

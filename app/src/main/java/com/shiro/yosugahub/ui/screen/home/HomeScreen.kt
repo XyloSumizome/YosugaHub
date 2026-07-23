@@ -19,11 +19,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
+import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.shareJsonText
@@ -59,6 +63,19 @@ fun HomeScreen(
         }
     }
     val importResponse = { importLauncher.launch(arrayOf("application/json", "text/plain")) }
+
+    var showPasteDialog by remember { mutableStateOf(false) }
+    if (showPasteDialog) {
+        PasteImportDialog(
+            onDismiss = { showPasteDialog = false },
+            onImport = { text ->
+                showPasteDialog = false
+                viewModel.importResponseText(text) { result ->
+                    Toast.makeText(context, importResultMessage(result), Toast.LENGTH_SHORT).show()
+                }
+            },
+        )
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -167,7 +184,14 @@ fun HomeScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
-                    Text("ChatGPT回答JSONを取り込む")
+                    Text("回答JSONを取り込む(ファイル)")
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = { showPasteDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("回答JSONを貼り付けて取り込む")
                 }
             }
         }
