@@ -2,6 +2,45 @@
 
 ---
 
+## 2026-07-23: v3-Step 2(v3.1統合)の詳細設計を確定 — 記録のみ
+
+### ユーザーと合意した決定
+
+1. **知識ベースの閲覧UIは「記録」タブを新設(6タブ化)**。タブ内で アイテム / 決定 / 日記 をセグメントボタン切替、タグで絞込。
+2. **タグは当面 knowledge_items のみ**。タスク・日記への拡張は将来の追加マイグレーションで。
+
+### データモデル(Room v2→v3、テーブル追加のみ・既存データ無傷)
+
+- `knowledge_items`: id(UUID) / kind(memo|idea|decision|shopping|tech|other) / title / body /
+  createdAt / updatedAt / source(assistant|manual)。決定事項ログ=kind:decision、保留アイデア=kind:idea
+- `tags`: id / name(unique)。AI管理、承認時に自動作成
+- `item_tags`: itemId×tagId(複合PK、多対多)
+- `entities`: id / name / type(project|person|tech|gear|event|other)。(name,type)でunique
+- `item_entities`: itemId×entityId(複合PK)
+- `diary_entries`: id / date(yyyy-MM-dd) / body / createdAt。Yosuga視点の観察日記
+- `pending_proposals`: id / type(task|item|diary|health) / payloadJson / status(pending|approved|rejected) / receivedAt
+  - 取り込みはまずここへ。承認で本テーブルへ反映、棄却は status 変更で履歴として残す
+- 外部キー制約は張らない方針を継続
+
+### 回答JSONスキーマ v2(schemaVersion=2)
+
+- `proposals.tasks[]`(projectId/title/detail/priority/dueDate)
+- `proposals.items[]`(kind/title/body/tags[名前]/entities[{name,type}])
+- `proposals.diary[]`(date/body)
+- `proposals.projectHealth[]`(projectId/health/reason)
+- v1(recommendations)の取り込み互換は維持。15章ルール踏襲(未知項目無視・不正JSONで落ちない)
+- 状況JSON(エクスポート)も v2 へ: タスク一覧・最近の決定事項を含める
+
+### 実装順(1ステップ=1コミット)
+
+- **2-a**: Room v3 + Repository(データ層のみ)
+- **2-b**: 回答JSON v2 パース → pending_proposals(v1互換維持)
+- **2-c**: 提案レビューUI(よすが画面を承認ハブ化)
+- **2-d**: 「記録」タブ新設(アイテム一覧・タグ絞込・決定事項ログ・日記)
+- **2-e**: 状況JSONエクスポート v2
+
+---
+
 ## ▶ 次回の再開ポイント(2026-07-23 時点)
 
 ### 今どこ
