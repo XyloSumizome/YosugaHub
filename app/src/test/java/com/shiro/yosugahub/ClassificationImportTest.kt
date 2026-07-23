@@ -269,6 +269,59 @@ class ClassificationImportTest {
         assertEquals(1, repository.classificationHistory(document.id).size)
     }
 
+    /**
+     * 実際にヨスガ(ChatGPT + GPT Actions)が返してきた回答JSON(2026-07-23)。
+     * 空配列だらけ・信頼度が低い・要約に別言語の文字が紛れ込む、といった
+     * 実運用で起きたことをそのまま固定する。
+     */
+    @Test
+    fun real_response_from_yosuga_is_applied() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repository = repository(dao)
+        val document = repository.createDocument("test", "honbun", "manual")
+
+        val json = """
+            {
+              "schemaVersion": 2,
+              "generatedAt": "2026-07-23T22:30:00+09:00",
+              "summary": "未整理文書1件を分類しました。",
+              "proposals": {
+                "tasks": [],
+                "items": [],
+                "diary": [],
+                "projectHealth": [],
+                "directives": [],
+                "classifications": [
+                  {
+                    "document_id": "${document.id}",
+                    "project_ids": [],
+                    "categories": ["other"],
+                    "tags": [],
+                    "document_type": "unknown",
+                    "summary": "本文が「honbun」のみで、扱っている विषयや関連プロジェクトを特定できない文書。",
+                    "related_entities": [],
+                    "confidence": 0.1
+                  }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val outcome = ClassificationApplier(repository).apply(classificationsOf(json))
+
+        assertEquals(ClassificationApplier.Outcome(applied = 1, skipped = 0), outcome)
+        val classified = repository.document(document.id)!!
+        assertEquals(DocumentStatus.NEEDS_REVIEW, classified.status)
+        assertEquals("honbun", classified.body)  // 原文は変わらない
+        val current = classified.currentClassification!!
+        assertEquals(0.1, current.confidence!!, 0.0001)
+        assertEquals(listOf("other"), current.categories)
+        assertTrue(current.tags.isEmpty())
+        assertTrue(current.projectIds.isEmpty())
+        // 別言語の文字が混ざっていてもそのまま保持する(壊さない)
+        assertTrue(current.summary.contains("विषय"))
+    }
+
     /** 分類を含まない回答JSON(従来どおりの提案だけ)でも何も起きない。 */
     @Test
     fun response_without_classifications_is_a_no_op() = runBlocking {

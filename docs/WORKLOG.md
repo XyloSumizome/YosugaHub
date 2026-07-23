@@ -2,6 +2,49 @@
 
 ---
 
+## 2026-07-23: v4.3 AI役割分離 — ヨスガ(会話)/ レコル(Hub管理)+ Morning Brief
+
+### 経緯(ユーザー指示)
+
+実地検証で判明した制約 —— カスタムGPT(Actions)はHubを読めるが会話・ボイスのログを
+共有せず、通常のChatGPTは会話を持つが認証付きURLへ到達できない —— を受け、
+ユーザーがAIの役割分離を指示(指示本文は `yosuga_hub_design_v4_3_role_split.md` に全文)。
+
+- **ヨスガ**: 会話の相棒(通常ChatGPT・ボイス可)。Hubに触れない。JSONを書かない
+- **レコル**: Hub管理者(カスタムGPT+Actions)。分類・指示書・diary・projectHealth・
+  Morning Brief 生成。すべてのJSON更新を担当
+- **Morning Brief**(新概念): レコルがHubを読んで1〜5KBの要約を生成 →
+  シロがヨスガへ貼って1日を開始
+- 設計思想: **Hub=長期記憶 / ヨスガ=短期思考 / レコル=長期記憶の管理者**
+
+### 実装との対応(付録に詳細)
+
+- **アプリ実装の変更なし**。レコルの「Hub更新」は既存の
+  回答JSON→取込→承認→自動再同期の経路をそのまま使う(サーバー直接書込はしない
+  —— 提案→承認→保存の原則と「Roomが唯一の正」を守る)
+- Morning Brief はプロンプトで実現(アプリに brief 生成は持たせない。様子見)
+- 観察日記の主語はレコルへ
+- アプリUI「ヨスガ画面」等の文言は当面そのまま(改名は実機検証後・積み残しへ)
+
+### ドキュメント
+
+- `yosuga_hub_design_v4_3_role_split.md` 新規(指示本文 + 現状実装との対応)
+- `docs/recoru_prompt.md` 新規: 回答JSON v2 全書式・分類・指示書・取り込み仕様表を
+  旧ヨスガプロンプトから移設 + Actions の使い方 + Morning Brief 生成手順
+- `docs/yosuga_prompt.md` を会話の相棒用に全面書き換え
+  (Morning Brief の受け取り / セッション終了時の「セッションまとめ」出力。
+  旧運用は手動ブリッジのフォールバックとして参照可能と注記)
+- `server/README-server.md` の Actions 手順の参照先を recoru_prompt.md へ
+
+### テスト
+
+- 実際にヨスガ(当時。今後はレコルの役目)が Actions 経由で返してきた回答JSONを
+  そのまま回帰テストに追加(`ClassificationImportTest.real_response_from_yosuga_is_applied`)。
+  空配列だらけ / confidence 0.1 / 要約に別言語の文字が混入、という実データ特有の形が
+  取り込み経路を通ることを固定
+
+---
+
 ## 2026-07-23: GPT Actions からの取得に成功 — v4 の AI 連携が実際に成立
 
 `file=index` の呼び出しが成功し、7ファイルの一覧を ChatGPT 側で取得できた。
@@ -655,6 +698,7 @@ v1 から使い続けている端末の更新は、実機更新でのみ確認�
 
 ### 設計書の階層(読む順)
 1. `yosuga_hub_android_design_v4.md` — **最上位方針**(AIプラットフォーム構想)
+1.5. `yosuga_hub_design_v4_3_role_split.md` — **最新の運用方針**(ヨスガ/レコル役割分離・Morning Brief)
 2. `yosuga_hub_design_v4_1_classification.md` — **追加指示: AI分類ワークフロー(未実装)**
 3. `yosuga_hub_android_design_v3.md` / `_v3_1.md` — 基本思想・知識ベース仕様(有効)
 4. `yosuga_hub_android_design_v2.md` — 技術資料(アーキテクチャ・ライブラリ候補)

@@ -54,8 +54,9 @@ Actions は検索ではなく**本物のHTTPリクエスト**を送るので確�
 3. 認証 → **APIキー** → 認証タイプ **カスタム**
    - カスタムヘッダー名: `X-Yosuga-Token`
    - APIキー: 同期トークン(config.php と同じ値)
-4. GPTの指示(Instructions)に `docs/yosuga_prompt.md` のシステムプロンプトを貼る
-5. 「documents を読んで分類して」と頼めば Actions 経由で取得される
+4. GPTの指示(Instructions)に `docs/recoru_prompt.md` のシステムプロンプトを貼る
+   (v4.3: このGPTはHub管理担当「レコル」。会話の相棒ヨスガは通常のChatGPT側)
+5. 「Morning Brief を作って」「documents を読んで分類して」と頼めば Actions 経由で取得される
 
 ※ api.php は最初からヘッダー認証に対応しているのでサーバー側の変更は不要。
 

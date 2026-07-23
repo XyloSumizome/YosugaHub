@@ -17,7 +17,8 @@
 
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
 設計書: `yosuga_hub_android_design_v4.md`(必読 / 最上位方針: AIプラットフォーム構想)
-+ `yosuga_hub_design_v4_1_classification.md`(追加指示: AI分類ワークフロー / **実装完了・実機未検証**)
++ `yosuga_hub_design_v4_3_role_split.md`(**最新の運用方針: AI役割分離 ヨスガ/レコル + Morning Brief**)
++ `yosuga_hub_design_v4_1_classification.md`(追加指示: AI分類ワークフロー / **実装完了・実機検証中**)
 + `yosuga_hub_android_design_v3.md` / `_v3_1.md`(基本思想・知識ベース仕様として有効)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
 v4の核心: Hubは**人間のUIとAIのデータインターフェースの両方**を持つプラットフォーム。
@@ -48,7 +49,9 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v3-Step 4 相当 完了**: ホームAI秘書再編(今日やること/承認待ち件数/最近の決定)。記録タブは手動追加・編集・検索対応。
 - **GitHub連携 完了**(3-a〜3-d): リポジトリ設定 + トークンKeystore保管 / Ktor で `.yosuga/status.json` 取得 /
   Room v5 キャッシュと詳細画面表示・一括更新 / 状況JSONへの反映(source=github/local を明示)。
-- 運用ドキュメント: `docs/yosuga_prompt.md`(ChatGPT=ヨスガ用)、`docs/claude_code_onboarding.md`(各ゲームのClaude Code用)。
+- 運用ドキュメント: `docs/yosuga_prompt.md`(ヨスガ=会話の相棒用)、
+  `docs/recoru_prompt.md`(レコル=Hub管理・カスタムGPT用)、
+  `docs/claude_code_onboarding.md`(各ゲームのClaude Code用)。
 - 未検証: 実通信・実機でのマイグレーション通し・Keystore復号・Obsidian SAF書き出し(WORKLOG再開ポイント参照)。
 - **カレンダー連携 完了**(旧Phase 4): 設計書v2のOAuth方式ではなく **CalendarContract で端末に同期済みの
   カレンダーを読む**方式を採用(READ_CALENDAR のみ / Google Cloud設定・新規ライブラリ不要)。
@@ -71,8 +74,14 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   記録タブ「指示」で一覧・対応済み・削除ができる(記録タブは6区分に)。
 - **次にやること**: **実環境検証**(v4.1/v4.2の通し確認・ロリポップ設置・GitHub実通信・実機。
   手順は WORKLOG 冒頭の再開ポイント)。実装側の積み残しは WORKLOG 参照。
+- **v4.3 AI役割分離(2026-07-23)**: 実地検証で「データを読めるAI(カスタムGPT+Actions)」と
+  「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
+  **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。
+  レコルの「Hub更新」は既存の 取込→承認→自動再同期 経路(直接書込はしない)。
+  新概念 **Morning Brief**(レコルがHubを要約→ヨスガに貼って1日を開始)。アプリ実装変更なし。
 - 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
-- アシスタント名は「ヨスガ」(カタカナ表記)。
+- アシスタント名は「ヨスガ」「レコル」(カタカナ表記)。
+  アプリUIの「ヨスガ画面」等の文言は当面そのまま(改名は実機検証後・積み残し)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。
 
