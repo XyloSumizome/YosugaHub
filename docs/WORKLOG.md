@@ -2,6 +2,34 @@
 
 ---
 
+## 2026-07-23: 記録タブの磨き込み(手動追加・編集・検索)
+
+### 目的
+
+記録タブを閲覧専用から編集可能へ。AI経由でなくても短い知識をその場で残せるようにする。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `RecordsFilters` に純粋関数を追加:
+  - `searchItems`(タイトル・本文・タグの部分一致、大文字小文字無視、空なら全件)
+  - `parseTagsInput`(カンマ・読点区切り → trim・空除去・重複除去)
+- `ItemEditDialog`: 種類チップ(6種・横スクロール)/ タイトル(必須)/ 本文 / タグ(カンマ区切り)。
+  編集時のみ削除ボタン。実体(entities)の関連付けは AI 経由のみ(手動編集では触らない)
+- `RecordsViewModel` に `addItem`(source=manual)/ `updateItem` / `deleteItem`
+- `RecordsScreen`(アイテムセクション): 検索フィールド + [アイテムを追加] ボタン +
+  カードタップで編集。検索・タグ絞込は併用可。0件時の文言を「条件に合わない」と区別
+- テスト: `RecordsFiltersTest` に検索・タグ入力パースの2件を追加
+
+### テスト結果
+
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+---
+
 ## 2026-07-23: v3-Step 3 Obsidian連携(SAF)を実装 — 動作検証は実機入手後
 
 ### 目的
@@ -89,23 +117,24 @@ Obsidian Vault のノートへ追記できるようにする(v3設計書付録�
 
 ---
 
-## ▶ 次回の再開ポイント(2026-07-23 時点 / v3-Step 2 完了)
+## ▶ 次回の再開ポイント(2026-07-23 時点 / v3ロードマップ主要部分 完了)
 
 ### 今どこ
 - 設計: v3(AIファースト)+ v3.1(知識ベース・タグ・観察日記)。アシスタント名は「ヨスガ」(カタカナ)。
 - **v3-Step 1 完了**(Task実体化 + プロジェクト詳細/編集)。実機確認済み。
-- **v3-Step 2 完了**(2-a〜2-e): Room v3(知識ベース7テーブル)/ 回答JSON v2 取り込み /
-  提案レビューUI(承認→本テーブル反映・棄却)/ 「記録」タブ(6タブ化)/ 状況JSONエクスポート v2。
-- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている。
+- **v3-Step 2 完了**(Room v3 / 回答JSON v2 / 提案レビューUI / 「記録」タブ / エクスポート v2)。
+- **v3-Step 3 完了(コードのみ)**: Obsidian連携(SAF・KnowledgeStore抽象化・targetNote承認時追記)。
+- **v3-Step 4 相当 完了**: ホームAI秘書再編(今日やること/承認待ち件数/最近の決定)。
+- 記録タブは手動追加・編集・検索に対応。`docs/yosuga_prompt.md` に ChatGPT 用プロンプト完備。
+- WSL の `assembleDebug` + `testDebugUnitTest` は全て通っている(新規ライブラリ: documentfile のみ)。
 
-### 未実施の実機確認(次にやると良い)
-1. Room v2→v3 マイグレーション(Step 1 確認時の端末で更新起動 → データ保持とクラッシュなし)。
-2. 「記録」タブ(アイテム/決定/日記の切替、タグ絞込)。
-3. **提案→承認フローの一気通貫**: ヨスガ画面で状況JSON作成(v2で出力される)→
-   ChatGPT に渡し schemaVersion:2 の回答JSONをもらう → 取り込み → 承認待ちカード →
-   承認でタスク/記録/日記/健康状態へ反映されること。
-   ※ 手元で試すだけなら、`{"schemaVersion":2,"proposals":{"items":[{"kind":"memo","title":"テスト"}]}}`
-   のような小さなJSONをファイル保存して取り込めばよい。
+### 実機入手後にやる確認
+1. Room v2→v3 マイグレーション(更新起動でデータ保持・クラッシュなし)。
+2. 「記録」タブ(切替・タグ絞込・検索・手動追加/編集)とホームの新カード。
+3. **提案→承認フローの一気通貫**(docs/yosuga_prompt.md のプロンプトを ChatGPT に貼って運用開始)。
+   手軽な確認は同ドキュメント末尾の最小サンプルJSONを取り込む。
+4. **Obsidian連携**: 設定画面で Vault 選択 → targetNote 付きアイテムを承認 → Obsidianアプリで
+   ノート追記を確認。`createFile("text/markdown")` の拡張子挙動はプロバイダ依存のため要確認。
 
 ### WSL でビルドする場合
 ```
@@ -115,9 +144,9 @@ JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebug
 ※ 終わったら local.properties を Windows 用(`C:\Users\note_\AppData\Local\Android\Sdk`)へ戻す。
 
 ### 次の実装候補(ユーザーと相談して決める)
-- **v3-Step 3: Obsidian連携(SAF)** — Vault フォルダ選択・URI権限永続化・長文知識の書き出し(`KnowledgeStore` 抽象化)。
-- または Step 4 相当(ホームのAI秘書視点への再編: 今日やること/承認待ち件数/最近の決定)。
-- 積み残し(任意): 記録タブのアイテム編集・検索、タグのタスク適用、FileProvider共有、取り込み履歴画面。
+- 積み残し(任意): タグのタスク適用、FileProvider共有、取り込み履歴画面、エンティティ閲覧UI、
+  観察日記のObsidian書き出し。
+- 将来: GitHub Knowledge Repository / Claude Code status統合 / Google Calendar連携(旧Phase 4)/ AI API直結。
 
 ---
 

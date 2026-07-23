@@ -4,7 +4,10 @@ import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.screen.records.decisionsOf
 import com.shiro.yosugahub.ui.screen.records.filterItemsByTag
+import com.shiro.yosugahub.ui.screen.records.parseTagsInput
+import com.shiro.yosugahub.ui.screen.records.searchItems
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class RecordsFiltersTest {
@@ -38,6 +41,28 @@ class RecordsFiltersTest {
         assertEquals(listOf("a"), filterItemsByTag(items, "買い物").map { it.id })
         assertEquals(listOf("a", "b"), filterItemsByTag(items, "展示会準備").map { it.id })
         assertEquals(emptyList<String>(), filterItemsByTag(items, "存在しないタグ").map { it.id })
+    }
+
+    @Test
+    fun search_matches_title_body_and_tags_case_insensitive() {
+        val items = listOf(
+            item("by-title").copy(title = "USB-Cハブを購入"),
+            item("by-body").copy(body = "HDMI出力付きにする"),
+            item("by-tag", tags = listOf("展示会準備")),
+            item("no-match"),
+        )
+        assertEquals(listOf("by-title"), searchItems(items, "usb").map { it.id })
+        assertEquals(listOf("by-body"), searchItems(items, "HDMI").map { it.id })
+        assertEquals(listOf("by-tag"), searchItems(items, "展示会").map { it.id })
+        assertEquals(items, searchItems(items, "  "))  // 空検索は全件
+        assertTrue(searchItems(items, "存在しない語").isEmpty())
+    }
+
+    @Test
+    fun parse_tags_input_splits_trims_and_dedupes() {
+        assertEquals(listOf("買い物", "展示会準備"), parseTagsInput(" 買い物, 展示会準備 "))
+        assertEquals(listOf("A", "B"), parseTagsInput("A、B、A"))
+        assertEquals(emptyList<String>(), parseTagsInput("  ,、 "))
     }
 
     @Test

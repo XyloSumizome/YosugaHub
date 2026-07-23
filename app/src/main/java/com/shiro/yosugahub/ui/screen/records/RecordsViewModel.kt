@@ -10,11 +10,13 @@ import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 /** 記録タブが監視するUI状態。絞り込みは画面側(純粋関数)で行う。 */
 data class RecordsUiState(
@@ -24,9 +26,32 @@ data class RecordsUiState(
 )
 
 class RecordsViewModel(
-    knowledgeRepository: KnowledgeRepository,
+    private val knowledgeRepository: KnowledgeRepository,
     diaryRepository: DiaryRepository,
 ) : ViewModel() {
+
+    /** 手動でアイテムを追加する(source=manual、実体の関連付けは AI 経由のみ)。 */
+    fun addItem(kind: ItemKind, title: String, body: String, tags: List<String>) {
+        viewModelScope.launch {
+            knowledgeRepository.createItem(
+                kind = kind,
+                title = title,
+                body = body,
+                tags = tags,
+                entities = emptyList(),
+                source = "manual",
+            )
+        }
+    }
+
+    /** 編集済みアイテムを保存する(updatedAt は Repository が刻む)。 */
+    fun updateItem(item: KnowledgeItem) {
+        viewModelScope.launch { knowledgeRepository.updateItem(item) }
+    }
+
+    fun deleteItem(id: String) {
+        viewModelScope.launch { knowledgeRepository.deleteItem(id) }
+    }
 
     val uiState: StateFlow<RecordsUiState> = combine(
         knowledgeRepository.items(),

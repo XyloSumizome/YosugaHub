@@ -12,9 +12,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,6 +54,9 @@ fun RecordsScreen(
     val uiState by viewModel.uiState.collectAsState()
     var section by rememberSaveable { mutableStateOf(RecordsSection.ITEMS) }
     var selectedTag by rememberSaveable { mutableStateOf<String?>(null) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var showNewItemDialog by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<KnowledgeItem?>(null) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -74,6 +80,23 @@ fun RecordsScreen(
 
         when (section) {
             RecordsSection.ITEMS -> {
+                item {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("検索(タイトル・本文・タグ)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                item {
+                    OutlinedButton(
+                        onClick = { showNewItemDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("アイテムを追加")
+                    }
+                }
                 if (uiState.tagNames.isNotEmpty()) {
                     item {
                         Row(
@@ -99,12 +122,17 @@ fun RecordsScreen(
                         }
                     }
                 }
-                val filtered = filterItemsByTag(uiState.items, selectedTag)
+                val filtered = searchItems(filterItemsByTag(uiState.items, selectedTag), searchQuery)
                 if (filtered.isEmpty()) {
-                    item { EmptyText("アイテムはまだありません") }
+                    item {
+                        EmptyText(
+                            if (uiState.items.isEmpty()) "アイテムはまだありません"
+                            else "条件に合うアイテムがありません"
+                        )
+                    }
                 } else {
                     items(filtered, key = { it.id }) { item ->
-                        ItemCard(item)
+                        ItemCard(item = item, onClick = { editingItem = item })
                     }
                 }
             }
@@ -131,6 +159,32 @@ fun RecordsScreen(
             }
         }
     }
+
+    if (showNewItemDialog) {
+        ItemEditDialog(
+            original = null,
+            onDismiss = { showNewItemDialog = false },
+            onSave = { kind, title, body, tags ->
+                viewModel.addItem(kind, title, body, tags)
+                showNewItemDialog = false
+            },
+        )
+    }
+
+    editingItem?.let { item ->
+        ItemEditDialog(
+            original = item,
+            onDismiss = { editingItem = null },
+            onSave = { kind, title, body, tags ->
+                viewModel.updateItem(item.copy(kind = kind, title = title, body = body, tags = tags))
+                editingItem = null
+            },
+            onDelete = {
+                viewModel.deleteItem(item.id)
+                editingItem = null
+            },
+        )
+    }
 }
 
 @Composable
@@ -143,8 +197,8 @@ private fun EmptyText(text: String) {
 }
 
 @Composable
-private fun ItemCard(item: KnowledgeItem, modifier: Modifier = Modifier) {
-    SectionCard(title = item.title, modifier = modifier) {
+private fun ItemCard(item: KnowledgeItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    SectionCard(title = item.title, modifier = modifier.clickable(onClick = onClick)) {
         Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
