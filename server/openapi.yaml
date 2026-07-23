@@ -22,11 +22,12 @@ paths:
             index=更新時刻の一覧 / projects=各ゲームの状況 / tasks=タスク /
             knowledge=情報アイテムと観察日記(既存タグの語彙) / calendar=予定 /
             conversations=取込履歴 / documents=未整理文書(分類対象) /
-            directives=配信中の指示書
+            directives=配信中の指示書 / selftest=設定の切り分け用(トークン不要)
           schema:
             type: string
             enum:
               - index
+              - selftest
               - projects
               - tasks
               - knowledge
@@ -114,6 +115,21 @@ components:
         note:
           type: string
           description: 読み手への注意書き
+        headerReceived:
+          type: boolean
+          description: selftest のみ。認証ヘッダーが届いたか。
+        headerLength:
+          type: integer
+          description: selftest のみ。届いたヘッダーの長さ。
+        queryReceived:
+          type: boolean
+          description: selftest のみ。
+        tokenConfigured:
+          type: boolean
+          description: selftest のみ。サーバー側の設定が済んでいるか。
+        matches:
+          type: boolean
+          description: selftest のみ。トークンが一致するか。
     FileEntry:
       type: object
       description: どのファイルがいつ更新されたか
