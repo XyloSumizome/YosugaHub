@@ -10,7 +10,7 @@ import java.time.OffsetDateTime
 
 /**
  * 観察日記の Repository(v3-Step 2)。
- * 日記は AI(よすが)が書き、承認を経てここへ保存される。Hub は内容を生成しない。
+ * 日記は AI(ヨスガ)が書き、承認を経てここへ保存される。Hub は内容を生成しない。
  */
 class DiaryRepository(
     private val dao: DiaryDao,

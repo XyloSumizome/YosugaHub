@@ -192,7 +192,7 @@ AI・Obsidian・GitHub・制作データを結び付ける **ゲーム制作の�
 
 旧 Phase 0〜2 で実装済み。v3ではこれらを**捨てずに積み増す**。
 
-- Jetpack Compose + Navigation + 5画面(ホーム / カレンダー / プロジェクト / よすが連携 / 設定)
+- Jetpack Compose + Navigation + 5画面(ホーム / カレンダー / プロジェクト / ヨスガ連携 / 設定)
 - Room(`Project` / `CalendarEvent` / `Recommendation`)。初回シードは仮データ
 - DataStore(最終同期時刻)
 - UI → ViewModel → Repository → DataSource の分離(手動DI)

@@ -3,7 +3,7 @@ package com.shiro.yosugahub.data.file.model
 import kotlinx.serialization.Serializable
 
 /**
- * アプリ → ChatGPT(よすが)へ渡す状況JSON(設計書2.3「アプリからChatGPTへ」)。
+ * アプリ → ChatGPT(ヨスガ)へ渡す状況JSON(設計書2.3「アプリからChatGPTへ」)。
  * schemaVersion を必ず含める(設計書15章)。
  */
 @Serializable

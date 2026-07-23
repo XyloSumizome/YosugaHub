@@ -17,6 +17,6 @@ enum class YosugaDestination(
     Home("home", "ホーム", Icons.Filled.Home),
     Calendar("calendar", "カレンダー", Icons.Filled.DateRange),
     Projects("projects", "プロジェクト", Icons.AutoMirrored.Filled.List),
-    Assistant("assistant", "よすが", Icons.AutoMirrored.Filled.Send),
+    Assistant("assistant", "ヨスガ", Icons.AutoMirrored.Filled.Send),
     Settings("settings", "設定", Icons.Filled.Settings),
 }

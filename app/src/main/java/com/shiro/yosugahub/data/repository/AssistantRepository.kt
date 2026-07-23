@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * よすが(ChatGPT)提案の取得元を吸収する Repository。
+ * ヨスガ(ChatGPT)提案の取得元を吸収する Repository。
  * 現状は Room(仮データでシード)。Phase 2 で回答JSONの取り込み結果へ、
  * Phase 7 で OpenAI API データソースへ差し替える(設計書7章)。
  */

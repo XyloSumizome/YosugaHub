@@ -66,7 +66,7 @@ fun AssistantScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(text = "よすが連携", style = MaterialTheme.typography.headlineSmall)
+            Text(text = "ヨスガ連携", style = MaterialTheme.typography.headlineSmall)
         }
         item {
             SectionCard(title = "状況JSON") {

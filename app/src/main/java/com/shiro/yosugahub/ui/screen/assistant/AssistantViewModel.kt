@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** よすが連携画面が監視するUI状態。 */
+/** ヨスガ連携画面が監視するUI状態。 */
 data class AssistantUiState(
     val recommendations: List<Recommendation> = emptyList(),
 )
