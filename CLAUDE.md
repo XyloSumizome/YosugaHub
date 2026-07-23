@@ -73,8 +73,9 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 # Build
 
 ```
-./gradlew assembleDebug   # ビルド
-./gradlew testDebugUnitTest   # 単体テスト
+./gradlew assembleDebug             # ビルド
+./gradlew testDebugUnitTest         # 単体テスト
+./gradlew connectedDebugAndroidTest # マイグレーションテスト(実機/エミュレータが必要)
 ```
 
 WSL側にJDK/Android SDKがない場合、ビルドはWindows側のAndroid Studioで行う。

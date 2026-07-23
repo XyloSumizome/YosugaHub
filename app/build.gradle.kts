@@ -39,6 +39,11 @@ android {
     buildFeatures {
         compose = true
     }
+    // MigrationTestHelper は期待スキーマを端末上のアセットから読む。
+    // ksp が出力する app/schemas/ をそのまま androidTest のアセットに含める。
+    sourceSets.getByName("androidTest") {
+        assets.srcDir("$projectDir/schemas")
+    }
 }
 
 // Room のスキーマJSONを出力(YosugaDatabase の exportSchema=true とセット)。
@@ -74,6 +79,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    // マイグレーションテスト(MigrationTestHelper)専用。アプリ本体には入らない。
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)

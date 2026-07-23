@@ -2,6 +2,53 @@
 
 ---
 
+## 2026-07-23: Room マイグレーションの自動テスト(androidTest)
+
+### 目的
+
+マイグレーションの抜け(①定義 ②`@Database(version)` ③`addMigrations` 登録 ④スキーマ突き合わせ)は
+**コンパイルが通ってしまい、実機更新時に初めてクラッシュする**。過去2回踏んでいるため自動化した。
+
+### 新規ライブラリ
+
+- **`androidx.room:room-testing:2.6.1`**(既存 room と同一バージョン / `androidTestImplementation` のみ)
+  - 理由: `MigrationTestHelper` はこの公式アーティファクトにしか無い。
+    「旧バージョンのDBを実際に作る → マイグレーションを走らせる → `app/schemas/*.json` の
+    期待スキーマと突き合わせる」を行う正攻法。**アプリ本体(APK)には入らない**
+
+### 実施内容
+
+- `app/build.gradle.kts`: androidTest のアセットに `$projectDir/schemas` を追加
+  (MigrationTestHelper は期待スキーマを端末上のアセットから読むため)。
+  テストAPKに `assets/com.shiro...YosugaDatabase/2〜6.json` が入ることを確認済み
+- `app/src/androidTest/.../MigrationTest.kt` 5件:
+  1. 各段(2→3 / 3→4 / 4→5 / 5→6)を個別に検証(落ちた段が特定できる)
+  2. v2 から最新まで通し
+  3. 既存データ(projects / tasks)がマイグレーションで失われない +
+     v4 追加列が既存行で NULL になること
+  4. v6 の documents / document_classifications が実際に読み書きできること
+  5. **実際の Room ビルダーで開けること**(`addMigrations` への登録漏れ=チェックリスト③は
+     ここで初めて落ちる)
+- `validateDroppedTables = true` で消し忘れテーブルも検出する
+
+### ⚠ v1 は自動テストできない(既知の制約)
+
+`app/schemas/` は **2.json から**しか無い(v1 の時点では `exportSchema` を有効にしていなかった)。
+MigrationTestHelper は期待スキーマが無いバージョンのDBを作れないため、**v1→v2 だけは対象外**。
+1.json を手書きすると Room の `identityHash` を捏造することになり、誤った安心を生むので**あえて作らない**。
+v1 から使い続けている端末の更新は、実機更新でのみ確認できる。
+
+### 検証状況
+
+- `assembleDebugAndroidTest` 成功(**コンパイルとAPK同梱までは確認済み**)
+- `assembleDebug` + `testDebugUnitTest` 成功(単体165件全成功、既存に影響なし)
+- **テスト自体はまだ実行していない**(実機またはエミュレータが必要):
+  ```
+  ./gradlew connectedDebugAndroidTest
+  ```
+
+---
+
 ## 2026-07-23: v4.1 AI分類ワークフロー — 同期・取込・プロンプト(③④⑤)= 実装完了
 
 ### 設計判断(合意内容からの調整・要確認)
@@ -314,6 +361,9 @@ JAVA_HOME=/home/note_xylo/tools/jdk-17.0.19+10 ./gradlew assembleDebug testDebug
 ### マイグレーション追加時のチェックリスト(2回踏んだ)
 ①Migration定義 ②`@Database(version)` 更新 ③`addMigrations` 登録 ④スキーマJSON突き合わせ
 — ②③はコンパイルが通ってしまい、実機更新時にクラッシュする。
+**自動テストあり**: `MigrationTest`(androidTest)。`./gradlew connectedDebugAndroidTest` で
+①〜④をまとめて検証できる。新しい版を足したら `MigrationTest.LATEST_VERSION` と
+`allMigrations` も更新すること。※ v1→v2 のみ対象外(1.json が無いため。理由は同テストのコメント)。
 
 ### 積み残し(任意)
 タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI / 観察日記のObsidian書き出し /
