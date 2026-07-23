@@ -21,4 +21,8 @@ interface PendingProposalDao {
 
     @Query("UPDATE pending_proposals SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: String, status: String)
+
+    /** 取込・承認の履歴(conversations.json 用)。新しい順に最大 limit 件。 */
+    @Query("SELECT * FROM pending_proposals ORDER BY receivedAt DESC LIMIT :limit")
+    suspend fun recent(limit: Int): List<PendingProposalEntity>
 }

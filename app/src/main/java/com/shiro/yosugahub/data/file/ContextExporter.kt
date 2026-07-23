@@ -51,21 +51,24 @@ object ContextExporter {
             futureDays = futureDays,
             events = events.map { it.toExport() },
         ),
-        projects = projects.map { it.toExport(statuses[it.id]) },
+        projects = projects.map { projectExportOf(it, statuses[it.id]) },
         tasks = tasks.map { it.toExport() },
         recentDecisions = decisions.map { it.toDecisionExport() },
     )
 
     fun toJson(export: ContextExport): String = json.encodeToString(export)
 
-    private fun Task.toExport(): TaskExport = TaskExport(
-        projectId = projectId,
-        title = title,
-        detail = detail,
-        status = status.dbValue,
-        priority = priority,
-        dueDate = dueDate,
+    /** タスクの共通変換(状況JSONと AiExporter で共有)。 */
+    fun taskExportOf(task: Task): TaskExport = TaskExport(
+        projectId = task.projectId,
+        title = task.title,
+        detail = task.detail,
+        status = task.status.dbValue,
+        priority = task.priority,
+        dueDate = task.dueDate,
     )
+
+    private fun Task.toExport(): TaskExport = taskExportOf(this)
 
     private fun KnowledgeItem.toDecisionExport(): DecisionExport = DecisionExport(
         date = createdAt.take(10),
@@ -82,32 +85,33 @@ object ContextExporter {
     )
 
     /**
+     * プロジェクトの共通変換(状況JSONと AiExporter で共有)。
      * GitHub の status.json を取得済みならそれを Markdown 化して渡す(source=github)。
-     * 未取得なら従来どおり手元の構造化フィールドから簡易 Markdown を組み立てる(source=local)。
+     * 未取得なら手元の構造化フィールドから簡易 Markdown を組み立てる(source=local)。
      */
-    private fun Project.toExport(snapshot: ProjectStatusSnapshot?): ProjectExport =
+    fun projectExportOf(project: Project, snapshot: ProjectStatusSnapshot?): ProjectExport =
         if (snapshot == null) {
             ProjectExport(
-                id = id,
-                name = name,
+                id = project.id,
+                name = project.name,
                 statusMarkdown = buildString {
-                    append("## Current Goal\n").append(currentGoal).append("\n\n")
-                    append("## In Progress\n").append(inProgress).append("\n\n")
-                    append("## Next Tasks\n").append(nextTask)
+                    append("## Current Goal\n").append(project.currentGoal).append("\n\n")
+                    append("## In Progress\n").append(project.inProgress).append("\n\n")
+                    append("## Next Tasks\n").append(project.nextTask)
                 },
-                lastUpdated = lastUpdated,
+                lastUpdated = project.lastUpdated,
                 source = SOURCE_LOCAL,
-                health = health,
+                health = project.health,
             )
         } else {
             ProjectExport(
-                id = id,
-                name = name,
+                id = project.id,
+                name = project.name,
                 statusMarkdown = snapshot.toStatusMarkdown(),
                 // GitHub 側の生成時刻があればそちらを使う(なければ手元の最終更新)。
-                lastUpdated = snapshot.generatedAt.ifBlank { lastUpdated },
+                lastUpdated = snapshot.generatedAt.ifBlank { project.lastUpdated },
                 source = SOURCE_GITHUB,
-                health = snapshot.health.ifBlank { health },
+                health = snapshot.health.ifBlank { project.health },
                 blockers = snapshot.blockers.map { line ->
                     if (line.detail.isBlank()) line.title else "${line.title}(${line.detail})"
                 },

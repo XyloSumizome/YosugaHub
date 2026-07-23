@@ -58,9 +58,33 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.GITHUB_TOKEN_ENCRYPTED] = value }
     }
 
+    /** サーバー同期先のベースURL(例: https://example.com/yosuga)。秘密情報ではないため平文。 */
+    val syncBaseUrl: Flow<String> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.SYNC_BASE_URL].orEmpty() }
+
+    suspend fun setSyncBaseUrl(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.SYNC_BASE_URL] = value }
+    }
+
+    /** サーバー同期トークンの**暗号化済み**文字列(v4)。平文は保存しない。 */
+    val syncTokenEncrypted: Flow<String> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.SYNC_TOKEN_ENCRYPTED].orEmpty() }
+
+    suspend fun setSyncTokenEncrypted(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.SYNC_TOKEN_ENCRYPTED] = value }
+    }
+
     private object Keys {
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
         val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")
+        val SYNC_BASE_URL = stringPreferencesKey("sync_base_url")
+        val SYNC_TOKEN_ENCRYPTED = stringPreferencesKey("sync_token_encrypted")
     }
 }

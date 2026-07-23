@@ -7,6 +7,17 @@ Yosuga Hub ⇄ ChatGPT 間で受け渡す JSON(v2)の仕様。
 以後は ①アプリで「状況JSONを作成」→ ChatGPT へ貼る → ②会話する → ③「回答JSONをください」と言う →
 ④返ってきた JSON をファイル(.json)に保存 → ⑤アプリの「回答JSONを取り込む」で選択 → ⑥承認。
 
+**サーバー同期を設定済みの場合(v4)**: ①の代わりに、状況を URL で読ませることもできる。
+アプリの 設定 → サーバー同期 → 「今すぐ同期」の後、会話でこう伝える:
+
+```
+最新の状況はここから読んでください。
+一覧: https://<あなたのドメイン>/yosuga/api.php?file=index&token=<トークン>
+各ファイル: file=projects / tasks / knowledge / calendar / conversations
+```
+
+※ ChatGPT のブラウズ機能が有効な会話で使うこと。回答JSONの受け取り(④〜⑥)は従来どおり。
+
 ---
 
 ## システムプロンプト(ここから下をChatGPTへ貼る)

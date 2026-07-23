@@ -2,6 +2,61 @@
 
 ---
 
+## 2026-07-23: v4 Phase2 — AI用JSON分割 + ロリポップ同期
+
+### 経緯・決定(ユーザーと合意)
+
+- 設計方針 **v4(AIプラットフォーム構想)** を取り込み(コミット 4877666)。
+  Hubは「人間のUI」と「AIのデータインターフェース」の両方を持つ。
+- **v3の「クラウド同期なし」を v4 が上書き**し、ロリポップ同期を導入。
+- 同期方式: **PHP受け口 + トークン認証**(Android→HTTPS POST、配信は api.php?token=)。
+  公開するのは進捗・整理情報のみのため、トークン認証を最低限の保護とする。
+- conversations.json は当面「取込・承認履歴」で代用(会話本文は保持しない)。
+
+### 新規ライブラリ
+
+- **なし**(Ktor は GitHub連携で導入済みのものを流用)
+
+### 実施内容(Android)
+
+- `data/file/model/AiExportModels`: 用途別5ファイルのモデル
+  (projects / tasks / knowledge(items+diary) / calendar(today+upcoming+past) /
+  conversations(exchanges))。各ファイルが schemaVersion / generatedAt を持つ
+- `data/file/AiExporter`(純粋ロジック): 5ファイルの組み立て。
+  projects / tasks の変換は `ContextExporter.projectExportOf / taskExportOf` として公開化し
+  状況JSON(手動ブリッジ)と共有。提案履歴のタイトルは payload から抽出(壊れていても落ちない)
+- `PendingProposalDao.recent(limit)` を追加(履歴50件)
+- `AiExportRepository`: ドメインRepositoryからスナップショットを集めて5ファイル生成、
+  `filesDir/ai/` へ保存(AI Interface の初期実装 = ローカルJSON出力)
+- `data/sync/SyncApi`: `upload.php` へ POST(トークンは `X-Yosuga-Token` ヘッダー。URLに載せない)。
+  結果を Ok / Unauthorized / HttpError / NetworkError に分類、例外メッセージは伝播させない
+- `ServerSyncRepository`: URL・トークンを供給関数で受け、成功時に最終同期時刻を記録
+  (ホームの「最終同期」が本来の意味を持つようになった)
+- `SyncSettingsRepository`: URL(平文)+ トークン(Keystore暗号化。GitHubと同じ TokenCrypto を共用)。
+  `generateToken()`(SecureRandom 64桁hex)
+- 設定画面「サーバー同期」セクション: URL / トークン(伏字)/ トークン生成 / 今すぐ同期
+- `docs/yosuga_prompt.md`: サーバーAPI経由で状況を読ませる手順を追記
+
+### 実施内容(サーバー / `server/` ディレクトリ)
+
+- `config.php`(トークン設定)/ `upload.php`(受け口: hash_equals検証・ファイル名ホワイトリスト・
+  JSON妥当性チェック)/ `api.php`(配信: file=index で一覧+更新時刻)/ `data/.htaccess`(直接アクセス拒否)
+- `README-server.md`: ロリポップへの設置手順・動作確認・ChatGPTへの渡し方
+- config.php が初期値のままなら全リクエスト403(設定忘れをフェイルセーフに)
+
+### テスト
+
+- `AiExporterTest` 4件(5ファイル生成 / 各ファイルのパース・schemaVersion / 履歴タイトル抽出 /
+  壊れたpayload耐性)、`SyncApiTest` 4件(URL・ヘッダー・本文 / 403 / 500 / オフライン)
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL)
+
+### 未検証
+
+- ロリポップへの実設置・実通信(ユーザー作業: README-server.md 参照)
+- ChatGPT のブラウズでの api.php 読み取り
+
+---
+
 ## 2026-07-23: カレンダー連携(旧Phase 4)— 端末カレンダー読み取りで実装
 
 ### 方式の決定(ユーザーと合意)

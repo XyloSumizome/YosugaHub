@@ -47,6 +47,7 @@ class ProposalRepositoryTest {
         override suspend fun updateStatus(id: String, status: String) {
             statuses[id] = status
         }
+        override suspend fun recent(limit: Int): List<PendingProposalEntity> = emptyList()
     }
 
     private class FakeTaskDao : TaskDao {

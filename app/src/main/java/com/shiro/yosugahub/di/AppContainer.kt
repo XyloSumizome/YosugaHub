@@ -18,6 +18,7 @@ import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.github.GitHubApi
+import com.shiro.yosugahub.data.repository.AiExportRepository
 import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
 import com.shiro.yosugahub.data.repository.GitHubStatusRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
@@ -25,11 +26,15 @@ import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.data.repository.ServerSyncRepository
+import com.shiro.yosugahub.data.repository.SyncSettingsRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
+import com.shiro.yosugahub.data.sync.SyncApi
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
@@ -51,6 +56,8 @@ interface AppContainer {
     val projectStatusRepository: ProjectStatusRepository
     val exportRepository: ExportRepository
     val importRepository: ImportRepository
+    val syncSettingsRepository: SyncSettingsRepository
+    val serverSyncRepository: ServerSyncRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -107,7 +114,7 @@ class DefaultAppContainer(
         UserPreferencesRepository(context.applicationContext)
     }
     override val gitHubSettingsRepository: GitHubSettingsRepository by lazy {
-        GitHubSettingsRepository(userPreferencesRepository, KeystoreTokenCrypto())
+        GitHubSettingsRepository(userPreferencesRepository, tokenCrypto)
     }
     override val gitHubStatusRepository: GitHubStatusRepository by lazy {
         GitHubStatusRepository(
@@ -136,6 +143,39 @@ class DefaultAppContainer(
             context.applicationContext,
             database.recommendationDao(),
             database.pendingProposalDao(),
+        )
+    }
+
+    private val tokenCrypto by lazy { KeystoreTokenCrypto() }
+
+    override val syncSettingsRepository: SyncSettingsRepository by lazy {
+        SyncSettingsRepository(userPreferencesRepository, tokenCrypto)
+    }
+
+    private val aiExportRepository: AiExportRepository by lazy {
+        AiExportRepository(
+            context = context.applicationContext,
+            projectRepository = projectRepository,
+            taskRepository = taskRepository,
+            knowledgeRepository = knowledgeRepository,
+            diaryRepository = diaryRepository,
+            calendarRepository = calendarRepository,
+            projectStatusRepository = projectStatusRepository,
+            pendingProposalDao = database.pendingProposalDao(),
+        )
+    }
+
+    override val serverSyncRepository: ServerSyncRepository by lazy {
+        ServerSyncRepository(
+            aiExportRepository = aiExportRepository,
+            api = SyncApi(),
+            urlProvider = { syncSettingsRepository.baseUrl.first() },
+            tokenProvider = { syncSettingsRepository.currentToken() },
+            onSynced = {
+                userPreferencesRepository.setLastSyncedAt(
+                    formatSyncTime(LocalDateTime.now())
+                )
+            },
         )
     }
 

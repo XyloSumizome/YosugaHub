@@ -52,7 +52,11 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **カレンダー連携 完了**(旧Phase 4): 設計書v2のOAuth方式ではなく **CalendarContract で端末に同期済みの
   カレンダーを読む**方式を採用(READ_CALENDAR のみ / Google Cloud設定・新規ライブラリ不要)。
   これで仮データは解消済み。
-- 次の候補: 実機での通し確認、積み残し(タグのタスク適用 / 取り込み履歴画面 / エンティティ閲覧UI 等)。
+- **v4 Phase2 完了**: AI用JSONを5ファイルに分割(AiExporter / AiExportRepository)、
+  ロリポップ同期(SyncApi + ServerSyncRepository + 設定画面。トークンはKeystore、ヘッダー送信)。
+  サーバーPHP一式は `server/`(設置手順は `server/README-server.md`)。
+- 次の候補: ロリポップ実設置(ユーザー作業)、実機での通し確認、積み残し(タグのタスク適用 /
+  取り込み履歴画面 / エンティティ閲覧UI 等)。将来: MCP(v4 Phase4)。
 - アシスタント名は「ヨスガ」(カタカナ表記)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。
