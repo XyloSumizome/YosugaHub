@@ -273,10 +273,8 @@ fun RecordsScreen(
     }
 
     // 状態が更新されたら開いている詳細も追従するよう、IDで引き直す。
+    // 対象が消えていれば let が空振りしてダイアログは閉じる(composition 中に状態は書き換えない)。
     val openedDocument = openedDocumentId?.let { id -> uiState.documents.firstOrNull { it.id == id } }
-    if (openedDocumentId != null && openedDocument == null) {
-        openedDocumentId = null  // 削除された文書のダイアログは閉じる
-    }
     openedDocument?.let { document ->
         DocumentDetailDialog(
             document = document,

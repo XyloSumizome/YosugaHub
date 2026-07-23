@@ -245,6 +245,28 @@ class DocumentRepositoryTest {
         assertEquals(DocumentStatus.CLASSIFIED.dbValue, dao.documents[classified.id]?.status)
     }
 
+    /** 古い回答JSONを取り込んでも、片付けた文書を勝手に復活させない。 */
+    @Test
+    fun applyAiClassification_skips_archived_document() = runBlocking {
+        val dao = FakeDocumentDao()
+        val repo = repository(dao)
+        val doc = repo.createSample()
+        repo.applyAiClassification(
+            doc.id, "最初の分類", "memo", 0.9, emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+        repo.archive(doc.id)
+
+        val result = repo.applyAiClassification(
+            doc.id, "古い回答からの分類", "memo", 0.9,
+            emptyList(), emptyList(), emptyList(), emptyList(),
+        )
+
+        assertNull(result)
+        assertEquals(DocumentStatus.ARCHIVED.dbValue, dao.documents[doc.id]?.status)
+        // 分類履歴も増えない。
+        assertEquals(1, repo.classificationHistory(doc.id).size)
+    }
+
     @Test
     fun archive_and_delete() = runBlocking {
         val dao = FakeDocumentDao()

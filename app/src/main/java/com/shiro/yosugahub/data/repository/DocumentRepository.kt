@@ -78,7 +78,10 @@ class DocumentRepository(
 
     /**
      * AI分類結果の取り込み。分類レコードを現行として積み、needs_review へ進める。
-     * 文書が無ければ null(取込側で読み飛ばす)。原文には一切触れない。
+     * 原文には一切触れない。次の場合は適用せず null を返す(取込側で読み飛ばす):
+     * - 文書が存在しない
+     * - **アーカイブ済み**。古い回答JSONを取り込んだときに、片付けたはずの文書を
+     *   勝手に復活させないため(再開したいときはユーザーが明示的に再分類する)
      */
     suspend fun applyAiClassification(
         documentId: String,
@@ -90,7 +93,8 @@ class DocumentRepository(
         tags: List<String>,
         relatedEntities: List<RelatedRef>,
     ): Document? {
-        dao.getDocument(documentId) ?: return null
+        val existing = dao.getDocument(documentId) ?: return null
+        if (DocumentStatus.fromDb(existing.document.status) == DocumentStatus.ARCHIVED) return null
         saveClassification(
             documentId = documentId,
             summary = summary,

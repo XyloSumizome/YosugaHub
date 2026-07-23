@@ -25,13 +25,14 @@ sealed interface ImportResult {
     /**
      * v2: 提案を承認待ちに入れた(反映はユーザー承認後)。
      * 分類結果は文書へ適用済み(状態は「確認待ち」で、確定はユーザーの承認後)。
-     * unknownDocumentCount は宛先の文書が見つからず読み飛ばした件数。
+     * skippedClassificationCount は適用できず読み飛ばした件数
+     * (宛先の文書が見つからない / アーカイブ済み)。
      */
     data class SuccessProposals(
         val proposalCount: Int,
         val fileName: String,
         val classificationCount: Int = 0,
-        val unknownDocumentCount: Int = 0,
+        val skippedClassificationCount: Int = 0,
     ) : ImportResult
 
     data class InvalidJson(val message: String) : ImportResult
@@ -102,25 +103,25 @@ class ImportRepository(
                     proposalCount = rows.size,
                     fileName = fileName,
                     classificationCount = classified.applied,
-                    unknownDocumentCount = classified.unknownDocument,
+                    skippedClassificationCount = classified.skipped,
                 )
             }
         }
     }
 
-    private data class ClassificationOutcome(val applied: Int, val unknownDocument: Int)
+    private data class ClassificationOutcome(val applied: Int, val skipped: Int)
 
     /**
      * 分類結果を文書へ適用する(v4.1)。
      * 他の提案と違い pending_proposals には積まない — 文書は「確認待ち」になり、
      * 承認・修正は文書の詳細画面で行う(承認を二重に求めない)。
-     * document_id が空、または宛先の文書が無いものは読み飛ばす。
+     * document_id が空、宛先の文書が無い、アーカイブ済みのものは読み飛ばす。
      */
     private suspend fun applyClassifications(
         classifications: List<ClassificationProposal>,
     ): ClassificationOutcome {
         var applied = 0
-        var unknown = 0
+        var skipped = 0
         classifications
             .filter { it.documentId.isNotBlank() }
             .forEach { classification ->
@@ -136,9 +137,9 @@ class ImportRepository(
                         .filter { it.type.isNotBlank() && it.id.isNotBlank() }
                         .map { RelatedRef(type = it.type, id = it.id) },
                 )
-                if (result != null) applied++ else unknown++
+                if (result != null) applied++ else skipped++
             }
-        return ClassificationOutcome(applied = applied, unknownDocument = unknown)
+        return ClassificationOutcome(applied = applied, skipped = skipped)
     }
 
     /** 元ファイルは上書きせず履歴として保存する(設計書15章)。 */

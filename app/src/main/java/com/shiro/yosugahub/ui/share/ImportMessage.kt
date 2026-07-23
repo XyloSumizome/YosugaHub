@@ -12,8 +12,9 @@ fun importResultMessage(result: ImportResult): String = when (result) {
                 .takeIf { result.proposalCount > 0 },
             "文書 ${result.classificationCount} 件の分類を受け取りました。記録タブの「文書」で確認してください。"
                 .takeIf { result.classificationCount > 0 },
-            "宛先の文書が見つからない分類が ${result.unknownDocumentCount} 件ありました。"
-                .takeIf { result.unknownDocumentCount > 0 },
+            ("適用できなかった分類が ${result.skippedClassificationCount} 件ありました" +
+                "(宛先の文書が見つからない、またはアーカイブ済み)。")
+                .takeIf { result.skippedClassificationCount > 0 },
         ).ifEmpty { listOf("受け取れる提案がありませんでした。") }
             .joinToString("\n")
     is ImportResult.InvalidJson ->

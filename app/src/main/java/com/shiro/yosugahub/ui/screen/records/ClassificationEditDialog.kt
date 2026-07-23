@@ -102,6 +102,8 @@ fun ClassificationEditDialog(
         },
         confirmButton = {
             TextButton(
+                // 要約が空の分類を確定させない(既存の ItemEditDialog と同じ方針)。
+                enabled = summary.isNotBlank(),
                 onClick = {
                     onApprove(
                         ClassificationEdits(

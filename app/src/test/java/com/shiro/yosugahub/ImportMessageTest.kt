@@ -36,11 +36,12 @@ class ImportMessageTest {
         val message = importResultMessage(
             ImportResult.SuccessProposals(
                 proposalCount = 1, fileName = "r.json",
-                classificationCount = 2, unknownDocumentCount = 1,
+                classificationCount = 2, skippedClassificationCount = 1,
             )
         )
         assertEquals(3, message.lines().size)
-        assertTrue(message.contains("宛先の文書が見つからない分類が 1 件"))
+        assertTrue(message.contains("適用できなかった分類が 1 件"))
+        assertTrue(message.contains("アーカイブ済み"))
     }
 
     @Test

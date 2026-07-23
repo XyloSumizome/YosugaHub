@@ -116,6 +116,9 @@ fun DocumentDetailDialog(
 /**
  * 状態に応じたレビュー操作。
  * 承認・修正は現行分類があるときだけ(空の分類を確定させない)。
+ * 再分類は「一度分類された文書をやり直す」操作なので、
+ * まだ分類されていない文書(未整理・分類待ち)には出さない
+ * — それらは次の同期で自動的にヨスガへ渡るため、押す意味がない。
  */
 @Composable
 private fun ReviewActions(
@@ -135,8 +138,10 @@ private fun ReviewActions(
         if (hasClassification && document.status == DocumentStatus.CLASSIFIED) {
             TextButton(onClick = onEdit) { Text("分類を修正") }
         }
-        if (document.status != DocumentStatus.ARCHIVED) {
+        if (hasClassification && document.status != DocumentStatus.ARCHIVED) {
             TextButton(onClick = onReclassify) { Text("再分類をヨスガに依頼") }
+        }
+        if (document.status != DocumentStatus.ARCHIVED) {
             TextButton(onClick = onArchive) { Text("アーカイブ") }
         }
     }
