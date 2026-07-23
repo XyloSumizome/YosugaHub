@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.shiro.yosugahub.data.local.db.dao.CalendarEventDao
 import com.shiro.yosugahub.data.local.db.dao.DiaryDao
+import com.shiro.yosugahub.data.local.db.dao.DocumentDao
 import com.shiro.yosugahub.data.local.db.dao.KnowledgeDao
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
 import com.shiro.yosugahub.data.local.db.dao.ProjectDao
@@ -12,6 +13,8 @@ import com.shiro.yosugahub.data.local.db.dao.RecommendationDao
 import com.shiro.yosugahub.data.local.db.dao.TaskDao
 import com.shiro.yosugahub.data.local.db.entity.CalendarEventEntity
 import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
+import com.shiro.yosugahub.data.local.db.entity.DocumentClassificationEntity
+import com.shiro.yosugahub.data.local.db.entity.DocumentEntity
 import com.shiro.yosugahub.data.local.db.entity.ItemEntityCrossRef
 import com.shiro.yosugahub.data.local.db.entity.ItemTagCrossRef
 import com.shiro.yosugahub.data.local.db.entity.KnowledgeItemEntity
@@ -29,6 +32,7 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
  *     diary_entries / pending_proposals)を追加(v3-Step 2)。
  * v4: projects に GitHub リポジトリ情報(repoOwner / repoName / repoBranch)を追加。
  * v5: project_status_cache(GitHub の status.json キャッシュ)を追加。
+ * v6: AI分類ワークフロー(v4.1)の documents / document_classifications を追加。
  * マイグレーションは Migrations.kt。スキーマJSONは app/schemas/ に出力される。
  */
 @Database(
@@ -45,8 +49,10 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
         DiaryEntryEntity::class,
         PendingProposalEntity::class,
         ProjectStatusCacheEntity::class,
+        DocumentEntity::class,
+        DocumentClassificationEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class YosugaDatabase : RoomDatabase() {
@@ -58,4 +64,5 @@ abstract class YosugaDatabase : RoomDatabase() {
     abstract fun diaryDao(): DiaryDao
     abstract fun pendingProposalDao(): PendingProposalDao
     abstract fun projectStatusDao(): ProjectStatusDao
+    abstract fun documentDao(): DocumentDao
 }

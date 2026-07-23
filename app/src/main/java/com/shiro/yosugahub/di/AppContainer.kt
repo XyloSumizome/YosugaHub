@@ -8,6 +8,7 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_1_2
 import com.shiro.yosugahub.data.local.db.MIGRATION_2_3
 import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
 import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
+import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
@@ -16,6 +17,7 @@ import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
+import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.github.GitHubApi
 import com.shiro.yosugahub.data.repository.AiExportRepository
@@ -48,6 +50,7 @@ interface AppContainer {
     val taskRepository: TaskRepository
     val knowledgeRepository: KnowledgeRepository
     val diaryRepository: DiaryRepository
+    val documentRepository: DocumentRepository
     val assistantRepository: AssistantRepository
     val proposalRepository: ProposalRepository
     val userPreferencesRepository: UserPreferencesRepository
@@ -71,7 +74,7 @@ class DefaultAppContainer(
         YosugaDatabase::class.java,
         "yosuga.db",
     )
-        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
         .build()
 
     override val calendarRepository: CalendarRepository by lazy {
@@ -91,6 +94,9 @@ class DefaultAppContainer(
     }
     override val diaryRepository: DiaryRepository by lazy {
         DiaryRepository(database.diaryDao())
+    }
+    override val documentRepository: DocumentRepository by lazy {
+        DocumentRepository(database.documentDao())
     }
     override val assistantRepository: AssistantRepository by lazy {
         AssistantRepository(database.recommendationDao())

@@ -9,6 +9,30 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 新しいマイグレーションを書いたら、期待スキーマと一致するか出力JSONで確認すること。
  */
 
+/** v5 → v6: AI分類ワークフロー(v4.1)の documents / document_classifications を追加。 */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `documents` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, " +
+                "`body` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` TEXT NOT NULL, " +
+                "`updatedAt` TEXT NOT NULL, `source` TEXT NOT NULL, PRIMARY KEY(`id`))"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_documents_status` ON `documents` (`status`)")
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `document_classifications` (`id` TEXT NOT NULL, " +
+                "`documentId` TEXT NOT NULL, `summary` TEXT NOT NULL, `documentType` TEXT NOT NULL, " +
+                "`confidence` REAL, `projectIdsJson` TEXT NOT NULL, `categoriesJson` TEXT NOT NULL, " +
+                "`tagsJson` TEXT NOT NULL, `relatedEntitiesJson` TEXT NOT NULL, " +
+                "`classifiedAt` TEXT NOT NULL, `appliedBy` TEXT NOT NULL, `isCurrent` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`id`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_document_classifications_documentId` " +
+                "ON `document_classifications` (`documentId`)"
+        )
+    }
+}
+
 /** v4 → v5: GitHub の status.json キャッシュを追加(GitHub連携 3-c)。 */
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(db: SupportSQLiteDatabase) {

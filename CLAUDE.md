@@ -56,8 +56,11 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v4 Phase2 完了**: AI用JSONを5ファイルに分割(AiExporter / AiExportRepository)、
   ロリポップ同期(SyncApi + ServerSyncRepository + 設定画面。トークンはKeystore、ヘッダー送信)。
   サーバーPHP一式は `server/`(設置手順は `server/README-server.md`)。
-- **次にやること**: ①AI分類ワークフローの実装(`yosuga_hub_design_v4_1_classification.md`。
-  着手前に同ファイル末尾の「未確定の論点」5点をユーザーと合意すること)、
+- **v4.1 データ層 完了**: AI分類ワークフローの Room v6(documents=原文不変 /
+  document_classifications=分類履歴)+ DocumentRepository(状態遷移)。
+  「未確定の論点」5点は合意済み(WORKLOG 2026-07-23 v4.1 エントリ参照)。
+- **次にやること**: ①AI分類ワークフローの続き(文書UI・レビューUI・documents.json同期・
+  回答JSON取込。WORKLOG 再開ポイントの5項目)、
   ②実環境検証(ロリポップ設置・GitHub実通信・実機。手順は WORKLOG 冒頭の再開ポイント)。
 - 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
 - アシスタント名は「ヨスガ」(カタカナ表記)。

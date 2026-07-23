@@ -2,13 +2,18 @@ package com.shiro.yosugahub.data.local.db
 
 import com.shiro.yosugahub.data.local.db.entity.CalendarEventEntity
 import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
+import com.shiro.yosugahub.data.local.db.entity.DocumentClassificationEntity
 import com.shiro.yosugahub.data.local.db.entity.PendingProposalEntity
 import com.shiro.yosugahub.data.local.db.entity.ProjectEntity
 import com.shiro.yosugahub.data.local.db.entity.RecommendationEntity
 import com.shiro.yosugahub.data.local.db.entity.TaskEntity
 import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.ClassificationOrigin
 import com.shiro.yosugahub.domain.model.DiaryEntry
+import com.shiro.yosugahub.domain.model.Document
+import com.shiro.yosugahub.domain.model.DocumentClassification
+import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityRef
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.ItemKind
@@ -119,6 +124,36 @@ fun PendingProposalEntity.toDomainOrNull(): PendingProposal? {
         receivedAt = receivedAt,
     )
 }
+
+fun DocumentClassificationEntity.toDomain(): DocumentClassification = DocumentClassification(
+    id = id,
+    documentId = documentId,
+    summary = summary,
+    documentType = documentType,
+    confidence = confidence,
+    projectIds = DocumentJsonColumns.decodeStrings(projectIdsJson),
+    categories = DocumentJsonColumns.decodeStrings(categoriesJson),
+    tags = DocumentJsonColumns.decodeStrings(tagsJson),
+    relatedEntities = DocumentJsonColumns.decodeRelatedRefs(relatedEntitiesJson),
+    classifiedAt = classifiedAt,
+    origin = ClassificationOrigin.fromDb(appliedBy),
+    isCurrent = isCurrent,
+)
+
+/** 現行分類は isCurrent の1件(複数あれば新しいものを採る)。 */
+fun DocumentWithClassifications.toDomain(): Document = Document(
+    id = document.id,
+    title = document.title,
+    body = document.body,
+    status = DocumentStatus.fromDb(document.status),
+    createdAt = document.createdAt,
+    updatedAt = document.updatedAt,
+    source = document.source,
+    currentClassification = classifications
+        .filter { it.isCurrent }
+        .maxByOrNull { it.classifiedAt }
+        ?.toDomain(),
+)
 
 /** タスクは編集可能なため、書き込み用の逆変換も持つ。 */
 fun Task.toEntity(): TaskEntity = TaskEntity(

@@ -2,6 +2,61 @@
 
 ---
 
+## 2026-07-23: v4.1 AI分類ワークフロー — データ層(Room v6)
+
+### 経緯・決定(ユーザーと合意 / 設計書v4.1「未確定の論点」5点)
+
+1. **実装範囲**: 今回はデータ層まで(Room v6 + Repository + テスト)。UI・同期・取込は次回。
+2. **文書の作成入口**: 記録タブに「文書」セクションを新設(次回のUI実装で対応)。
+3. **分類結果の受け取り**: 回答JSON v2 の `proposals.classifications[]`(次回の取込実装で対応。
+   既存の 取込→pending_proposals→レビューUI を再利用する)。
+4. **承認確定後**: documents のまま(knowledge_items へ昇格しない。長文=文書 / 短い知識=アイテム)。
+5. **related_entities の type**: 文書側は自由文字列(既存 EntityType は拡張しない)。
+
+### 新規ライブラリ
+
+- **なし**
+
+### 実施内容
+
+- `domain/model/Document`: DocumentStatus(unclassified / classification_pending / needs_review /
+  classified / archived)、ClassificationOrigin(ai / user)、RelatedRef(type は自由文字列)、
+  DocumentClassification、Document。未知のDB値は安全側へフォールバック
+- Room v6: `documents`(**body=原文・不変**。status にインデックス)+
+  `document_classifications`(AI結果とユーザー修正を**別レコード**で積む=そのまま分類履歴。
+  現行1件だけ isCurrent。リスト項目は履歴スナップショットとして JSON 列で保持 —
+  後からタグを改名しても過去の分類記録が変わらない)
+- `DocumentJsonColumns`(純粋ロジック): JSON列の符号化・復号。壊れたJSONは空リストへ
+  フォールバック(ProposalPayloads と同方針)
+- `DocumentDao`: 原文を更新するSQLは置かない。`saveClassificationAsCurrent`(旧現行を落として積む)/
+  `deleteDocumentWithClassifications` は default メソッドでロジックを持つ
+- `DocumentRepository`: 状態遷移を集約 — createDocument(→unclassified)/
+  markUnclassifiedAsPending(同期成功時に呼ぶ想定)/ applyAiClassification(→needs_review)/
+  approve(現行分類が無ければ拒否)/ approveWithEdits(USER レコードを積んで→classified)/
+  requestReclassification(→pending。履歴は残す)/ archive / deleteDocument。
+  **原文(body)を書き換える操作は提供しない**
+- `MIGRATION_5_6` + `@Database(version = 6)` + AppContainer 登録(チェックリスト①〜③)、
+  スキーマJSON 6.json と突き合わせ済み(④)
+- SampleSeed への documents 追加はなし(実運用データのみ)
+
+### テスト
+
+- `DocumentRepositoryTest` 13件(状態遷移一式 / 原文不変 / ユーザー修正でAI履歴が残る /
+  再分類で履歴が積み上がる / markUnclassifiedAsPending が unclassified のみ動かす /
+  壊れたJSON列の耐性 / roundtrip / 未知DB値フォールバック)
+- WSL で `assembleDebug` + `testDebugUnitTest` 成功(BUILD SUCCESSFUL / **142件全成功**。
+  ※前回記録の「145件」は誤記で、実数は129件だった)
+
+### 未実装(次回)
+
+- 記録タブ「文書」セクション(作成・一覧・詳細・元文表示)
+- 分類レビューUI(承認 / 修正 / 保留 / 再分類)
+- `documents.json` のサーバー同期(AiExporter への追加 + markUnclassifiedAsPending の接続)
+- 回答JSON v2 `proposals.classifications[]` の取込(ResponseImporter / ImportRepository)
+- `docs/yosuga_prompt.md` への分類指示の追記
+
+---
+
 ## 2026-07-23: v4 Phase2 — AI用JSON分割 + ロリポップ同期
 
 ### 経緯・決定(ユーザーと合意)
@@ -118,23 +173,27 @@
 3. `yosuga_hub_android_design_v3.md` / `_v3_1.md` — 基本思想・知識ベース仕様(有効)
 4. `yosuga_hub_android_design_v2.md` — 技術資料(アーキテクチャ・ライブラリ候補)
 
-### 実装済み(すべてビルド+テスト通過・最新コミット `0c02f21`)
+### 実装済み(すべてビルド+テスト通過)
 - **v3-Step 1〜4**: Task実体化 / 知識ベース+提案承認フロー / Obsidian連携(SAF) / ホームAI秘書再編
 - **GitHub連携 3-a〜3-d**: リポジトリ設定 + トークンKeystore保管 / Ktorで `.yosuga/status.json` 取得 /
   Room v5 キャッシュと表示 / 状況JSONへの反映
 - **カレンダー連携**: CalendarContract で端末カレンダーを読む(OAuth不要)
 - **v4 Phase2**: AI用JSON 5分割(AiExporter)+ ロリポップ同期(SyncApi / server/ にPHP一式)
-- 仮データはすべて解消済み。テストは 145 件。
+- **v4.1 データ層**: Room v6(documents / document_classifications)+ DocumentRepository
+  (状態遷移・分類履歴。論点5点は合意済み — 本日のエントリ参照)
+- 仮データはすべて解消済み。テストは 142 件。
 
 ### ▶ 次にやること(このどちらかから)
 
-**A. AI分類ワークフローの実装**(`yosuga_hub_design_v4_1_classification.md`)
-着手前に同ファイル末尾の「未確定の論点」5点をユーザーと合意すること。特に:
-- 今回の実装範囲(フル実装 / データ層まで / 設計のみ)
-- 文書の作成入口(記録タブに「文書」セクション新設が推奨)
-- 分類結果の受け取り方(回答JSON v2 の `proposals.classifications[]` に追加が推奨。
-  既存の取込→承認待ち→レビュー機構をそのまま再利用できる)
-状態遷移・データモデル(Room v6)の案も同ファイルに記載済み。
+**A. AI分類ワークフローの続き**(`yosuga_hub_design_v4_1_classification.md` / 論点は合意済み)
+データ層(Room v6)は完了。残りは:
+1. 記録タブ「文書」セクション(作成・一覧・詳細・元文表示)
+2. 分類レビューUI(承認 / 修正 / 保留 / 再分類 — DocumentRepository のメソッドは用意済み)
+3. `documents.json` のサーバー同期(AiExporter に追加 + 同期成功時に
+   `DocumentRepository.markUnclassifiedAsPending()` を呼ぶ)
+4. 回答JSON v2 `proposals.classifications[]` の取込(ResponseImporter →
+   `DocumentRepository.applyAiClassification()`)
+5. `docs/yosuga_prompt.md` へ分類指示を追記
 
 **B. 実環境での検証**(ユーザー作業が必要)
 1. ロリポップ設置: `server/README-server.md` の手順(トークン生成 → config.php → FTP → 同期)
