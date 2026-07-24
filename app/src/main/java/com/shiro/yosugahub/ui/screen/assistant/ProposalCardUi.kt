@@ -56,9 +56,9 @@ fun PendingProposal.toCardUi(): ProposalCardUi = when (type) {
 
     ProposalType.DIARY -> {
         val p = ProposalPayloads.decodeDiary(payloadJson)
-        if (p == null) unreadable("観察日記") else ProposalCardUi(
+        if (p == null) unreadable("観測") else ProposalCardUi(
             proposal = this,
-            typeLabel = "観察日記",
+            typeLabel = "観測",
             title = p.date.ifBlank { receivedAt.take(10) },
             body = p.body,
             readable = true,

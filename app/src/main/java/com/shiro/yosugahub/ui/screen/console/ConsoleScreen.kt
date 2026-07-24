@@ -170,7 +170,7 @@ fun ConsoleScreen(
         AsciiDivider()
         Command("PROJECTS (${uiState.projectCount})", "ゲームの進捗・タスク", onClick = onOpenProjects)
         AsciiDivider()
-        Command("RECORDS", "知識・決定・日記・文書・指示", onClick = onOpenRecords)
+        Command("RECORDS", "知識・決定・観測・文書・指示", onClick = onOpenRecords)
         AsciiDivider()
         Command("CALENDAR", "端末カレンダーの予定", onClick = onOpenCalendar)
         AsciiDivider()

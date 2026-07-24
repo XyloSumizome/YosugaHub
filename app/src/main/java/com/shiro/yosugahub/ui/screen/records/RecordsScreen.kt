@@ -49,7 +49,7 @@ import com.shiro.yosugahub.ui.component.itemKindLabel
 private enum class RecordsSection(val label: String) {
     ITEMS("アイテム"),
     DECISIONS("決定"),
-    DIARY("日記"),
+    DIARY("観測"),
     DOCUMENTS("文書"),
     ENTITIES("関連"),
     DIRECTIVES("指示"),
@@ -57,7 +57,7 @@ private enum class RecordsSection(val label: String) {
 
 /**
  * 記録タブ(v3-Step 2-d / v4.1「文書」/ その後「関連」/ v4.2「指示」を追加)。
- * アイテム(タグ絞込)/ 決定事項ログ / 観察日記 / 未整理文書 / 実体 / 指示書 を切り替えて表示する。
+ * アイテム(タグ絞込)/ 決定事項ログ / 観測 / 未整理文書 / 実体 / 指示書 を切り替えて表示する。
  */
 @Composable
 fun RecordsScreen(
@@ -173,7 +173,7 @@ fun RecordsScreen(
 
             RecordsSection.DIARY -> {
                 if (uiState.diaryEntries.isEmpty()) {
-                    item { EmptyText("観察日記はまだありません") }
+                    item { EmptyText("観測はまだありません") }
                 } else {
                     items(uiState.diaryEntries, key = { it.id }) { entry ->
                         DiaryCard(entry)
