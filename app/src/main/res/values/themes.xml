@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.YosugaHub" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- サイバーパンクUI(ダーク固定)。起動直後の一瞬も暗い地で出すため
+         windowBackground を Compose 側の背景色と揃える。 -->
+    <style name="Theme.YosugaHub" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0A0E14</item>
+        <item name="android:statusBarColor">#0A0E14</item>
+        <item name="android:navigationBarColor">#0A0E14</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>
