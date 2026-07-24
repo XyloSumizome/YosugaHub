@@ -150,7 +150,8 @@ file_count: 3
 ```yaml
 ---
 type: development-log
-game: ANRI
+project_id: anri          # 振り分けの安定キー(変更禁止)
+game: ANRI                # 表示名(人が読む用。改名されうる)
 category: lighting
 created_at: 2026-07-24T08:00:00+09:00
 updated_at: 2026-07-24T08:00:00+09:00
@@ -217,7 +218,24 @@ YosugaVault/
 
 分類に失敗したファイル・保存先が決められないファイルは `Inbox/` へ入れる。
 
-**Phase 1 はこの構成に依存しない**(何があっても列挙するだけ)。構成の確定は Phase 3 でよい。
+**Phase 1 はこの構成に依存しない**(何があっても列挙するだけ)。
+
+### 保存先の決まり方(2026-07-24 確定)
+
+Claude Code が出す Frontmatter の `type` と `project_id` から**機械的に**決まる。
+Hub は中身を読んで判断しない(v5 §10「Hub は複雑な判断を持たない」)。
+
+| `type` | 保存先 |
+|---|---|
+| `design` | `Games/<ゲーム>/Design/` |
+| `development-log` | `Games/<ゲーム>/Development Logs/` |
+| `decision` | `Games/<ゲーム>/Decisions/` |
+| `reference` | `Games/<ゲーム>/Overview/` |
+| 不明・Frontmatter 欠落 | `Inbox/` |
+
+`<ゲーム>` は表示名のフォルダ(`ANRI` / `紙装甲主人公と不死身のカエル` / `げんげきょう`)。
+ただし**振り分けの判定に使うのは `project_id`**(`anri` / `paper-armor-frog` / `gengenkyo`)。
+表示名は改名されうるが `project_id` は変わらないため。
 
 ---
 
@@ -263,6 +281,18 @@ YosugaVault/
 
 GitHub 取得データの Obsidian 自動保存 / Claude Code 出力の自動振り分け /
 ヨスガ会話ログの取り込み / 重複検出 / 関連ノート候補の提示
+
+前提はすべて確定済み(§11)。実装は次の順に割る:
+
+| | 内容 |
+|---|---|
+| **3-a** | 各リポジトリの `.yosuga/notes/` を GitHub から一覧・取得する |
+| **3-b** | Frontmatter の `type` / `project_id` から保存先を決めて Vault へ書く。**取得済みは再取得しない** |
+| **3-c** | 取り込み結果の画面(何を・どこへ入れたか / Inbox 行きの件数) |
+| **3-d** | ヨスガ会話ログの取り込み(独立モジュール) |
+
+**設計原則(§10)の再確認**: 上書きより新規作成を優先し、既存ノートを壊さない。
+すべての自動処理に元ファイルと処理日時を残す。
 
 ### Phase 4
 
@@ -314,10 +344,11 @@ VaultReader ──→ List<LoadedNote>(原文) ──→ [ NoteTransformer ] ─
 
 | 論点 | Phase 1 の扱い | 最終決定 |
 |---|---|---|
-| Dropbox API 直利用 か 端末同期フォルダか | **どちらにも依存しない**。SAF で選んだ任意のツリーを読む | ⚠ 実機確認待ち(§12) |
-| Vault の正式なフォルダ構成 | 依存しない | Phase 3 |
-| 各ゲームの正式名称と識別子 | 依存しない | 未定 |
-| Claude Code のファイル名ルール | 依存しない | Phase 3 |
+| Dropbox API 直利用 か 端末同期フォルダか | **どちらにも依存しない**。SAF で選んだ任意のツリーを読む | **決定**: 端末ローカル Vault + Remotely Save(Obsidian プラグイン)で Dropbox 同期。⚠ Vault は共有ストレージ上に置くこと(アプリ内フォルダだと Hub から読めない) |
+| Vault の正式なフォルダ構成 | 依存しない | **決定**: §6 のとおり。`type` からの振り分け表を追加 |
+| 各ゲームの正式名称と識別子 | 依存しない | **決定**: `anri` / `paper-armor-frog` / `gengenkyo`(既存の projectId を流用・変更禁止) |
+| **知識ノートの受け渡し方法** | — | **決定**: リポジトリ `.yosuga/notes/` に置き、**Hub が GitHub 経由で取得して Vault へ書く**。Claude Code は Vault も Dropbox も知らない(PC固有の絶対パスを持たせない) |
+| Claude Code のファイル名ルール | 依存しない | **決定**: `YYYY-MM-DD-<英語スラッグ>.md`。既存ファイルを上書きしない |
 | 同名ファイルの処理 | **Vault は読み取り専用**。出力名に日時を入れて衝突させない | Phase 3 |
 | 自動追記と新規作成の使い分け | Phase 1 では書き込まない | Phase 3 |
 | ChatGPT へ送る推奨最大文字数 | 制限せず、**約 60,000 字で警告表示のみ** | 運用で調整 |

@@ -221,6 +221,7 @@ Hub 側が中身を読んで分類し直さなくてよい形で出力するこ�
 ```markdown
 ---
 type: development-log
+project_id: anri
 game: ANRI
 category: lighting
 created_at: 2026-07-24T08:00:00+09:00
@@ -267,8 +268,9 @@ commit:
 
 | キー | 必須 | 値 |
 |---|---|---|
-| `type` | ✅ | `development-log` / `design` / `decision` / `reference` のいずれか |
-| `game` | ✅ | 表示名(`ANRI` / `紙装甲主人公と不死身のカエル` / `げんげきょう`) |
+| `type` | ✅ | `development-log` / `design` / `decision` / `reference` のいずれか。**Hub の保存先はこれで決まる** |
+| `project_id` | ✅ | `anri` / `paper-armor-frog` / `gengenkyo`。**変更禁止の安定キー**。Hub はこれで振り分ける |
+| `game` | ✅ | 表示名(`ANRI` / `紙装甲主人公と不死身のカエル` / `げんげきょう`)。人が読む用 |
 | `category` | ✅ | 自由。ただし**そのゲーム内で表記を揺らさない**(`lighting` と `Lighting` を混ぜない) |
 | `created_at` / `updated_at` | ✅ | ISO 8601 + タイムゾーン(`+09:00`) |
 | `source` | ✅ | 固定で `claude-code` |
@@ -294,17 +296,44 @@ YYYY-MM-DD-<短い英語スラッグ>.md
 
 ---
 
-## ⚠ 未決: 知識ノートの受け渡し方法
+## 受け渡し方法(2026-07-24 決定: リポジトリ経由)
 
-出力形式は上記で確定。**どうやって Obsidian Vault まで運ぶかは未決。**
+**知識ノートはリポジトリ内に置く。Obsidian へ運ぶのは Yosuga Hub の仕事。**
 
-| | 方法 | 長所 | 短所 |
-|---|---|---|---|
-| **A** | Claude Code が **PC上の Vault フォルダへ直接書く** → Dropbox が同期 → スマホの Hub が読む | **今日から動く。**Hub 側の実装が要らない | 各ゲームの CLAUDE.md に PC 固有の絶対パスが載る。PCが変わると壊れる |
-| **B** | リポジトリ内(例 `.yosuga/notes/`)に書く → Hub が GitHub 経由で取得 → Vault へ書き込む | リポジトリで完結。マシン非依存。git履歴に残る | **Hub 側に Phase 3 の実装が必要** |
+```
+各ゲームのリポジトリ
+  .yosuga/notes/2026-07-24-lighting-falloff.md   ← Claude Code が書く
+        ↓ git push
+      GitHub
+        ↓ Yosuga Hub が取得(Phase 3)
+  Obsidian Vault / Games/<ゲーム>/Development Logs/2026-07-24-lighting-falloff.md
+        ↓ Dropbox 同期
+      PC の Obsidian / スマホの Yosuga Hub
+```
 
-決まるまでは、**B の置き場所(`.yosuga/notes/`)に書いておくのが安全**。
-A へ切り替える場合もファイルを移すだけで済み、書式は変わらない。
+**Claude Code がやること: `.yosuga/notes/` に書いて push する。それだけ。**
+Vault の場所も Dropbox も知らなくてよい(PC固有の絶対パスを持たずに済む)。
+
+### 置き場所の規則
+
+- ディレクトリ: **`.yosuga/notes/`**(無ければ作る)
+- **既存ファイルを上書きしない。**追記も原則しない。新しい記録は新しいファイルにする
+- 一度 push したノートを後から書き換えない(訂正は新しいノートに書き、旧ノートを参照する)
+  - 理由: Hub 側は「取得済みのノートは再取得しない」前提で作るため、
+    書き換えても Vault 側へ反映されない
+- **ゲームのコードと同じコミットに含めてよい**(むしろそのほうが対応が追いやすい)
+
+### Hub 側での保存先(Claude Code は意識しなくてよい)
+
+`type` と `project_id` から機械的に決まる。だから **`type` を正しく書くことが最重要**。
+
+| `type` | Vault 内の保存先 |
+|---|---|
+| `design` | `Games/<ゲーム>/Design/` |
+| `development-log` | `Games/<ゲーム>/Development Logs/` |
+| `decision` | `Games/<ゲーム>/Decisions/` |
+| `reference` | `Games/<ゲーム>/Overview/` |
+| 不明・Frontmatter 欠落 | `Inbox/`(人が後で仕分ける) |
 
 ---
 

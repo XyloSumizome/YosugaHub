@@ -380,8 +380,54 @@ GitHubリポジトリ情報しか編集させておらず、`inProgress` / `next
 実機確認 ✅ ホーム画面の「ゲーム進捗」から架空の文言が消えた。
 **これで Hub に架空データは残っていない。**
 
+### 運用ドキュメントを v5 へ追随 + Phase 3 の前提を確定
+
+v5 の核心は「意味付けは生成元でやる」。各ゲームの Claude Code が Frontmatter 付き
+Markdown を出さなければ、Phase 3 を作っても振り分ける中身が来ない。まずここを定義した。
+
+- `docs/claude_code_onboarding.md` に「v5: 知識ノートの出力」を追加
+  (status.json との役割の違い / Frontmatter 規則 / 本文構成 / ファイル名規則)
+- `docs/yosuga_prompt.md`: 入力に Obsidian コンテキストが加わった旨 +
+  「渡されるのは原文の一部。書かれていないことを断定しない」注意
+- `docs/recoru_prompt.md`: v5 でレコルが必須から外れた旨
+
+#### ▶ 決定事項(これで Phase 3 の前提はすべて揃った)
+
+| 論点 | 決定 |
+|---|---|
+| **知識ノートの受け渡し** | **リポジトリ経由(B)**。`.yosuga/notes/` に置き、**Hub が GitHub 経由で取得して Vault へ書く** |
+| Vault のフォルダ構成 | 設計書v5 §6 のとおり |
+| 保存先の決まり方 | Frontmatter の `type` で機械的に決定。不明なら `Inbox/` |
+| ゲームの識別子 | 既存 projectId を流用: `anri` / `paper-armor-frog` / `gengenkyo` |
+| ファイル名 | `YYYY-MM-DD-<英語スラッグ>.md`。上書き禁止 |
+
+**設計判断: Frontmatter に `project_id` を追加した。**
+`game`(表示名)は改名されうるが、Hub が振り分けに使うキーは安定していなければならない。
+表示名だけだと改名のたびに振り分けが壊れる。
+
+**設計判断: Claude Code に Vault の場所を知らせない。**
+B を選んだ最大の理由。A(PC上の Vault へ直接書く)だと各ゲームの CLAUDE.md に
+PC 固有の絶対パスが載り、マシンが変わると壊れる。
+B なら Claude Code は「`.yosuga/notes/` に書いて push」だけでよい。
+
+**運用ルール: 一度 push したノートは書き換えない。**
+Hub 側を「取得済みは再取得しない」設計にするため、後から直しても Vault へ反映されない。
+訂正は新しいノートを書き、旧ノートを参照する。
+
+#### Phase 3 の分割(設計書v5 §8 に追記)
+
+| | 内容 |
+|---|---|
+| 3-a | 各リポジトリの `.yosuga/notes/` を GitHub から一覧・取得 |
+| 3-b | `type` から保存先を決めて Vault へ書く。取得済みは再取得しない |
+| 3-c | 取り込み結果の画面(何を・どこへ / Inbox 行きの件数) |
+| 3-d | ヨスガ会話ログの取り込み(独立モジュール) |
+
 ### 次にやること
 
+- **各ゲームの Claude Code へ `docs/claude_code_onboarding.md` を渡す**
+  (これをやらないと Phase 3 が空回りする)
+- **Phase 3-a に着手**
 - **Morning Brief を作り直す**。レコルが実データだけを見て要約するか確認
   (これまでは中身がほぼ全部仮データだった)
 - **Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /
