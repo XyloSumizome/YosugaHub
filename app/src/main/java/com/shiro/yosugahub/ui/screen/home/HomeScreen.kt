@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.inProgressLine
 import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.shareJsonText
 
@@ -154,7 +155,7 @@ fun HomeScreen(
                     Column(modifier = Modifier.padding(vertical = 4.dp)) {
                         Text(text = project.name, style = MaterialTheme.typography.titleSmall)
                         Text(
-                            text = "作業中: ${project.inProgress}",
+                            text = inProgressLine(project.inProgress),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }

@@ -95,11 +95,42 @@ fun ProjectDetailScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(text = "目標: ${project.currentGoal}", style = MaterialTheme.typography.bodyMedium)
+                        // 目標が空なら見出しだけ出さない(A運用では進捗はGitHub側にある)。
+                        Text(
+                            text = if (project.currentGoal.isNotBlank()) {
+                                "目標: ${project.currentGoal}"
+                            } else {
+                                "目標: 未設定"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (project.currentGoal.isNotBlank()) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
                         AssistChip(onClick = {}, label = { Text(healthLabel(project.health)) })
                     }
-                    Text(text = "作業中: ${project.inProgress}", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = "次: ${project.nextTask}", style = MaterialTheme.typography.bodyMedium)
+                    // 作業中 / 次 はタスクから導出(案C)。無ければ行ごと隠す。
+                    if (project.inProgress.isNotBlank()) {
+                        Text(
+                            text = "作業中: ${project.inProgress}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    if (project.nextTask.isNotBlank()) {
+                        Text(
+                            text = "次: ${project.nextTask}",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    if (project.inProgress.isBlank() && project.nextTask.isBlank()) {
+                        Text(
+                            text = "残タスク・進捗は下の「GitHub 進捗」に表示されます。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "最終更新: ${project.lastUpdated}",

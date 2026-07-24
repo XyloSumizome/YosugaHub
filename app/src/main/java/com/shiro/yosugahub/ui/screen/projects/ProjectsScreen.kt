@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.ui.component.healthLabel
+import com.shiro.yosugahub.ui.component.inProgressLine
 import com.shiro.yosugahub.ui.share.statusRefreshSummary
 
 @Composable
@@ -85,9 +86,16 @@ private fun ProjectCard(project: Project, onClick: () -> Unit, modifier: Modifie
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "目標: ${project.currentGoal}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "作業中: ${project.inProgress}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "次: ${project.nextTask}", style = MaterialTheme.typography.bodyMedium)
+            if (project.currentGoal.isNotBlank()) {
+                Text(
+                    text = "目標: ${project.currentGoal}",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Text(text = inProgressLine(project.inProgress), style = MaterialTheme.typography.bodyMedium)
+            if (project.nextTask.isNotBlank()) {
+                Text(text = "次: ${project.nextTask}", style = MaterialTheme.typography.bodyMedium)
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "最終更新: ${project.lastUpdated}",
