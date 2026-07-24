@@ -9,6 +9,7 @@ import com.shiro.yosugahub.data.obsidian.ContextScope
 import com.shiro.yosugahub.data.obsidian.Frontmatter
 import com.shiro.yosugahub.data.obsidian.LoadedNote
 import com.shiro.yosugahub.data.obsidian.NoteTransformer
+import com.shiro.yosugahub.data.obsidian.TagIndex
 import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultReader
@@ -76,6 +77,29 @@ class VaultRepository(
         format: ContextFormat = ContextFormat.MARKDOWN,
         now: OffsetDateTime = OffsetDateTime.now(zoneId),
     ): ContextBuildResult = format(loadContext(selected, now), format)
+
+    /**
+     * タグ索引を作る(設計書v5 Phase 2)。
+     *
+     * **全ノートを開く。**一覧の列挙(フォルダを辿るだけ)とは桁違いに重いので、
+     * 画面表示のたびには走らせず、ユーザーが明示的に要求したときだけ呼ぶ。
+     * 読めなかったノートは飛ばして続行する。
+     */
+    suspend fun buildTagIndex(notes: List<VaultNote> = _notes.value): TagIndex {
+        val tagsByPath = LinkedHashMap<String, List<String>>()
+        val skipped = mutableListOf<String>()
+
+        notes.forEach { note ->
+            val raw = reader.readNote(note.documentUri)
+            if (raw == null) {
+                skipped += note.relativePath
+                return@forEach
+            }
+            val tags = Frontmatter.parse(raw).tags
+            if (tags.isNotEmpty()) tagsByPath[note.relativePath] = tags
+        }
+        return TagIndex(tagsByPath = tagsByPath, skipped = skipped)
+    }
 
     /**
      * 選択されたノートの本文を読み、**形式に依存しない**中間表現を作る。

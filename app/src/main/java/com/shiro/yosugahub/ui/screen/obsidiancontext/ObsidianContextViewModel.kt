@@ -11,10 +11,13 @@ import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.file.TextDocumentWriter
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.NoteFilter
+import com.shiro.yosugahub.data.obsidian.TagIndex
 import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import com.shiro.yosugahub.data.repository.ContextBuildResult
+import com.shiro.yosugahub.data.repository.ContextHistoryEntry
+import com.shiro.yosugahub.data.repository.ContextHistoryRepository
 import com.shiro.yosugahub.data.repository.VaultRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +37,9 @@ data class ObsidianContextUiState(
     val format: ContextFormat = ContextFormat.MARKDOWN,
     /** [filter] を適用した表示対象。選択は絞り込みに影響されない。 */
     val visible: List<VaultNote> = emptyList(),
+    /** タグ索引。作るまで空(タグ絞り込みは使えないが他の条件は動く)。 */
+    val tagIndex: TagIndex = TagIndex.EMPTY,
+    val isIndexing: Boolean = false,
     val errorMessage: String = "",
     val isBuilding: Boolean = false,
     /** 生成済みのコンテキスト。null ならプレビュー未生成。 */
@@ -58,6 +64,7 @@ data class ObsidianContextUiState(
 class ObsidianContextViewModel(
     private val vaultRepository: VaultRepository,
     private val documentWriter: TextDocumentWriter,
+    private val historyRepository: ContextHistoryRepository? = null,
     /** 「最近更新」の基準時刻。テストで固定できるようにする。 */
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
@@ -123,7 +130,31 @@ class ObsidianContextViewModel(
     }
 
     private fun filtered(notes: List<VaultNote>, filter: NoteFilter): List<VaultNote> =
-        VaultNoteFilters.apply(notes, filter, nowMillis())
+        VaultNoteFilters.apply(notes, filter, nowMillis(), _uiState.value.tagIndex)
+
+    /**
+     * タグ索引を作る(全ノートを開くので明示的に呼ぶ)。
+     * 作り終えたら、いま効いている絞り込みを適用し直す。
+     */
+    fun buildTagIndex() {
+        if (_uiState.value.isIndexing) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isIndexing = true)
+            val index = runCatching { vaultRepository.buildTagIndex(_uiState.value.notes) }
+                .getOrDefault(TagIndex.EMPTY)
+            val state = _uiState.value.copy(isIndexing = false, tagIndex = index)
+            _uiState.value = state.copy(
+                visible = VaultNoteFilters.apply(state.notes, state.filter, nowMillis(), index),
+            )
+        }
+    }
+
+    /** タグの選択を切り替える(複数選んだ場合は OR)。 */
+    fun toggleTag(tag: String) {
+        val current = _uiState.value.filter
+        val next = if (tag in current.tags) current.tags - tag else current.tags + tag
+        applyFilter(current.copy(tags = next))
+    }
 
     fun toggle(note: VaultNote) {
         val current = _uiState.value.selected
@@ -192,12 +223,55 @@ class ObsidianContextViewModel(
 
     /** SAF で作成されたファイルへプレビュー内容を書き出す(Phase 1-c)。 */
     fun saveTo(uri: Uri, onResult: (Boolean) -> Unit) {
-        val content = _uiState.value.preview?.content
-        if (content == null) {
+        val preview = _uiState.value.preview
+        if (preview == null) {
             onResult(false)
             return
         }
-        viewModelScope.launch { onResult(documentWriter.write(uri, content)) }
+        viewModelScope.launch {
+            val saved = documentWriter.write(uri, preview.content)
+            if (saved) recordHistory()
+            onResult(saved)
+        }
+    }
+
+    /**
+     * 実際に外へ出したときだけ控えを残す(Phase 2「出力履歴」)。
+     * プレビューは何度も作り直すため、生成のたびに残すと何を渡したか分からなくなる。
+     */
+    fun recordHistory() {
+        val preview = _uiState.value.preview ?: return
+        val repository = historyRepository ?: return
+        viewModelScope.launch {
+            repository.record(preview.content, preview.format)
+            _history.value = repository.history()
+        }
+    }
+
+    private val _history = MutableStateFlow<List<ContextHistoryEntry>>(emptyList())
+    val history: StateFlow<List<ContextHistoryEntry>> = _history.asStateFlow()
+
+    fun refreshHistory() {
+        val repository = historyRepository ?: return
+        viewModelScope.launch { _history.value = repository.history() }
+    }
+
+    /** 控えの中身を読む(何を渡したかの確認用)。 */
+    fun readHistory(fileName: String, onResult: (String?) -> Unit) {
+        val repository = historyRepository
+        if (repository == null) {
+            onResult(null)
+            return
+        }
+        viewModelScope.launch { onResult(repository.read(fileName)) }
+    }
+
+    fun deleteHistory(fileName: String) {
+        val repository = historyRepository ?: return
+        viewModelScope.launch {
+            repository.delete(fileName)
+            _history.value = repository.history()
+        }
     }
 
     companion object {
@@ -207,6 +281,7 @@ class ObsidianContextViewModel(
                 ObsidianContextViewModel(
                     vaultRepository = app.container.vaultRepository,
                     documentWriter = app.container.documentWriter,
+                    historyRepository = app.container.contextHistoryRepository,
                 )
             }
         }

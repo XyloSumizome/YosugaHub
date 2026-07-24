@@ -1,6 +1,7 @@
 package com.shiro.yosugahub
 
 import com.shiro.yosugahub.data.obsidian.NoteFilter
+import com.shiro.yosugahub.data.obsidian.TagIndex
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import org.junit.Assert.assertEquals
@@ -84,10 +85,69 @@ class VaultNoteFiltersTest {
         assertEquals(reversed, result)
     }
 
+    private val tagIndex = TagIndex(
+        tagsByPath = mapOf(
+            lighting.relativePath to listOf("ANRI", "design", "lighting"),
+            log.relativePath to listOf("ANRI", "development-log"),
+            idea.relativePath to listOf("audio"),
+        ),
+    )
+
+    @Test
+    fun tags_are_combined_with_or_not_and() {
+        // 2つ選んで AND にすると即 0 件になるので OR にしている
+        val filter = NoteFilter(tags = setOf("design", "development-log"))
+        assertEquals(listOf(lighting, log), VaultNoteFilters.apply(all, filter, now, tagIndex))
+    }
+
+    @Test
+    fun a_single_tag_narrows_to_its_notes() {
+        val filter = NoteFilter(tags = setOf("audio"))
+        assertEquals(listOf(idea), VaultNoteFilters.apply(all, filter, now, tagIndex))
+    }
+
+    @Test
+    fun notes_missing_from_the_index_are_excluded_when_filtering_by_tag() {
+        val partial = TagIndex(tagsByPath = mapOf(lighting.relativePath to listOf("ANRI")))
+        val filter = NoteFilter(tags = setOf("ANRI"))
+
+        assertEquals(listOf(lighting), VaultNoteFilters.apply(all, filter, now, partial))
+    }
+
+    @Test
+    fun tag_filter_does_nothing_without_an_index() {
+        // 索引未作成でもクラッシュせず、他の条件だけが効く
+        val filter = NoteFilter(query = "Games", tags = setOf("design"))
+        assertTrue(VaultNoteFilters.apply(all, filter, now).isEmpty())
+    }
+
+    @Test
+    fun tags_combine_with_the_other_conditions() {
+        val filter = NoteFilter(query = "Games", tags = setOf("ANRI"), recentDays = 1)
+        assertEquals(listOf(lighting), VaultNoteFilters.apply(all, filter, now, tagIndex))
+    }
+
+    @Test
+    fun all_tags_are_ordered_by_frequency_then_name() {
+        // ANRI が2件、それ以外は1件。同数は名前順。
+        assertEquals(
+            listOf("ANRI", "audio", "design", "development-log", "lighting"),
+            tagIndex.allTags,
+        )
+    }
+
+    @Test
+    fun an_empty_index_reports_itself_as_not_built() {
+        assertFalse(TagIndex.EMPTY.isBuilt)
+        assertTrue(tagIndex.isBuilt)
+        assertEquals(emptyList<String>(), TagIndex.EMPTY.tagsOf("なにか.md"))
+    }
+
     @Test
     fun is_active_reflects_either_condition() {
         assertTrue(NoteFilter(query = "a").isActive)
         assertTrue(NoteFilter(recentDays = 7).isActive)
         assertFalse(NoteFilter(query = "   ").isActive)
+        assertTrue(NoteFilter(tags = setOf("design")).isActive)
     }
 }

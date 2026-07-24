@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -32,6 +34,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,8 +52,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
+import com.shiro.yosugahub.data.obsidian.TagIndex
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
+import com.shiro.yosugahub.data.repository.ContextHistoryEntry
 import com.shiro.yosugahub.data.repository.ContextBuildResult
 import com.shiro.yosugahub.ui.share.shareMarkdownText
 
@@ -64,6 +72,11 @@ fun ObsidianContextScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
+    val history by viewModel.history.collectAsState()
+    var showHistory by remember { mutableStateOf(false) }
+    var openedHistory by remember { mutableStateOf<Pair<String, String>?>(null) }
+    // 履歴はファイル一覧なので Flow ではない。画面を開いたときに読み直す。
+    LaunchedEffect(Unit) { viewModel.refreshHistory() }
 
     // 保存先はその場でユーザーが選ぶ(FileProvider も追加権限も不要)。
     // CreateDocument は MIME を生成時に固定するため、形式ごとにランチャーを用意する。
@@ -89,6 +102,7 @@ fun ObsidianContextScreen(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f).padding(start = 8.dp),
             )
+            TextButton(onClick = { showHistory = true }) { Text("履歴") }
             TextButton(
                 onClick = viewModel::refresh,
                 enabled = uiState.loadState != VaultLoadState.LOADING,
@@ -134,8 +148,12 @@ fun ObsidianContextScreen(
             } else {
                 FilterBar(
                     filter = uiState.filter,
+                    tagIndex = uiState.tagIndex,
+                    isIndexing = uiState.isIndexing,
                     onQueryChange = viewModel::setQuery,
                     onRecentDays = viewModel::setRecentDays,
+                    onBuildTagIndex = viewModel::buildTagIndex,
+                    onToggleTag = viewModel::toggleTag,
                     onClear = viewModel::clearFilter,
                 )
                 if (uiState.visible.isEmpty()) {
@@ -161,12 +179,38 @@ fun ObsidianContextScreen(
         }
     }
 
+    if (showHistory) {
+        HistoryDialog(
+            entries = history,
+            onOpen = { fileName ->
+                viewModel.readHistory(fileName) { content ->
+                    if (content != null) openedHistory = fileName to content
+                }
+            },
+            onDelete = viewModel::deleteHistory,
+            onDismiss = { showHistory = false },
+        )
+    }
+
+    openedHistory?.let { (fileName, content) ->
+        HistoryContentDialog(
+            fileName = fileName,
+            content = content,
+            onCopy = {
+                clipboard.setText(AnnotatedString(content))
+                Toast.makeText(context, "コピーしました", Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { openedHistory = null },
+        )
+    }
+
     uiState.preview?.let { preview ->
         PreviewDialog(
             preview = preview,
             onDismiss = viewModel::dismissPreview,
             onCopy = {
                 clipboard.setText(AnnotatedString(preview.content))
+                viewModel.recordHistory()
                 Toast.makeText(context, "コピーしました", Toast.LENGTH_SHORT).show()
             },
             onSave = {
@@ -178,18 +222,96 @@ fun ObsidianContextScreen(
             format = uiState.format,
             onFormatChange = viewModel::setFormat,
             onShare = {
+                viewModel.recordHistory()
                 shareMarkdownText(context, preview.content, subject = preview.fileName)
             },
         )
     }
 }
 
+/**
+ * 出力履歴(設計書v5 Phase 2)。
+ * 記録されるのは**実際に外へ出したもの**だけ(コピー / 保存 / 共有)。
+ */
+@Composable
+private fun HistoryDialog(
+    entries: List<ContextHistoryEntry>,
+    onOpen: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("出力履歴") },
+        text = {
+            if (entries.isEmpty()) {
+                Text(
+                    "まだありません。コピー・保存・共有したものがここに残ります。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            } else {
+                LazyColumn {
+                    items(entries, key = { it.fileName }) { entry ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onOpen(entry.fileName) }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = entry.savedAt.ifBlank { entry.fileName },
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                                Text(
+                                    text = "${entry.format} / ${entry.sizeBytes} B",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                            TextButton(onClick = { onDelete(entry.fileName) }) { Text("削除") }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("閉じる") } },
+    )
+}
+
+/** 控えの中身表示。過去に渡したものをもう一度コピーできる。 */
+@Composable
+private fun HistoryContentDialog(
+    fileName: String,
+    content: String,
+    onCopy: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(fileName) },
+        text = {
+            Text(
+                text = content,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            )
+        },
+        confirmButton = { TextButton(onClick = onCopy) { Text("コピー") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("閉じる") } },
+    )
+}
+
 /** 絞り込み。ファイルを開かずに判定できる条件だけを置く(設計書v5 Phase 2)。 */
 @Composable
 private fun FilterBar(
     filter: NoteFilter,
+    tagIndex: TagIndex,
+    isIndexing: Boolean,
     onQueryChange: (String) -> Unit,
     onRecentDays: (Int?) -> Unit,
+    onBuildTagIndex: () -> Unit,
+    onToggleTag: (String) -> Unit,
     onClear: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
@@ -214,6 +336,34 @@ private fun FilterBar(
             }
             if (filter.isActive) {
                 TextButton(onClick = onClear) { Text("解除") }
+            }
+        }
+
+        // タグは本文を開かないと分からない。索引は明示的に作らせる。
+        if (!tagIndex.isBuilt) {
+            Spacer(modifier = Modifier.height(4.dp))
+            TextButton(onClick = onBuildTagIndex, enabled = !isIndexing) {
+                Text(if (isIndexing) "タグを読み込み中…" else "タグで絞り込む(全ノートを読みます)")
+            }
+        } else {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                tagIndex.allTags.forEach { tag ->
+                    FilterChip(
+                        selected = tag in filter.tags,
+                        onClick = { onToggleTag(tag) },
+                        label = { Text("#$tag") },
+                    )
+                }
+            }
+            if (tagIndex.skipped.isNotEmpty()) {
+                Text(
+                    text = "${tagIndex.skipped.size}件は読めませんでした",
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
     }

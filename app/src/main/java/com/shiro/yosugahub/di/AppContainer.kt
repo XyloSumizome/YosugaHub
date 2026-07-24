@@ -20,6 +20,7 @@ import com.shiro.yosugahub.data.obsidian.SafVaultReader
 import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
+import com.shiro.yosugahub.data.repository.ContextHistoryRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.DirectiveRepository
 import com.shiro.yosugahub.data.repository.DocumentRepository
@@ -72,6 +73,7 @@ interface AppContainer {
     val vaultRepository: VaultRepository
     val documentWriter: DocumentWriter
     val sampleDataRepository: SampleDataRepository
+    val contextHistoryRepository: ContextHistoryRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -134,6 +136,11 @@ class DefaultAppContainer(
             projectStatusDao = database.projectStatusDao(),
             userPreferencesRepository = userPreferencesRepository,
         )
+    }
+
+    /** ヨスガへ渡したコンテキストの控え(v5 Phase 2)。 */
+    override val contextHistoryRepository: ContextHistoryRepository by lazy {
+        ContextHistoryRepository(context.applicationContext)
     }
 
     /** SAF で選ばれたファイルへの書き出し(v5 Phase 1-c)。 */
