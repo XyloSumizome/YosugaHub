@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
 import com.shiro.yosugahub.data.obsidian.VaultNote
@@ -65,16 +66,17 @@ fun ObsidianContextScreen(
     val clipboard = LocalClipboardManager.current
 
     // 保存先はその場でユーザーが選ぶ(FileProvider も追加権限も不要)。
-    val saveLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/markdown"),
-    ) { uri ->
-        if (uri != null) {
-            viewModel.saveTo(uri) { saved ->
-                val message = if (saved) "保存しました" else "保存に失敗しました"
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
-        }
+    // CreateDocument は MIME を生成時に固定するため、形式ごとにランチャーを用意する。
+    val onSaved: (Boolean) -> Unit = { saved ->
+        val message = if (saved) "保存しました" else "保存に失敗しました"
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
+    val saveMarkdown = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(ContextFormat.MARKDOWN.mimeType),
+    ) { uri -> if (uri != null) viewModel.saveTo(uri, onSaved) }
+    val saveJson = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(ContextFormat.JSON.mimeType),
+    ) { uri -> if (uri != null) viewModel.saveTo(uri, onSaved) }
 
     Column(modifier = modifier.fillMaxSize()) {
         Row(
@@ -164,12 +166,19 @@ fun ObsidianContextScreen(
             preview = preview,
             onDismiss = viewModel::dismissPreview,
             onCopy = {
-                clipboard.setText(AnnotatedString(preview.markdown))
+                clipboard.setText(AnnotatedString(preview.content))
                 Toast.makeText(context, "コピーしました", Toast.LENGTH_SHORT).show()
             },
-            onSave = { saveLauncher.launch(preview.fileName) },
+            onSave = {
+                when (uiState.format) {
+                    ContextFormat.MARKDOWN -> saveMarkdown.launch(preview.fileName)
+                    ContextFormat.JSON -> saveJson.launch(preview.fileName)
+                }
+            },
+            format = uiState.format,
+            onFormatChange = viewModel::setFormat,
             onShare = {
-                shareMarkdownText(context, preview.markdown, subject = preview.fileName)
+                shareMarkdownText(context, preview.content, subject = preview.fileName)
             },
         )
     }
@@ -311,6 +320,8 @@ private fun SelectionBar(
 @Composable
 private fun PreviewDialog(
     preview: ContextBuildResult,
+    format: ContextFormat,
+    onFormatChange: (ContextFormat) -> Unit,
     onDismiss: () -> Unit,
     onCopy: () -> Unit,
     onSave: () -> Unit,
@@ -344,9 +355,19 @@ private fun PreviewDialog(
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    ContextFormat.entries.forEach { option ->
+                        FilterChip(
+                            selected = format == option,
+                            onClick = { onFormatChange(option) },
+                            label = { Text(option.label) },
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
                 HorizontalDivider()
                 Text(
-                    text = preview.markdown,
+                    text = preview.content,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier
                         .weight(1f)

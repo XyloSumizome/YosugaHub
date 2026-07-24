@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.file.TextDocumentWriter
+import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.NoteFilter
 import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.obsidian.VaultNote
@@ -29,6 +30,8 @@ data class ObsidianContextUiState(
     /** 選択されたノートの相対パス。順序は一覧の並びに従うので Set で持つ。 */
     val selected: Set<String> = emptySet(),
     val filter: NoteFilter = NoteFilter(),
+    /** 出力形式。正本は Markdown、JSON は機械処理向けの追加(設計書v5 §6)。 */
+    val format: ContextFormat = ContextFormat.MARKDOWN,
     /** [filter] を適用した表示対象。選択は絞り込みに影響されない。 */
     val visible: List<VaultNote> = emptyList(),
     val errorMessage: String = "",
@@ -151,7 +154,7 @@ class ObsidianContextViewModel(
         _uiState.value = _uiState.value.copy(selected = emptySet(), preview = null)
     }
 
-    /** 選択されたノートを 1 本のコンテキスト Markdown にする。 */
+    /** 選択されたノートを 1 本のコンテキストにまとめる。 */
     fun buildPreview() {
         val state = _uiState.value
         if (!state.canBuild) return
@@ -159,7 +162,9 @@ class ObsidianContextViewModel(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isBuilding = true)
-            val result = runCatching { vaultRepository.buildContext(targets) }
+            val result = runCatching {
+                vaultRepository.format(vaultRepository.loadContext(targets), _uiState.value.format)
+            }
             _uiState.value = _uiState.value.copy(
                 isBuilding = false,
                 preview = result.getOrNull(),
@@ -170,18 +175,29 @@ class ObsidianContextViewModel(
         }
     }
 
+    /**
+     * 出力形式を切り替える。**ファイルは読み直さない**
+     * (中間表現から整形し直すだけ)。
+     */
+    fun setFormat(format: ContextFormat) {
+        val state = _uiState.value
+        if (state.format == format) return
+        val preview = state.preview?.let { vaultRepository.format(it.data, format) }
+        _uiState.value = state.copy(format = format, preview = preview)
+    }
+
     fun dismissPreview() {
         _uiState.value = _uiState.value.copy(preview = null)
     }
 
     /** SAF で作成されたファイルへプレビュー内容を書き出す(Phase 1-c)。 */
     fun saveTo(uri: Uri, onResult: (Boolean) -> Unit) {
-        val markdown = _uiState.value.preview?.markdown
-        if (markdown == null) {
+        val content = _uiState.value.preview?.content
+        if (content == null) {
             onResult(false)
             return
         }
-        viewModelScope.launch { onResult(documentWriter.write(uri, markdown)) }
+        viewModelScope.launch { onResult(documentWriter.write(uri, content)) }
     }
 
     companion object {

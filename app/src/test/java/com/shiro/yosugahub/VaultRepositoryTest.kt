@@ -71,15 +71,15 @@ class VaultRepositoryTest {
             )
         )
 
-        val result = repository.buildContext(listOf(first, second), now)
+        val result = repository.buildContext(listOf(first, second), now = now)
 
         assertEquals(2, result.noteCount)
         assertEquals("yosuga_context_2026-07-24.md", result.fileName)
         assertTrue(result.skipped.isEmpty())
-        assertTrue(result.markdown.contains("減衰をゆるく。"))
-        assertTrue(result.markdown.contains("カーブを差し替えた。"))
-        assertTrue(result.markdown.contains("## ANRI / Lighting"))
-        assertEquals(result.markdown.length, result.charCount)
+        assertTrue(result.content.contains("減衰をゆるく。"))
+        assertTrue(result.content.contains("カーブを差し替えた。"))
+        assertTrue(result.content.contains("## ANRI / Lighting"))
+        assertEquals(result.content.length, result.charCount)
     }
 
     @Test
@@ -93,11 +93,11 @@ class VaultRepositoryTest {
             )
         )
 
-        val result = repository.buildContext(listOf(ok, broken), now)
+        val result = repository.buildContext(listOf(ok, broken), now = now)
 
         assertEquals(1, result.noteCount)
         assertEquals(listOf("B.md"), result.skipped)
-        assertTrue(result.markdown.contains("本文A"))
+        assertTrue(result.content.contains("本文A"))
     }
 
     @Test
@@ -114,9 +114,9 @@ class VaultRepositoryTest {
             zoneId = ZoneOffset.ofHours(9),
         )
 
-        val result = repository.buildContext(listOf(target), now)
+        val result = repository.buildContext(listOf(target), now = now)
 
-        assertTrue(result.markdown.contains("- Updated: `2026-07-23T21:15:00+09:00`"))
+        assertTrue(result.content.contains("- Updated: `2026-07-23T21:15:00+09:00`"))
     }
 
     @Test
@@ -131,9 +131,9 @@ class VaultRepositoryTest {
             transformer = NoteTransformer { notes -> notes.map { it.copy(body = "要約") } },
         )
 
-        val result = repository.buildContext(listOf(target), now)
+        val result = repository.buildContext(listOf(target), now = now)
 
-        assertTrue(result.markdown.contains("要約"))
-        assertTrue(!result.markdown.contains("とても長い原文"))
+        assertTrue(result.content.contains("要約"))
+        assertTrue(!result.content.contains("とても長い原文"))
     }
 }

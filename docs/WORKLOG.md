@@ -164,8 +164,29 @@ v5 では「維持するが必須ではない」に格下げする(設計書v5 �
 
 テスト **13件追加**(`VaultNoteFiltersTest` 8 / ViewModel 5)。全体 **261件** 通過。
 
+### Phase 2-b 完了(JSON出力)
+
+プレビュー内で **Markdown / JSON** を切り替えられるようにした。
+
+| 追加 | 役割 |
+|---|---|
+| `data/obsidian/ContextFormat.kt` | 形式の enum + `ContextData`(形式に依存しない中間表現)+ ファイル名 |
+| `data/obsidian/ContextJson.kt` | Markdown と同じ情報を JSON で出す純粋関数 |
+
+**設計判断: 読み取りと整形を分けた。**
+`VaultRepository` を `loadContext()`(ファイルを読む)と `format()`(純粋)に割った。
+おかげで**形式を切り替えてもファイルを読み直さない**。
+`switching_format_reformats_without_reading_files_again` が読み取り回数で担保している。
+
+- 正本は Markdown。JSON は機械処理向けの追加であって置き換えではない(v5 §6)
+- `CreateDocument` は MIME を生成時に固定するため、保存ランチャーを形式ごとに用意した
+- `ContextBuildResult.markdown` → `.content` へ改名(JSON も入るため)
+
+テスト **9件追加**(`ContextJsonTest` 7 / ViewModel 2)。全体 **270件** 通過。
+
 ### 次にやること
 
+- **Phase 2 の残り**: 出力履歴 / タグ絞り込み(インデックス作成が必要)
 - **Phase 1 の実機通し確認の残り**(共有シートに ChatGPT が出るか)
 - **Phase 2**: タグ抽出 / 日付範囲 / 最近更新 / JSON出力 / 出力履歴
 - 並行: Obsidian モバイル + Remotely Save で Dropbox 同期の構成を作る

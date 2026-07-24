@@ -68,8 +68,8 @@ object ContextMarkdown {
         }
     }
 
-    /** 出力ファイル名。日付ごとに分け、既存ファイルと衝突させない(設計書v5 §11)。 */
-    fun fileName(date: String): String = "yosuga_context_$date.md"
+    /** Markdown の出力ファイル名。 */
+    fun fileName(date: String): String = ContextFileNames.of(date, ContextFormat.MARKDOWN)
 
     private fun StringBuilder.appendScope(scope: ContextScope) {
         if (scope.isEmpty) {

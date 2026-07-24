@@ -1,6 +1,7 @@
 package com.shiro.yosugahub
 
 import com.shiro.yosugahub.data.file.TextDocumentWriter
+import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultReader
@@ -134,8 +135,8 @@ class ObsidianContextViewModelTest {
         val preview = vm.uiState.value.preview
         requireNotNull(preview)
         assertEquals(1, preview.noteCount)
-        assertTrue(preview.markdown.contains("選んだ本文"))
-        assertFalse(preview.markdown.contains("選ばない本文"))
+        assertTrue(preview.content.contains("選んだ本文"))
+        assertFalse(preview.content.contains("選ばない本文"))
         assertFalse(vm.uiState.value.isBuilding)
     }
 
@@ -227,6 +228,56 @@ class ObsidianContextViewModelTest {
 
         assertEquals("Logs", vm.uiState.value.filter.query)
         assertEquals(listOf(log), vm.uiState.value.visible)
+    }
+
+    @Test
+    fun switching_format_reformats_without_reading_files_again() = runTest(dispatcher) {
+        var reads = 0
+        val reader = object : VaultReader {
+            override suspend fun listNotes(): VaultListing =
+                VaultListing.Success(listOf(lighting))
+
+            override suspend fun readNote(documentUri: String): String {
+                reads++
+                return "本文"
+            }
+
+            override suspend fun vaultName(): String = "TestVault"
+        }
+        val vm = ObsidianContextViewModel(
+            vaultRepository = VaultRepository(reader),
+            documentWriter = NoopWriter,
+        )
+        advanceUntilIdle()
+
+        vm.toggle(lighting)
+        vm.buildPreview()
+        advanceUntilIdle()
+        assertEquals(1, reads)
+        assertTrue(vm.uiState.value.preview!!.content.startsWith("---"))
+
+        vm.setFormat(ContextFormat.JSON)
+
+        // 形式を変えてもファイルは読み直さない
+        assertEquals(1, reads)
+        assertEquals(ContextFormat.JSON, vm.uiState.value.format)
+        val content = vm.uiState.value.preview!!.content
+        assertTrue(content.trimStart().startsWith("{"))
+        assertTrue(content.contains("yosuga-context"))
+        assertTrue(vm.uiState.value.preview!!.fileName.endsWith(".json"))
+    }
+
+    @Test
+    fun format_is_kept_for_the_next_build() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setFormat(ContextFormat.JSON)
+        vm.toggle(lighting)
+        vm.buildPreview()
+        advanceUntilIdle()
+
+        assertTrue(vm.uiState.value.preview!!.content.trimStart().startsWith("{"))
     }
 
     @Test
