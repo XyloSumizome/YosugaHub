@@ -14,10 +14,13 @@ import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ImportResult
+import com.shiro.yosugahub.data.repository.NoteImportRepository
+import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.Recommendation
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -34,7 +37,35 @@ class AssistantViewModel(
     private val exportRepository: ExportRepository,
     private val importRepository: ImportRepository,
     private val proposalRepository: ProposalRepository,
+    private val noteImportRepository: NoteImportRepository,
 ) : ViewModel() {
+
+    private val _noteImporting = MutableStateFlow(false)
+    val noteImporting: StateFlow<Boolean> = _noteImporting
+
+    private val _noteImportSummary = MutableStateFlow<NoteImportSummary?>(null)
+    val noteImportSummary: StateFlow<NoteImportSummary?> = _noteImportSummary
+
+    /**
+     * 各ゲームの `.yosuga/notes/` を取り込んで Obsidian Vault へ収める(v5 Phase 3-c)。
+     * 取得済みのノートは飛ばすので、繰り返し押しても二重には入らない。
+     */
+    fun importNotes() {
+        if (_noteImporting.value) return
+        viewModelScope.launch {
+            _noteImporting.value = true
+            _noteImportSummary.value = null
+            try {
+                _noteImportSummary.value = noteImportRepository.importAll()
+            } finally {
+                _noteImporting.value = false
+            }
+        }
+    }
+
+    fun dismissNoteImportSummary() {
+        _noteImportSummary.value = null
+    }
 
     /** 提案を承認して本テーブルへ反映する。反映できない提案は棄却へ回る。 */
     fun approveProposal(proposal: PendingProposal, onResult: (ApproveResult) -> Unit) {
@@ -94,6 +125,7 @@ class AssistantViewModel(
                     exportRepository = app.container.exportRepository,
                     importRepository = app.container.importRepository,
                     proposalRepository = app.container.proposalRepository,
+                    noteImportRepository = app.container.noteImportRepository,
                 )
             }
         }

@@ -47,6 +47,8 @@ fun AssistantScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val noteImporting by viewModel.noteImporting.collectAsState()
+    val noteImportSummary by viewModel.noteImportSummary.collectAsState()
 
     val createExport = {
         viewModel.createExport { result ->
@@ -73,6 +75,13 @@ fun AssistantScreen(
     val importResponse = { importLauncher.launch(arrayOf("application/json", "text/plain")) }
 
     var showPasteDialog by remember { mutableStateOf(false) }
+    noteImportSummary?.let { summary ->
+        NoteImportSummaryDialog(
+            summary = summary,
+            onDismiss = viewModel::dismissNoteImportSummary,
+        )
+    }
+
     if (showPasteDialog) {
         PasteImportDialog(
             onDismiss = { showPasteDialog = false },
@@ -92,6 +101,24 @@ fun AssistantScreen(
     ) {
         item {
             Text(text = "ヨスガ連携", style = MaterialTheme.typography.headlineSmall)
+        }
+        item {
+            SectionCard(title = "ゲームのノートを取り込む") {
+                Text(
+                    text = "各ゲームのリポジトリの .yosuga/notes/ を取得し、" +
+                        "Frontmatter の type に従って Obsidian Vault へ振り分けます。" +
+                        "取り込み済みのノートは飛ばすので、何度押しても二重には入りません。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = viewModel::importNotes,
+                    enabled = !noteImporting,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (noteImporting) "取り込み中…" else "ノートを取り込む")
+                }
+            }
         }
         item {
             SectionCard(title = "Obsidianの文脈") {
