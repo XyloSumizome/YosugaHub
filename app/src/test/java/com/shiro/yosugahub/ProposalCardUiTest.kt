@@ -46,7 +46,7 @@ class ProposalCardUiTest {
     @Test
     fun diary_card_uses_received_date_when_blank() {
         val card = proposal(ProposalType.DIARY, """{"body":"今日は..."}""").toCardUi()
-        assertEquals("観察日記", card.typeLabel)
+        assertEquals("観測", card.typeLabel)
         assertEquals("2026-07-23", card.title)
     }
 

@@ -82,4 +82,80 @@ class StatusParserTest {
         val result = StatusParser.parse(validJson, expectedProjectId = "")
         assertTrue(result is StatusParser.Result.Success)
     }
+
+    private fun successOf(json: String): StatusParser.Result.Success {
+        val result = StatusParser.parse(json)
+        assertTrue("読めなかった: $result", result is StatusParser.Result.Success)
+        return result as StatusParser.Result.Success
+    }
+
+    /** 紙エルのように questionsForYosuga をオブジェクト配列で書く例。落とさず読む。 */
+    @Test
+    fun reads_questions_written_as_objects() {
+        val status = successOf(
+            """
+            {
+              "schemaVersion": 1,
+              "projectId": "paper-armor-frog",
+              "questionsForYosuga": [
+                { "id": "q1", "question": "難易度はどうすべきか" },
+                { "id": "q2", "text": "章立ては足りているか" },
+                { "id": "q3", "title": "BGMの方向性" }
+              ]
+            }
+            """.trimIndent(),
+        ).status
+        assertEquals(
+            listOf("難易度はどうすべきか", "章立ては足りているか", "BGMの方向性"),
+            status.questionsForYosuga,
+        )
+    }
+
+    /** 既知のキーが無いオブジェクトでも、最初の非空な文字列を拾う。 */
+    @Test
+    fun falls_back_to_first_string_value_in_unknown_object() {
+        val status = successOf(
+            """
+            {"schemaVersion":1,"projectId":"anri",
+             "questionsForYosuga":[{"id":"","ask":"素材はどこまで揃える?"}]}
+            """.trimIndent(),
+        ).status
+        assertEquals(listOf("素材はどこまで揃える?"), status.questionsForYosuga)
+    }
+
+    /** 配列で書き忘れて単体の文字列にした例。 */
+    @Test
+    fun reads_questions_written_as_a_bare_string() {
+        val status = successOf(
+            """{"schemaVersion":1,"projectId":"anri","questionsForYosuga":"難易度はどうすべきか"}""",
+        ).status
+        assertEquals(listOf("難易度はどうすべきか"), status.questionsForYosuga)
+    }
+
+    /** null や空文字は落とし、混在した文字列/オブジェクトは両方読む。 */
+    @Test
+    fun drops_blank_entries_and_reads_mixed_shapes() {
+        val status = successOf(
+            """
+            {"schemaVersion":1,"projectId":"anri",
+             "questionsForYosuga":["生の文字列", "", null, {"id":"q9"}, {"question":"最後の質問"}]}
+            """.trimIndent(),
+        ).status
+        assertEquals(listOf("生の文字列", "最後の質問"), status.questionsForYosuga)
+    }
+
+    /** null 丸ごと・数値混じりでも落ちない。 */
+    @Test
+    fun tolerates_null_and_non_string_scalars() {
+        assertEquals(
+            emptyList<String>(),
+            successOf("""{"schemaVersion":1,"projectId":"anri","questionsForYosuga":null}""")
+                .status.questionsForYosuga,
+        )
+        assertEquals(
+            listOf("42"),
+            successOf("""{"schemaVersion":1,"projectId":"anri","questionsForYosuga":[42]}""")
+                .status.questionsForYosuga,
+        )
+    }
 }

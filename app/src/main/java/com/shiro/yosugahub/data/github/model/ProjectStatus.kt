@@ -24,6 +24,11 @@ data class ProjectStatus(
     val recentChanges: List<StatusChange> = emptyList(),
     val risks: List<StatusBlocker> = emptyList(),
     val decisions: List<StatusDecision> = emptyList(),
+    /**
+     * ゲーム側が文字列配列で書く想定だが、オブジェクト配列や単体文字列で来ることがある。
+     * 1項目の型ゆれで status.json 全体が読めなくなるのを避けるため型ゆれを吸収する。
+     */
+    @Serializable(with = FlexibleTextListSerializer::class)
     val questionsForYosuga: List<String> = emptyList(),
 )
 

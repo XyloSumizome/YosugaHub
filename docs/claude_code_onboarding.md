@@ -95,7 +95,10 @@
 推奨:
 - 完了タスクには完了日時、次タスクには優先度
 - 見積もりが難しければ estimatedMinutes は省略
-- 判断が必要な事項は questionsForYosuga へ、重要な設計判断は decisions へ
+- 判断が必要な事項は questionsForYosuga へ、重要な設計判断は decisions へ。
+  `questionsForYosuga` は **文字列の配列**(`["質問文", ...]`)。
+  Hub 側はオブジェクト配列(`{"question": "..."}` など)や単体の文字列でも読めるが、
+  正しい形は文字列配列なのでそれに合わせる
 - 進捗率は根拠がある場合のみ
 
 ## status.md(人間可読。status.json と矛盾させない)

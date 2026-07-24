@@ -18,7 +18,7 @@
   取り込み/保存/生成/GitHub取得で**本物のログが端末に流れ、走査線が走る**演出付き。
 - **仮データ(SampleSeed)は削除機能で一掃済み**。再シードも停止。
   プロジェクトの「作業中/次」はタスクから自動導出(案C)。
-- テスト **349件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
+- テスト **354件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
   (`cmd.exe /c "set JAVA_HOME=...jbr&& gradlew.bat ..."`)。エミュは黒画面対策で
   `fastboot.forceColdBoot=yes`(詳細は [[build-environments]] メモ)。
 
@@ -46,8 +46,8 @@
 - **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期の構成
   (⚠ Vault は**共有ストレージ上**に。アプリ内フォルダだと Hub から読めない)。
   共有シートに ChatGPT が出るか。
-- **紙エル(paper-armor-frog)の status.json**: `questionsForYosuga` が文字列配列か要確認
-  (オブジェクト配列だと「読み取れませんでした」で落ちる。ANRI は解決済み)。
+- ~~**紙エルの status.json**: `questionsForYosuga` の型ゆれ~~ → **2026-07-24 解決**。
+  オブジェクト配列 / 単体文字列 / null でも読めるようにした(下記の項参照)。実機での取得は未確認。
 - **UI の細部**: 複雑なフォーム(タスク編集/プロジェクト編集/記録追加)は Material の
   ドロップダウン・チェックボックスが残る。AlertDialog も Material のまま(角丸ゼロ・緑)。
   プロジェクト詳細の戻るは旧アイコン(`<BACK` ブロックに揃える余地)。
@@ -59,6 +59,50 @@
 - コンソール `> IMPORT RESPONSE` にヨスガの `diary[]` JSON を貼る → 記録タブ「観測」へ。
 - 各コマンドで端末ログ + 走査線の演出を確認。
 - プロジェクト詳細 → GitHubから更新 で GITHUB FETCH の端末ログ。
+
+---
+
+## 2026-07-24: status.json の `questionsForYosuga` の型ゆれを吸収(紙エル対策)
+
+### 問題
+
+`ProjectStatus.questionsForYosuga` が `List<String>` 固定だったため、ゲーム側の Claude Code が
+`[{"id":"q1","question":"..."}]` のようにオブジェクト配列で書くと **kotlinx.serialization が
+例外を投げ、status.json 全体が `InvalidJson` になって取得が丸ごと失敗**していた。
+質問1項目の書き方の違いで、summary も nextTasks も読めなくなるのは害が大きい。
+
+### 直し方
+
+`FlexibleTextSerializer` / `FlexibleTextListSerializer` を新規追加
+(`data/github/model/FlexibleTextSerializer.kt`)。`questionsForYosuga` にだけ適用した。
+
+- 文字列 / 数値 / 真偽値 → そのまま文字列に
+- オブジェクト → `question` `text` `title` `summary` … の順で本文らしいキーを探す。
+  無ければ、`id` `type` `date` などの管理用キーを除いた最初の非空文字列を拾う
+  (`{"id":"q9"}` だけのような中身の無い項目は空になり、既存の空落としで消える)
+- 配列 → 各要素を同じ規則で文字列化して `" / "` 連結
+- 配列で書き忘れて単体の文字列 / オブジェクトになっていても読む
+- null / 該当なし → 空文字(`toSnapshot` が既に空を落としている)
+
+**適用範囲は `questionsForYosuga` のみ**。他フィールドは型ゆれの実例が無いので広げていない
+(全体を緩めると、本当に壊れた status.json を「読めた」ことにしてしまう)。
+
+`docs/claude_code_onboarding.md` にも「正しい形は文字列配列」と明記した(Hub 側が
+読めることを、そう書いてよい理由にしないため)。
+
+### ついでに直したもの
+
+`ProposalCardUiTest.diary_card_uses_received_date_when_blank` が失敗していた。
+「観察日記 → 観測」の表記変更(06bfc54)でテストが取り残されていた **既存の失敗**で、
+今回の変更とは無関係。期待値を「観測」に更新した。
+
+### テスト
+
+`StatusParserTest` に **5件追加**(オブジェクト配列 / 未知キーのオブジェクト / 単体文字列 /
+空・null・数値の混在)。全体 **354件** 通過。`assembleDebug` 成功。
+新規ライブラリなし・Roomスキーマ変更なし。
+
+**未確認**: 実機で紙エルの status.json を実際に取得して読めること。
 
 ---
 
