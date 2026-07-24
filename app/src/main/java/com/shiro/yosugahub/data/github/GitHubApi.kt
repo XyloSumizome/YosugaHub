@@ -89,8 +89,52 @@ class GitHubApi(
         }
     }
 
+    /**
+     * ディレクトリの一覧を取得する(v5 Phase 3-a)。
+     * ファイル取得と違い `application/vnd.github+json` を使う。応答は JSON 配列。
+     * 中身の解釈は [NoteListParser] に任せ、ここは通信だけを担う。
+     */
+    suspend fun listDirectory(
+        owner: String,
+        repo: String,
+        path: String,
+        branch: String?,
+        token: String?,
+    ): FetchResult {
+        val url = buildString {
+            append(baseUrl)
+            append("/repos/").append(owner.encodeURLPathPart())
+            append("/").append(repo.encodeURLPathPart())
+            append("/contents/").append(path)
+            if (!branch.isNullOrBlank()) append("?ref=").append(branch.encodeURLPathPart())
+        }
+
+        return try {
+            val response = client.get(url) {
+                header("Accept", "application/vnd.github+json")
+                header("X-GitHub-Api-Version", API_VERSION)
+                if (!token.isNullOrBlank()) header("Authorization", "Bearer $token")
+            }
+            when (val code = response.status.value) {
+                HttpStatusCode.OK.value -> FetchResult.Success(response.bodyAsText())
+                HttpStatusCode.Unauthorized.value,
+                HttpStatusCode.Forbidden.value,
+                -> FetchResult.Unauthorized(code)
+                HttpStatusCode.NotFound.value -> FetchResult.NotFound
+                else -> FetchResult.HttpError(code)
+            }
+        } catch (e: IOException) {
+            FetchResult.NetworkError
+        } catch (e: Exception) {
+            FetchResult.NetworkError
+        }
+    }
+
     companion object {
         const val STATUS_PATH = ".yosuga/status.json"
+
+        /** 各ゲームが知識ノートを置くディレクトリ(v5 Phase 3-a / 受け渡し方法B)。 */
+        const val NOTES_PATH = ".yosuga/notes"
 
         private const val API_VERSION = "2022-11-28"
         private const val REQUEST_TIMEOUT_MS = 15_000L

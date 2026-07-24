@@ -34,6 +34,7 @@ import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.data.repository.RepoNoteRepository
 import com.shiro.yosugahub.data.repository.SampleDataRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
@@ -74,6 +75,7 @@ interface AppContainer {
     val documentWriter: DocumentWriter
     val sampleDataRepository: SampleDataRepository
     val contextHistoryRepository: ContextHistoryRepository
+    val repoNoteRepository: RepoNoteRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -136,6 +138,14 @@ class DefaultAppContainer(
             calendarEventDao = database.calendarEventDao(),
             projectStatusDao = database.projectStatusDao(),
             userPreferencesRepository = userPreferencesRepository,
+        )
+    }
+
+    /** 各ゲームの `.yosuga/notes/` から知識ノートを取得する(v5 Phase 3-a)。 */
+    override val repoNoteRepository: RepoNoteRepository by lazy {
+        RepoNoteRepository(
+            api = GitHubApi(),
+            tokenProvider = { gitHubSettingsRepository.currentToken() },
         )
     }
 

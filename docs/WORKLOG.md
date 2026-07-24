@@ -423,11 +423,35 @@ Hub 側を「取得済みは再取得しない」設計にするため、後か�
 | 3-c | 取り込み結果の画面(何を・どこへ / Inbox 行きの件数) |
 | 3-d | ヨスガ会話ログの取り込み(独立モジュール) |
 
+### Phase 3-a 完了(GitHub から知識ノートを取得)
+
+| 追加 | 役割 |
+|---|---|
+| `GitHubApi.listDirectory()` | ディレクトリ一覧の取得。`GitHubApi.NOTES_PATH = ".yosuga/notes"` |
+| `data/github/NoteListParser.kt` | 一覧JSONの純粋パーサ + `RemoteNote`(name/path/sha/size) |
+| `data/repository/RepoNoteRepository.kt` | 一覧 → 未取得だけ本文取得。`NoteFetchResult` |
+
+設計判断:
+- **取得済み判定はブロブSHA。**Git のブロブSHAは内容が変わらない限り不変なので、
+  ファイル名や更新日時より確実。「一度 push したノートは書き換えない」運用と対になる。
+- **判定材料(`knownShas`)は呼び出し側から渡す。**永続化の持ち方を 3-a に持ち込まない
+  (どこに記録するかは 3-b で決める)。
+- **`.yosuga/notes/` が無い(404)のはエラーではない。**まだノートを書いていないゲームでは
+  普通に起こるので `NoNotesDirectory` として区別する。
+- **1件の本文取得が失敗しても全体を止めない。**`failed` に積んで次回また拾う。
+- 1回の取得は**最大30件**。API を叩きすぎない歯止め。
+- ディレクトリ一覧は `Accept: application/vnd.github+json`(本文取得の `raw` とは別)。
+  サブディレクトリと `.md` 以外は無視するので、ノート置き場に何が置かれても落ちない。
+
+テスト **16件追加**(`NoteListParserTest` 8 / `RepoNoteRepositoryTest` 8、MockEngine)。
+全体 **304件** 通過。**実通信は未検証**(GitHub 連携全体がまだ実通信未確認)。
+
 ### 次にやること
 
 - **各ゲームの Claude Code へ `docs/claude_code_onboarding.md` を渡す**
-  (これをやらないと Phase 3 が空回りする)
-- **Phase 3-a に着手**
+  (ノートが1件も無いと 3-b の動作確認ができない)
+- **Phase 3-b**: `type` から保存先を決めて Vault へ書く。取得済み SHA の記録場所をここで決める
+  (Room v8 か DataStore か。書き込み記録は件数が増えるので Room が有力)
 - **Morning Brief を作り直す**。レコルが実データだけを見て要約するか確認
   (これまでは中身がほぼ全部仮データだった)
 - **Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /
