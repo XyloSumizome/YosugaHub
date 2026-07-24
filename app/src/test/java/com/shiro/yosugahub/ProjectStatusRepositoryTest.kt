@@ -10,6 +10,7 @@ import com.shiro.yosugahub.data.local.db.dao.ProjectStatusDao
 import com.shiro.yosugahub.data.local.db.entity.ProjectStatusCacheEntity
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.StatusFetchResult
+import com.shiro.yosugahub.data.repository.SyncResult
 import com.shiro.yosugahub.domain.model.Project
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -102,7 +103,7 @@ class ProjectStatusRepositoryTest {
         val repo = repository(dao) {
             StatusFetchResult.Success("anri", ProjectStatus(schemaVersion = 1, projectId = "anri"), validJson)
         }
-        val result = repo.refresh(project())
+        val result = repo.refresh(project()).fetch
         assertTrue(result is StatusFetchResult.Success)
         val cached = dao.stored.single()
         assertEquals("anri", cached.projectId)
@@ -116,7 +117,7 @@ class ProjectStatusRepositoryTest {
         val dao = FakeStatusDao(listOf(existing))
         val repo = repository(dao) { StatusFetchResult.NetworkError("anri") }
 
-        val result = repo.refresh(project())
+        val result = repo.refresh(project()).fetch
         assertTrue(result is StatusFetchResult.NetworkError)
         assertEquals(existing, dao.stored.single())  // 直近の表示を壊さない
     }
@@ -157,8 +158,83 @@ class ProjectStatusRepositoryTest {
         }
         val results = repo.refreshAll(
             listOf(project("anri"), project("gengenkyo", withRepo = false))
-        )
+        ).fetches
         assertEquals(listOf("anri"), fetched)
         assertEquals(1, results.size)
+    }
+
+    // --- 取得後の自動同期 ---
+
+    private fun repositoryWithSync(
+        dao: FakeStatusDao,
+        syncCalls: MutableList<Unit>,
+        sync: SyncResult = SyncResult.Success(7),
+        fetch: suspend (Project) -> StatusFetchResult,
+    ) = ProjectStatusRepository(
+        dao = dao,
+        fetch = fetch,
+        now = { fixedNow },
+        syncAfterFetch = { syncCalls += Unit; sync },
+    )
+
+    @Test
+    fun refresh_success_syncs_to_server() = runBlocking {
+        val calls = mutableListOf<Unit>()
+        val repo = repositoryWithSync(FakeStatusDao(), calls) {
+            StatusFetchResult.Success("anri", ProjectStatus(schemaVersion = 1, projectId = "anri"), validJson)
+        }
+        val result = repo.refresh(project())
+        assertEquals(1, calls.size)
+        assertEquals(SyncResult.Success(7), result.sync)
+    }
+
+    /** 取れなかったときは送る中身が変わらないので、通信を増やさない。 */
+    @Test
+    fun refresh_failure_does_not_sync() = runBlocking {
+        val calls = mutableListOf<Unit>()
+        val repo = repositoryWithSync(FakeStatusDao(), calls) { StatusFetchResult.NetworkError("anri") }
+        val result = repo.refresh(project())
+        assertTrue(calls.isEmpty())
+        assertNull(result.sync)
+    }
+
+    /** 一括更新は何件成功しても同期は1回だけ(送るのは毎回スナップショット全体)。 */
+    @Test
+    fun refresh_all_syncs_once_for_the_whole_batch() = runBlocking {
+        val calls = mutableListOf<Unit>()
+        val repo = repositoryWithSync(FakeStatusDao(), calls) { p ->
+            StatusFetchResult.Success(
+                p.id,
+                ProjectStatus(schemaVersion = 1, projectId = p.id),
+                """{"schemaVersion":1,"projectId":"${p.id}"}""",
+            )
+        }
+        val result = repo.refreshAll(listOf(project("anri"), project("gengenkyo")))
+        assertEquals(2, result.fetches.size)
+        assertEquals(1, calls.size)
+        assertEquals(SyncResult.Success(7), result.sync)
+    }
+
+    @Test
+    fun refresh_all_does_not_sync_when_every_fetch_failed() = runBlocking {
+        val calls = mutableListOf<Unit>()
+        val repo = repositoryWithSync(FakeStatusDao(), calls) { p ->
+            StatusFetchResult.NetworkError(p.id)
+        }
+        val result = repo.refreshAll(listOf(project("anri"), project("gengenkyo")))
+        assertTrue(calls.isEmpty())
+        assertNull(result.sync)
+    }
+
+    /** 更新対象が無ければ通信もしない。 */
+    @Test
+    fun refresh_all_without_repositories_does_not_sync() = runBlocking {
+        val calls = mutableListOf<Unit>()
+        val repo = repositoryWithSync(FakeStatusDao(), calls) {
+            throw AssertionError("通信してはいけない")
+        }
+        val result = repo.refreshAll(listOf(project("anri", withRepo = false)))
+        assertTrue(result.fetches.isEmpty())
+        assertTrue(calls.isEmpty())
     }
 }

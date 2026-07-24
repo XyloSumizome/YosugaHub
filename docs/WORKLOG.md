@@ -18,7 +18,7 @@
   取り込み/保存/生成/GitHub取得で**本物のログが端末に流れ、走査線が走る**演出付き。
 - **仮データ(SampleSeed)は削除機能で一掃済み**。再シードも停止。
   プロジェクトの「作業中/次」はタスクから自動導出(案C)。
-- テスト **354件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
+- テスト **359件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
   (`cmd.exe /c "set JAVA_HOME=...jbr&& gradlew.bat ..."`)。エミュは黒画面対策で
   `fastboot.forceColdBoot=yes`(詳細は [[build-environments]] メモ)。
 
@@ -38,6 +38,8 @@
   出力は `diary[]` の回答JSON → コンソール `> IMPORT RESPONSE` に貼る → 承認。
   ヨスガへの指示文は `docs/yosuga_prompt.md`(観測日記の節あり)。
 - **レコル**(カスタムGPT+Actions) = 情報の仕分け。日記は書かない。`docs/recoru_prompt.md`。
+  **知識を活かすのはレコルではない**(それは人間かヨスガの仕事)。レコルの役目は
+  **Obsidian への入力を自動化して、2人が参照しやすい状態を作ること**。
 - 各ゲームの **Claude Code** = `.yosuga/notes/`(知識ノート)と `.yosuga/status.json` を書く。
   指示文は `docs/claude_code_onboarding.md`。
 
@@ -59,6 +61,56 @@
 - コンソール `> IMPORT RESPONSE` にヨスガの `diary[]` JSON を貼る → 記録タブ「観測」へ。
 - 各コマンドで端末ログ + 走査線の演出を確認。
 - プロジェクト詳細 → GitHubから更新 で GITHUB FETCH の端末ログ。
+
+---
+
+## 2026-07-24: GitHub取得のあとに自動でサーバー同期する
+
+### 問題
+
+`GitHub取得 → Hub → ロリポップ → レコル` は繋がっていたが、
+**自動同期は「回答JSONの取り込み成功時」の1箇所だけ**だった(`AppContainer.kt`)。
+そのため「GitHubから更新」を押しても、レコルが読む `projects.json` は古いままで、
+`設定 →「今すぐ同期」` を人が続けて踏まないと反映されない。
+しかも古いことに気づく手がかりが `generatedAt` しかない。
+
+### 直し方
+
+`ProjectStatusRepository` に `syncAfterFetch: suspend () -> SyncResult?` を足した
+(取り込み時の `syncAfterImport` と同じ形)。`AppContainer` で `serverSyncRepository.sync()` を
+**ラムダで**渡す — 直接参照すると `serverSyncRepository → AiExportRepository →
+projectStatusRepository` の循環になるため。
+
+- `refresh()` = 1件更新。**取得成功時だけ**同期する(失敗時は送る中身が変わらないので通信を増やさない)
+- `refreshAll()` = 一括更新。**1件でも成功したら、最後に1回だけ**同期する
+  (送るのは毎回スナップショット全体なので、件数分呼ぶ意味がない)
+- 戻り値を `StatusRefreshResult(fetch, sync)` / `StatusRefreshAllResult(fetches, sync)` にして、
+  同期の結果を UI まで持ち上げた。**黙って同期して黙って失敗する**のを避けるため
+
+### 見え方
+
+- Toast: 取得結果の下に「サーバーへ反映しました。」/ 失敗時は
+  「設定の『今すぐ同期』でやり直せます。」を足す。
+  **同期未設定のときは何も言わない**(未設定は失敗ではない)。
+  取り込み時と同じ文面を `ui/share/SyncMessage.kt` の `autoSyncSuffix()` に集約し、
+  `ImportMessage` からも使うようにした。
+- プロジェクト詳細の端末ログ: GITHUB FETCH の後に
+  `> SYNC lolipop` / `  PUSH 7 files … OK` が流れる。未設定なら行自体を出さない。
+
+### レコルの役割について(この日の確認)
+
+レコルに**知識を活かさせる気はない**。知識を使うのは人間かヨスガで、
+レコルの役目は **Obsidian への入力を自動化して、2人が参照しやすくすること**。
+そのため「`.yosuga/notes/` が Vault にしか行かず、ロリポップに流れない」のは設計通りで、
+`knowledge.json` を GitHub 由来のノートで膨らませる必要はない。
+
+### テスト
+
+`ProjectStatusRepositoryTest` に **5件追加**(成功で同期する / 失敗では同期しない /
+一括は1回だけ / 全滅なら同期しない / 対象なしなら通信しない)。
+全体 **359件** 通過。`assembleDebug` 成功。新規ライブラリなし・Roomスキーマ変更なし。
+
+**未確認**: 実機で「GitHubから更新 → そのままレコルが新しい projects.json を読む」通し。
 
 ---
 

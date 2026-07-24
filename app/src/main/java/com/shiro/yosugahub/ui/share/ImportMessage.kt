@@ -27,14 +27,5 @@ fun importResultMessage(result: ImportResult): String = when (result) {
         "ファイルを開けませんでした。もう一度選び直してください。"
 }
 
-/**
- * 取り込み後の自動同期についての一行(先頭に改行を含む)。
- * サーバー同期を使っていない場合は何も言わない(未設定は失敗ではない)。
- */
-private fun syncSuffix(sync: SyncResult?): String = when (sync) {
-    null, SyncResult.UrlNotConfigured, SyncResult.TokenMissing -> ""
-    is SyncResult.Success -> "\nサーバーへ反映しました。"
-    // 取り込み自体は成立しているので、失敗しても「やり直せる」ことを伝える。
-    else -> "\nサーバーへの反映に失敗しました(${syncResultMessage(sync)})。" +
-        "設定の「今すぐ同期」でやり直せます。"
-}
+/** 自動同期の一行は GitHub取得と共通(ui/share/SyncMessage.kt)。 */
+private fun syncSuffix(sync: SyncResult?): String = autoSyncSuffix(sync)

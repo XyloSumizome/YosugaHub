@@ -14,6 +14,8 @@ import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.StatusFetchResult
+import com.shiro.yosugahub.data.repository.StatusRefreshResult
+import com.shiro.yosugahub.data.repository.SyncResult
 import com.shiro.yosugahub.data.repository.TaskRepository
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
@@ -48,8 +50,8 @@ class ProjectDetailViewModel(
     /** GitHub 取得の端末ログ(v5 UI)。 */
     val opLog = OpLogState()
 
-    /** GitHub から status.json を取得しキャッシュを更新する。演出付き。 */
-    fun refreshStatus(onResult: (StatusFetchResult) -> Unit) {
+    /** GitHub から status.json を取得しキャッシュを更新する(成功なら自動同期)。演出付き。 */
+    fun refreshStatus(onResult: (StatusRefreshResult) -> Unit) {
         val project = uiState.value.project ?: return
         viewModelScope.launch {
             refreshing.value = true
@@ -64,7 +66,8 @@ class ProjectDetailViewModel(
                     )
                     emit.emit(LogLine("  FETCH .yosuga/status.json …", LogTone.INFO))
                     val r = projectStatusRepository.refresh(project)
-                    statusLines(r).forEach { emit.emit(it) }
+                    statusLines(r.fetch).forEach { emit.emit(it) }
+                    syncLines(r.sync).forEach { emit.emit(it) }
                     emit.emit(LogLine("> DONE", LogTone.ACCENT))
                     r
                 } ?: return@launch
@@ -98,6 +101,22 @@ class ProjectDetailViewModel(
             listOf(LogLine("  リポジトリ未設定", LogTone.WARN))
         is StatusFetchResult.TokenMissing ->
             listOf(LogLine("  GitHub トークン未設定", LogTone.WARN))
+    }
+
+    /**
+     * 取得後の自動同期の行。同期を使っていない場合は**何も出さない**
+     * (未設定は失敗ではないので、毎回エラーめいた行を流さない)。
+     */
+    private fun syncLines(sync: SyncResult?): List<LogLine> = when (sync) {
+        null, SyncResult.UrlNotConfigured, SyncResult.TokenMissing -> emptyList()
+        is SyncResult.Success -> listOf(
+            LogLine("> SYNC lolipop", LogTone.ACCENT),
+            LogLine("  PUSH ${sync.fileCount} files … OK", LogTone.OK),
+        )
+        else -> listOf(
+            LogLine("> SYNC lolipop", LogTone.ACCENT),
+            LogLine("  PUSH 失敗(設定の「今すぐ同期」でやり直せます)", LogTone.ERROR),
+        )
     }
 
     /** プロジェクト編集の保存(1-d)。lastUpdated は Repository が刻む。 */

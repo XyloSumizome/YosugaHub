@@ -17,3 +17,15 @@ fun syncResultMessage(result: SyncResult): String = when (result) {
     SyncResult.NetworkError ->
         "通信できませんでした。接続とURLを確認してもう一度お試しください。"
 }
+
+/**
+ * 取り込み・GitHub取得のあとに走る**自動同期**についての一行(先頭に改行を含む)。
+ * サーバー同期を使っていない場合は何も言わない(未設定は失敗ではない)。
+ * 元の操作自体は成立しているので、失敗しても「やり直せる」ことだけ伝える。
+ */
+fun autoSyncSuffix(sync: SyncResult?): String = when (sync) {
+    null, SyncResult.UrlNotConfigured, SyncResult.TokenMissing -> ""
+    is SyncResult.Success -> "\nサーバーへ反映しました。"
+    else -> "\nサーバーへの反映に失敗しました(${syncResultMessage(sync)})。" +
+        "設定の「今すぐ同期」でやり直せます。"
+}

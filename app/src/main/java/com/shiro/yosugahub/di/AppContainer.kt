@@ -221,6 +221,9 @@ class DefaultAppContainer(
         ProjectStatusRepository(
             dao = database.projectStatusDao(),
             fetch = { project -> gitHubStatusRepository.fetchStatus(project) },
+            // GitHub の進捗を取ったら、レコルが読む側もその場で新しくする(未設定なら即座に返る)。
+            // ラムダで受けるので、serverSyncRepository → AiExportRepository → ここ、の循環にならない。
+            syncAfterFetch = { serverSyncRepository.sync() },
         )
     }
     override val exportRepository: ExportRepository by lazy {

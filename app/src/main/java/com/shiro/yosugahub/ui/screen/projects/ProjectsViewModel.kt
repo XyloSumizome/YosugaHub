@@ -9,7 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
-import com.shiro.yosugahub.data.repository.StatusFetchResult
+import com.shiro.yosugahub.data.repository.StatusRefreshAllResult
 import com.shiro.yosugahub.domain.model.Project
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,8 +33,8 @@ class ProjectsViewModel(
 
     private val refreshing = MutableStateFlow(false)
 
-    /** リポジトリ設定済みの全プロジェクトを GitHub から更新する。 */
-    fun refreshAll(onResult: (List<StatusFetchResult>) -> Unit) {
+    /** リポジトリ設定済みの全プロジェクトを GitHub から更新する(1件でも取れたら自動同期)。 */
+    fun refreshAll(onResult: (StatusRefreshAllResult) -> Unit) {
         val projects = uiState.value.projects
         viewModelScope.launch {
             refreshing.value = true

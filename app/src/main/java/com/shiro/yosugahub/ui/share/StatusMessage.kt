@@ -1,6 +1,8 @@
 package com.shiro.yosugahub.ui.share
 
 import com.shiro.yosugahub.data.repository.StatusFetchResult
+import com.shiro.yosugahub.data.repository.StatusRefreshAllResult
+import com.shiro.yosugahub.data.repository.StatusRefreshResult
 
 /** 取得結果をユーザー向けの短文へ(設計書8章: 次に何をすればよいかを示す)。 */
 fun statusFetchMessage(result: StatusFetchResult): String = when (result) {
@@ -37,3 +39,11 @@ fun statusRefreshSummary(results: List<StatusFetchResult>): String {
         "$success 件成功 / $failed 件失敗しました"
     }
 }
+
+/** 取得 + 自動同期。同期の一行は取り込みと共通の言い回しにする。 */
+fun statusFetchMessage(result: StatusRefreshResult): String =
+    statusFetchMessage(result.fetch) + autoSyncSuffix(result.sync)
+
+/** 一括更新 + 自動同期。 */
+fun statusRefreshSummary(result: StatusRefreshAllResult): String =
+    statusRefreshSummary(result.fetches) + autoSyncSuffix(result.sync)
