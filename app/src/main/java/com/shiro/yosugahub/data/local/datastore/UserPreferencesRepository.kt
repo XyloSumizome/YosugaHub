@@ -1,12 +1,14 @@
 package com.shiro.yosugahub.data.local.datastore
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.io.IOException
 
@@ -80,7 +82,24 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.SYNC_TOKEN_ENCRYPTED] = value }
     }
 
+    /**
+     * 仮データ(SampleSeed)の再投入を止めるフラグ(v5 / 選択A)。
+     * 一度「サンプルデータを削除」した後は、テーブルが空になっても投入しない。
+     */
+    val seedingDisabled: Flow<Boolean> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.SEEDING_DISABLED] ?: false }
+
+    suspend fun isSeedingDisabled(): Boolean = seedingDisabled.first()
+
+    suspend fun setSeedingDisabled(value: Boolean) {
+        dataStore.edit { preferences -> preferences[Keys.SEEDING_DISABLED] = value }
+    }
+
     private object Keys {
+        val SEEDING_DISABLED = booleanPreferencesKey("seeding_disabled")
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
         val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")

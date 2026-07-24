@@ -15,6 +15,10 @@ import org.junit.Test
 class ProjectRepositoryTest {
 
     private class FakeProjectDao(initial: List<ProjectEntity> = emptyList()) : ProjectDao {
+        override suspend fun deleteById(id: String): Int = 0
+
+        override suspend fun countByIds(ids: List<String>): Int = 0
+
         val stored = initial.toMutableList()
 
         override fun observeAll(): Flow<List<ProjectEntity>> = flowOf(stored.toList())

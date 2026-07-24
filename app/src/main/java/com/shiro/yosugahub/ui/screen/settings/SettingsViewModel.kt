@@ -12,6 +12,8 @@ import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
 import com.shiro.yosugahub.data.repository.ImportHistoryEntry
 import com.shiro.yosugahub.data.repository.ImportRepository
+import com.shiro.yosugahub.data.repository.SampleDataRepository
+import com.shiro.yosugahub.data.repository.SampleDataStatus
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncResult
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
@@ -49,6 +51,7 @@ class SettingsViewModel(
     private val serverSyncRepository: ServerSyncRepository,
     private val importRepository: ImportRepository,
     private val vaultRepository: VaultRepository,
+    private val sampleDataRepository: SampleDataRepository,
 ) : ViewModel() {
 
     private val syncing = MutableStateFlow(false)
@@ -58,6 +61,48 @@ class SettingsViewModel(
 
     private val _vaultCheck = MutableStateFlow<VaultCheckResult?>(null)
     val vaultCheck: StateFlow<VaultCheckResult?> = _vaultCheck
+
+    private val _sampleData = MutableStateFlow(SampleDataStatus())
+    val sampleData: StateFlow<SampleDataStatus> = _sampleData
+
+    private val _sampleDataMessage = MutableStateFlow("")
+    val sampleDataMessage: StateFlow<String> = _sampleDataMessage
+
+    /** 残っている仮データの件数を数え直す(画面を開いたとき・削除後)。 */
+    fun refreshSampleData() {
+        viewModelScope.launch { _sampleData.value = sampleDataRepository.status() }
+    }
+
+    /**
+     * 仮データを削除する。ID 指定で消すので実データは巻き込まない。
+     * 削除後は再シードが止まる。
+     */
+    fun deleteSampleData(includeProjects: Boolean) {
+        viewModelScope.launch {
+            val result = sampleDataRepository.deleteSampleData(includeProjects)
+            _sampleData.value = sampleDataRepository.status()
+            _sampleDataMessage.value = if (result.total == 0) {
+                "削除するサンプルデータはありませんでした(再投入は停止しました)。"
+            } else {
+                buildString {
+                    append("サンプルデータを削除しました: ")
+                    append(
+                        listOfNotNull(
+                            "プロジェクト${result.projects}".takeIf { result.projects > 0 },
+                            "タスク${result.tasks}".takeIf { result.tasks > 0 },
+                            "アイテム${result.items}".takeIf { result.items > 0 },
+                            "日記${result.diaries}".takeIf { result.diaries > 0 },
+                            "提案${result.recommendations}".takeIf { result.recommendations > 0 },
+                        ).joinToString(" / ")
+                    )
+                }
+            }
+        }
+    }
+
+    fun clearSampleDataMessage() {
+        _sampleDataMessage.value = ""
+    }
 
     /**
      * Vault を列挙してみて、件数と所要時間を返す。
@@ -185,6 +230,7 @@ class SettingsViewModel(
                     serverSyncRepository = app.container.serverSyncRepository,
                     importRepository = app.container.importRepository,
                     vaultRepository = app.container.vaultRepository,
+                    sampleDataRepository = app.container.sampleDataRepository,
                 )
             }
         }

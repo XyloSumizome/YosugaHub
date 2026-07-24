@@ -19,6 +19,10 @@ import org.junit.Test
 class TaskRepositoryTest {
 
     private class FakeTaskDao(initial: List<TaskEntity> = emptyList()) : TaskDao {
+        override suspend fun deleteByProject(projectId: String) = Unit
+
+        override suspend fun countByIds(ids: List<String>): Int = 0
+
         val stored = initial.toMutableList()
         var lastStatusUpdate: Triple<String, String?, String>? = null // status, completedAt, updatedAt
 

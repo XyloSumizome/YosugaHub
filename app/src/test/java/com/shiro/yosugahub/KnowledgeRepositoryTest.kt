@@ -27,6 +27,12 @@ import org.junit.Test
 class KnowledgeRepositoryTest {
 
     private class FakeKnowledgeDao : KnowledgeDao {
+        override suspend fun countItemsByIds(ids: List<String>): Int = 0
+
+        override suspend fun deleteTagIfUnused(id: String): Int = 0
+
+        override suspend fun deleteEntityIfUnused(id: String): Int = 0
+
         val items = mutableMapOf<String, KnowledgeItemEntity>()
         val tags = mutableMapOf<String, TagEntity>()          // id -> tag
         val entities = mutableMapOf<String, TrackedEntityEntity>()

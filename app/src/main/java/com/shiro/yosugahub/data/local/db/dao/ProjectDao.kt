@@ -30,4 +30,10 @@ interface ProjectDao {
     /** 健康状態のみ更新(提案承認用)。戻り値は更新行数。 */
     @Query("UPDATE projects SET health = :health, lastUpdated = :lastUpdated WHERE id = :id")
     suspend fun updateHealth(id: String, health: String, lastUpdated: String): Int
+
+    @Query("DELETE FROM projects WHERE id = :id")
+    suspend fun deleteById(id: String): Int
+
+    @Query("SELECT COUNT(*) FROM projects WHERE id IN (:ids)")
+    suspend fun countByIds(ids: List<String>): Int
 }

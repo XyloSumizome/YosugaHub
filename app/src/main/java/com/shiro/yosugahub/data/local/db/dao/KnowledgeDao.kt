@@ -68,6 +68,17 @@ interface KnowledgeDao {
     @Query("DELETE FROM knowledge_items WHERE id = :itemId")
     suspend fun deleteItemRow(itemId: String)
 
+    @Query("SELECT COUNT(*) FROM knowledge_items WHERE id IN (:ids)")
+    suspend fun countItemsByIds(ids: List<String>): Int
+
+    /** どのアイテムからも参照されていないタグだけを消す(実データのタグを巻き込まない)。 */
+    @Query("DELETE FROM tags WHERE id = :id AND id NOT IN (SELECT tagId FROM item_tags)")
+    suspend fun deleteTagIfUnused(id: String): Int
+
+    /** どのアイテムからも参照されていないエンティティだけを消す。 */
+    @Query("DELETE FROM entities WHERE id = :id AND id NOT IN (SELECT entityId FROM item_entities)")
+    suspend fun deleteEntityIfUnused(id: String): Int
+
     // --- 書き込み(まとまり) ---
 
     /**

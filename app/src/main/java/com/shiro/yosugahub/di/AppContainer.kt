@@ -33,6 +33,7 @@ import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.data.repository.SampleDataRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
@@ -70,6 +71,7 @@ interface AppContainer {
     val serverSyncRepository: ServerSyncRepository
     val vaultRepository: VaultRepository
     val documentWriter: DocumentWriter
+    val sampleDataRepository: SampleDataRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -119,6 +121,19 @@ class DefaultAppContainer(
     /** 長文知識の書き出し先(初期実装は Obsidian Vault / SAF)。 */
     private val knowledgeStore: KnowledgeStore by lazy {
         ObsidianVaultStore(context.applicationContext, userPreferencesRepository)
+    }
+
+    /** 仮データ(SampleSeed)の後片付け(v5 / 選択A)。 */
+    override val sampleDataRepository: SampleDataRepository by lazy {
+        SampleDataRepository(
+            projectDao = database.projectDao(),
+            taskDao = database.taskDao(),
+            knowledgeDao = database.knowledgeDao(),
+            diaryDao = database.diaryDao(),
+            recommendationDao = database.recommendationDao(),
+            projectStatusDao = database.projectStatusDao(),
+            userPreferencesRepository = userPreferencesRepository,
+        )
     }
 
     /** SAF で選ばれたファイルへの書き出し(v5 Phase 1-c)。 */
@@ -232,6 +247,9 @@ class DefaultAppContainer(
      */
     private fun seedIfEmpty() {
         applicationScope.launch {
+            // 一度「サンプルデータを削除」したら、空になっても二度と投入しない(v5 / 選択A)。
+            if (userPreferencesRepository.isSeedingDisabled()) return@launch
+
             var seededAnything = false
             if (database.projectDao().count() == 0) {
                 database.projectDao().insertAll(SampleSeed.projects)

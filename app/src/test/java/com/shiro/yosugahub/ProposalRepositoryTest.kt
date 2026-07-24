@@ -54,6 +54,10 @@ class ProposalRepositoryTest {
     }
 
     private class FakeTaskDao : TaskDao {
+        override suspend fun deleteByProject(projectId: String) = Unit
+
+        override suspend fun countByIds(ids: List<String>): Int = 0
+
         val stored = mutableListOf<TaskEntity>()
         override fun observeAll(): Flow<List<TaskEntity>> = flowOf(stored.toList())
         override fun observeByProject(projectId: String): Flow<List<TaskEntity>> = flowOf(emptyList())
@@ -67,6 +71,12 @@ class ProposalRepositoryTest {
     }
 
     private class FakeKnowledgeDao : KnowledgeDao {
+        override suspend fun countItemsByIds(ids: List<String>): Int = 0
+
+        override suspend fun deleteTagIfUnused(id: String): Int = 0
+
+        override suspend fun deleteEntityIfUnused(id: String): Int = 0
+
         val items = mutableListOf<KnowledgeItemEntity>()
         val tags = mutableListOf<TagEntity>()
         val itemTags = mutableListOf<ItemTagCrossRef>()
@@ -93,6 +103,8 @@ class ProposalRepositoryTest {
     }
 
     private class FakeDiaryDao : DiaryDao {
+        override suspend fun countByIds(ids: List<String>): Int = 0
+
         val stored = mutableListOf<DiaryEntryEntity>()
         override fun observeAll(): Flow<List<DiaryEntryEntity>> = flowOf(stored.toList())
         override suspend fun count(): Int = stored.size
@@ -104,6 +116,10 @@ class ProposalRepositoryTest {
     }
 
     private class FakeProjectDao : ProjectDao {
+        override suspend fun deleteById(id: String): Int = 0
+
+        override suspend fun countByIds(ids: List<String>): Int = 0
+
         val healthUpdates = mutableListOf<Pair<String, String>>()
         private val knownIds = SampleSeed.projects.map { it.id }.toSet()
         override fun observeAll(): Flow<List<ProjectEntity>> = flowOf(emptyList())

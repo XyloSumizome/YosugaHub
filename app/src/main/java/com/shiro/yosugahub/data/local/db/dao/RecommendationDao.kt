@@ -20,4 +20,7 @@ interface RecommendationDao {
 
     @Query("DELETE FROM recommendations")
     suspend fun deleteAll()
+
+    @Query("DELETE FROM recommendations WHERE projectId = :projectId AND title = :title")
+    suspend fun deleteByProjectAndTitle(projectId: String, title: String): Int
 }

@@ -24,4 +24,7 @@ interface DiaryDao {
 
     @Query("DELETE FROM diary_entries WHERE id = :id")
     suspend fun deleteById(id: String)
+
+    @Query("SELECT COUNT(*) FROM diary_entries WHERE id IN (:ids)")
+    suspend fun countByIds(ids: List<String>): Int
 }

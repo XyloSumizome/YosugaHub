@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
@@ -33,11 +34,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.repository.SampleDataStatus
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.syncResultMessage
 
@@ -51,6 +54,11 @@ fun SettingsScreen(
     val importHistory by viewModel.importHistory.collectAsState()
     val vaultChecking by viewModel.vaultChecking.collectAsState()
     val vaultCheck by viewModel.vaultCheck.collectAsState()
+    val sampleData by viewModel.sampleData.collectAsState()
+    val sampleDataMessage by viewModel.sampleDataMessage.collectAsState()
+    var showSampleDataDialog by remember { mutableStateOf(false) }
+    // 仮データの件数は Flow ではないので、画面を開いたときに数え直す。
+    LaunchedEffect(Unit) { viewModel.refreshSampleData() }
     // ファイル一覧は Flow ではないので、画面を開いたときに読み直す。
     LaunchedEffect(Unit) { viewModel.refreshImportHistory() }
     var openedHistory by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -127,6 +135,47 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+        item {
+            SectionCard(title = "サンプルデータ") {
+                if (!sampleData.hasAny) {
+                    Text(
+                        text = if (sampleData.seedingDisabled) {
+                            "残っていません。再投入も停止済みです。"
+                        } else {
+                            "残っていません。"
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                } else {
+                    Text(
+                        text = "初回起動時に入る仮データが残っています。" +
+                            "AIがこれを実データとして扱ってしまうため、実運用の前に削除してください。",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = listOfNotNull(
+                            "プロジェクト${sampleData.projects}件".takeIf { sampleData.projects > 0 },
+                            "タスク${sampleData.tasks}件".takeIf { sampleData.tasks > 0 },
+                            "アイテム${sampleData.items}件".takeIf { sampleData.items > 0 },
+                            "日記${sampleData.diaries}件".takeIf { sampleData.diaries > 0 },
+                        ).joinToString(" / "),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { showSampleDataDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("サンプルデータを削除")
+                    }
+                }
+                if (sampleDataMessage.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(sampleDataMessage, style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -333,6 +382,17 @@ fun SettingsScreen(
         }
     }
 
+    if (showSampleDataDialog) {
+        SampleDataDeleteDialog(
+            status = sampleData,
+            onDismiss = { showSampleDataDialog = false },
+            onConfirm = { includeProjects ->
+                showSampleDataDialog = false
+                viewModel.deleteSampleData(includeProjects)
+            },
+        )
+    }
+
     openedHistory?.let { (fileName, content) ->
         AlertDialog(
             onDismissRequest = { openedHistory = null },
@@ -349,6 +409,66 @@ fun SettingsScreen(
             },
         )
     }
+}
+
+/**
+ * 削除前の確認。プロジェクトは既定で残す(名前が実在するゲームの可能性があり、
+ * 消すと GitHub 設定などもやり直しになるため)。
+ */
+@Composable
+private fun SampleDataDeleteDialog(
+    status: SampleDataStatus,
+    onDismiss: () -> Unit,
+    onConfirm: (includeProjects: Boolean) -> Unit,
+) {
+    var includeProjects by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("サンプルデータを削除") },
+        text = {
+            Column {
+                Text(
+                    "ID を指定して消すため、あなたが作ったデータや取り込んだデータは残ります。" +
+                        "削除後は再投入されなくなります。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "削除: " + listOfNotNull(
+                        "タスク${status.tasks}件".takeIf { status.tasks > 0 },
+                        "アイテム${status.items}件".takeIf { status.items > 0 },
+                        "日記${status.diaries}件".takeIf { status.diaries > 0 },
+                    ).joinToString(" / ").ifEmpty { "なし" },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                if (status.projects > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = includeProjects,
+                            onCheckedChange = { includeProjects = it },
+                        )
+                        Text(
+                            "プロジェクト${status.projects}件も削除する",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                    Text(
+                        "ANRI / 紙装甲主人公と不死身のカエル / げんげきょう が" +
+                            "実在するゲームなら、チェックを外したまま残してください。",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(includeProjects) }) { Text("削除する") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("やめる") }
+        },
+    )
 }
 
 /** ツリーURIから表示用のフォルダ名を取り出す(例: primary:Obsidian/Vault → Obsidian/Vault)。 */

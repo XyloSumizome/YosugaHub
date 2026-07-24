@@ -200,6 +200,14 @@ object SampleSeed {
         ),
     )
 
+    // --- 後片付け用の ID 一覧(SampleDataRepository が使う) ---
+    // 「テーブルを空にする」のではなく ID を指定して消すため、実データを巻き込まない。
+
+    val projectIds: List<String> get() = projects.map { it.id }
+    val taskIds: List<String> get() = tasks.map { it.id }
+    val itemIds: List<String> get() = knowledgeItems.map { it.id }
+    val diaryIds: List<String> get() = diaryEntries.map { it.id }
+
     val recommendations: List<RecommendationEntity> = listOf(
         RecommendationEntity(
             projectId = "anri",
