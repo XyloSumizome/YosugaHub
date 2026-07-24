@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** ヨスガ連携画面が監視するUI状態。 */
@@ -54,17 +55,32 @@ class AssistantViewModel(
     private val _noteImportSummary = MutableStateFlow<NoteImportSummary?>(null)
     val noteImportSummary: StateFlow<NoteImportSummary?> = _noteImportSummary
 
+    /** 端末風ログの行(v5 UI: ハッキング演出)。取り込み中に1行ずつ積む。 */
+    private val _importLog = MutableStateFlow<List<LogLine>>(emptyList())
+    val importLog: StateFlow<List<LogLine>> = _importLog
+
     /**
      * 各ゲームの `.yosuga/notes/` を取り込んで Obsidian Vault へ収める(v5 Phase 3-c)。
      * 取得済みのノートは飛ばすので、繰り返し押しても二重には入らない。
+     *
+     * 進捗イベントを端末ログとして1行ずつ流す(演出)。**実処理は本物**で、
+     * ログに出るファイル名・振り分け先は実際に処理したものと一致する。
      */
     fun importNotes() {
         if (_noteImporting.value) return
         viewModelScope.launch {
             _noteImporting.value = true
             _noteImportSummary.value = null
+            _importLog.value = emptyList()
             try {
-                _noteImportSummary.value = noteImportRepository.importAll()
+                val summary = noteImportRepository.importAll { event ->
+                    _importLog.value = _importLog.value + ImportLog.format(event)
+                    // 少しタメて1行ずつ見せる(処理自体は本物のまま進む)。
+                    delay(LOG_LINE_DELAY_MS)
+                }
+                // 最後の DONE 行を読む余韻を少し置いてから結果ダイアログへ。
+                delay(SUMMARY_DELAY_MS)
+                _noteImportSummary.value = summary
             } finally {
                 _noteImporting.value = false
             }
@@ -73,6 +89,7 @@ class AssistantViewModel(
 
     fun dismissNoteImportSummary() {
         _noteImportSummary.value = null
+        _importLog.value = emptyList()
     }
 
     /** 提案を承認して本テーブルへ反映する。反映できない提案は棄却へ回る。 */
@@ -125,6 +142,9 @@ class AssistantViewModel(
     )
 
     companion object {
+        private const val LOG_LINE_DELAY_MS = 160L
+        private const val SUMMARY_DELAY_MS = 550L
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val app = this[APPLICATION_KEY] as YosugaHubApplication

@@ -50,6 +50,7 @@ fun AssistantScreen(
     val uiState by viewModel.uiState.collectAsState()
     val noteImporting by viewModel.noteImporting.collectAsState()
     val noteImportSummary by viewModel.noteImportSummary.collectAsState()
+    val importLog by viewModel.importLog.collectAsState()
 
     val createExport = {
         viewModel.createExport { result ->
@@ -143,6 +144,11 @@ fun AssistantScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (noteImporting) "取り込み中…" else "ノートを取り込む")
+                }
+                // 取り込み中・直後は本物のログを端末風に流す(ハッキング演出)。
+                if (noteImporting || importLog.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ImportTerminal(lines = importLog, running = noteImporting)
                 }
             }
         }

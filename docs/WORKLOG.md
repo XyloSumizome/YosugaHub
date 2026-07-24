@@ -614,6 +614,27 @@ ANRI / Kamieru の Claude Code へ status.json を正しい schemaVersion:1 形�
 ⚠ 積み残し: A運用では GitHub進捗カードが主役なので、将来
 **ローカルの「プロジェクト情報」カードをさらに控えめにする**候補(今回は見た目のみ整えた)。
 
+### サイバーパンクUI化 開始(v5 UI刷新)
+
+ユーザー要望: 取り込み・仕分け時のハッキング風演出 + 全体をサイバーパンクに。
+選択: ネオン(シアン×マゼンタ)/ アプリ全体ダーク固定 / 本物のログを流す / 少しタメる。
+段階: A(ノート取り込み)→ B(会話ログ・文脈)→ C(GitHub更新)。今回は **A まで**。
+
+**テーマ(第1弾)**: `Color.kt` / `Theme.kt` / `Type.kt` / `themes.xml` を差し替え。
+ダーク固定・ダイナミックカラー無効・見出しは等幅。新規ライブラリなし。実機確認済み。
+
+**ハッキング演出(A)**:
+- `data/repository/ImportEvent.kt` … 取り込みの進捗イベント(本物の処理を1件ずつ)
+- `NoteImportRepository.importAll(onEvent)` … **suspend コールバックを追加**。
+  既定は何もしないので、演出無しの呼び出し・既存テストに影響しない。
+  実処理イベント(Connect/Target/Scan/Fetch/Route/Written/Skip/Fail/Done)を emit
+- `ui/.../ImportLog.kt` … イベント → 端末ログ行(文字列+種別)の純粋整形。テスト可能
+- `ui/.../ImportTerminal.kt` … 端末風パネル。種別で色分け・最新行へ自動スクロール・
+  カーソル点滅。ViewModel が各行に 160ms のタメを入れて1行ずつ流す
+- **演出は本物**: ログのファイル名・振り分け先は実際に処理したものと一致する
+
+テスト **6件追加**(`ImportLogTest`)。全体 **349件** 通過。実機で演出確認済み。
+
 ### v5 Phase 3 実機で端から端まで成功 ✅
 
 各ゲームの Claude Code が `.yosuga/notes/` に push → ヨスガ画面「ノートを取り込む」で

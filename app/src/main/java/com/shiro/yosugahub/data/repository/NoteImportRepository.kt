@@ -56,39 +56,61 @@ class NoteImportRepository(
     },
 ) {
 
-    suspend fun importAll(): NoteImportSummary {
+    /**
+     * @param onEvent 進捗を1件ずつ通知する(v5 UI: ハッキング演出)。
+     *   **本物の処理イベント**を流すだけで、既定は何もしない(演出無しの呼び出しに影響しない)。
+     *   suspend なので、UI 側でここにタメ(delay)を入れて1行ずつ見せられる。
+     */
+    suspend fun importAll(
+        onEvent: suspend (ImportEvent) -> Unit = {},
+    ): NoteImportSummary {
+        onEvent(ImportEvent.Connect)
         val projects = projectRepository.projects().first()
         // 振り分けにはゲームフォルダ名が要る。表示名を使うが、判定キーは projectId。
         val gameFolders = projects.associate { it.id to it.name }
 
-        val outcomes = projects.map { project -> importProject(project, gameFolders) }
+        val outcomes = projects.map { project -> importProject(project, gameFolders, onEvent) }
 
         // Vault 未設定なら、どのプロジェクトも1件も書けていない。
         val notConfigured = outcomes.isNotEmpty() &&
             outcomes.all { it.message == VAULT_NOT_CONFIGURED }
-        return NoteImportSummary(outcomes = outcomes, vaultNotConfigured = notConfigured)
+        val summary = NoteImportSummary(outcomes = outcomes, vaultNotConfigured = notConfigured)
+        onEvent(
+            ImportEvent.Done(
+                imported = summary.imported,
+                toInbox = summary.toInbox,
+                skipped = summary.skipped,
+                failed = summary.failed,
+            )
+        )
+        return summary
     }
 
     private suspend fun importProject(
         project: Project,
         gameFolders: Map<String, String>,
+        onEvent: suspend (ImportEvent) -> Unit,
     ): ProjectImportOutcome {
+        onEvent(ImportEvent.Target(project.name))
         val known = dao.shasForProject(project.id).toSet()
 
         return when (val fetched = repoNoteRepository.fetchNewNotes(project, known)) {
-            is NoteFetchResult.Success -> writeNotes(project, fetched, gameFolders)
+            is NoteFetchResult.Success -> {
+                onEvent(ImportEvent.Scan(fetched.fetched.size + fetched.skipped))
+                writeNotes(project, fetched, gameFolders, onEvent)
+            }
 
-            is NoteFetchResult.NotConfigured -> outcome(project, message = "リポジトリ未設定")
-            is NoteFetchResult.TokenMissing -> outcome(project, message = "GitHubトークン未設定")
-            is NoteFetchResult.AuthFailed -> outcome(project, message = "GitHubの認証に失敗")
+            is NoteFetchResult.NotConfigured -> note(project, "リポジトリ未設定", onEvent)
+            is NoteFetchResult.TokenMissing -> note(project, "GitHubトークン未設定", onEvent)
+            is NoteFetchResult.AuthFailed -> note(project, "GitHubの認証に失敗", onEvent)
             // まだノートを書いていないだけ。エラーとして見せない。
-            is NoteFetchResult.NoNotesDirectory -> outcome(project, message = "ノートなし")
-            is NoteFetchResult.NetworkError -> outcome(project, message = "通信できません")
+            is NoteFetchResult.NoNotesDirectory -> note(project, "ノートなし", onEvent)
+            is NoteFetchResult.NetworkError -> note(project, "通信できません", onEvent)
             is NoteFetchResult.HttpError ->
-                outcome(project, message = "GitHubエラー(${fetched.statusCode})")
+                note(project, "GitHubエラー(${fetched.statusCode})", onEvent)
 
             is NoteFetchResult.InvalidListing ->
-                outcome(project, message = "一覧を解釈できません: ${fetched.message}")
+                note(project, "一覧を解釈できません: ${fetched.message}", onEvent)
         }
     }
 
@@ -96,6 +118,7 @@ class NoteImportRepository(
         project: Project,
         fetched: NoteFetchResult.Success,
         gameFolders: Map<String, String>,
+        onEvent: suspend (ImportEvent) -> Unit,
     ): ProjectImportOutcome {
         var imported = 0
         var toInbox = 0
@@ -103,12 +126,20 @@ class NoteImportRepository(
         var message = ""
 
         for (note in fetched.fetched) {
+            onEvent(ImportEvent.Fetch(note.note.name))
             val parsed = Frontmatter.parse(note.content)
             val destination = NoteRouter.route(
                 parsed = parsed,
                 sourceFileName = note.note.name,
                 repoProjectId = project.id,
                 gameFolders = gameFolders,
+            )
+            onEvent(
+                ImportEvent.Route(
+                    fileName = note.note.name,
+                    destination = destination.directory,
+                    isInbox = destination.isInbox,
+                )
             )
 
             when (val written = vaultWriter.write(
@@ -129,17 +160,25 @@ class NoteImportRepository(
                             importedAt = now(),
                         )
                     )
+                    onEvent(ImportEvent.Written(written.path))
                 }
 
                 VaultWriteResult.NotConfigured -> {
                     // Vault が無いなら以降も全部失敗する。記録も残さない(次回やり直せる)。
                     message = VAULT_NOT_CONFIGURED
+                    onEvent(ImportEvent.Note(VAULT_NOT_CONFIGURED))
                     break
                 }
 
-                is VaultWriteResult.Failed -> failed += note.note.path
+                is VaultWriteResult.Failed -> {
+                    failed += note.note.path
+                    onEvent(ImportEvent.Fail(note.note.path))
+                }
             }
         }
+
+        if (fetched.skipped > 0) onEvent(ImportEvent.Skip(fetched.skipped))
+        fetched.failed.forEach { onEvent(ImportEvent.Fail(it)) }
 
         return ProjectImportOutcome(
             projectId = project.id,
@@ -157,6 +196,16 @@ class NoteImportRepository(
         projectName = project.name,
         message = message,
     )
+
+    /** 取得できなかったプロジェクトの結果を作りつつ、理由をログへ流す。 */
+    private suspend fun note(
+        project: Project,
+        message: String,
+        onEvent: suspend (ImportEvent) -> Unit,
+    ): ProjectImportOutcome {
+        onEvent(ImportEvent.Note(message))
+        return outcome(project, message)
+    }
 
     private companion object {
         const val VAULT_NOT_CONFIGURED = "Vault未設定"
