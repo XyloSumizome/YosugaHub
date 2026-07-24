@@ -7,43 +7,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * サイバーパンク書体(v5 UI刷新)。
- * **見出し・ラベルは等幅**(端末風)、本文は既定フォント(日本語の読みやすさ優先)。
+ * ターミナル書体(v5 UI: Brutalist)。**全面的に等幅**で密度を上げる。
+ * 日本語には等幅グリフが無く既定サンセリフへフォールバックするため読みやすさは保たれ、
+ * ASCII(パス・ログ・数値)だけが等幅になる。
  */
+private val Mono = FontFamily.Monospace
+
 val Typography = Typography(
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 22.sp,
-        lineHeight = 30.sp,
-        letterSpacing = 0.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Bold,
+        fontSize = 20.sp, lineHeight = 26.sp, letterSpacing = 0.5.sp,
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.1.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Bold,
+        fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.8.sp,
     ),
     titleSmall = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Bold,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Bold,
+        fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = 0.5.sp,
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.1.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Medium,
+        fontSize = 13.sp, lineHeight = 16.sp, letterSpacing = 1.0.sp,
+    ),
+    labelMedium = TextStyle(
+        fontFamily = Mono, fontWeight = FontWeight.Medium,
+        fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 0.8.sp,
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
+        fontFamily = Mono, fontWeight = FontWeight.Normal,
+        fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = 0.sp,
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = Mono, fontWeight = FontWeight.Normal,
+        fontSize = 13.sp, lineHeight = 18.sp, letterSpacing = 0.sp,
+    ),
+    bodySmall = TextStyle(
+        fontFamily = Mono, fontWeight = FontWeight.Normal,
+        fontSize = 11.sp, lineHeight = 15.sp, letterSpacing = 0.sp,
     ),
 )

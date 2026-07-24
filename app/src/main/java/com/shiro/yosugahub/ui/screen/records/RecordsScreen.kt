@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.Document
@@ -113,7 +114,7 @@ fun RecordsScreen(
                     )
                 }
                 item {
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = { showNewItemDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -192,7 +193,7 @@ fun RecordsScreen(
                     )
                 }
                 item {
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = { showNewDocumentDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                     ) {

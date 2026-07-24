@@ -32,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalButton
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.data.obsidian.AppendOutcome
 import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.ConversationImportResult
@@ -138,7 +140,7 @@ fun AssistantScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(
+                TacticalButton(
                     onClick = viewModel::importNotes,
                     enabled = !noteImporting,
                     modifier = Modifier.fillMaxWidth(),
@@ -160,7 +162,7 @@ fun AssistantScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(
+                TacticalButton(
                     onClick = { showConversationDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -176,7 +178,7 @@ fun AssistantScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(onClick = onOpenObsidianContext, modifier = Modifier.fillMaxWidth()) {
+                TacticalButton(onClick = onOpenObsidianContext, modifier = Modifier.fillMaxWidth()) {
                     Text("Obsidianから文脈を作る")
                 }
             }
@@ -189,15 +191,15 @@ fun AssistantScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                Button(onClick = createExport, modifier = Modifier.fillMaxWidth()) {
+                TacticalButton(onClick = createExport, modifier = Modifier.fillMaxWidth()) {
                     Text("状況JSONを作成")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
+                TacticalOutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
                     Text("回答JSONを取り込む(ファイル)")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
+                TacticalOutlinedButton(
                     onClick = { showPasteDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -282,11 +284,11 @@ private fun ProposalCard(
             }
             Spacer(modifier = Modifier.height(12.dp))
             Row {
-                OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f)) {
+                TacticalOutlinedButton(onClick = onReject, modifier = Modifier.weight(1f)) {
                     Text("棄却")
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Button(
+                TacticalButton(
                     onClick = onApprove,
                     enabled = card.readable,
                     modifier = Modifier.weight(1f),

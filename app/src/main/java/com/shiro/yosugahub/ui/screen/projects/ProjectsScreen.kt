@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.ui.component.healthLabel
 import com.shiro.yosugahub.ui.component.inProgressLine
@@ -48,7 +49,7 @@ fun ProjectsScreen(
         }
         if (uiState.hasAnyRepository) {
             item {
-                OutlinedButton(
+                TacticalOutlinedButton(
                     onClick = {
                         viewModel.refreshAll { results ->
                             Toast.makeText(

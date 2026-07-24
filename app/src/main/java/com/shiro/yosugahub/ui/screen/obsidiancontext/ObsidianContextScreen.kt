@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalButton
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
@@ -133,7 +135,7 @@ fun ObsidianContextScreen(
                     color = MaterialTheme.colorScheme.error,
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(onClick = viewModel::refresh) { Text("もう一度試す") }
+                TacticalOutlinedButton(onClick = viewModel::refresh) { Text("もう一度試す") }
             }
 
             VaultLoadState.LOADED -> if (uiState.notes.isEmpty()) {
@@ -160,7 +162,7 @@ fun ObsidianContextScreen(
                     CenterMessage(modifier = Modifier.weight(1f)) {
                         Text("条件に合うノートがありません。")
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(onClick = viewModel::clearFilter) { Text("絞り込みを解除") }
+                        TacticalOutlinedButton(onClick = viewModel::clearFilter) { Text("絞り込みを解除") }
                     }
                 } else {
                     NoteList(
@@ -460,7 +462,7 @@ private fun SelectionBar(
             TextButton(onClick = onClear, enabled = uiState.selectedCount > 0) {
                 Text("選択解除")
             }
-            Button(onClick = onBuild, enabled = uiState.canBuild) {
+            TacticalButton(onClick = onBuild, enabled = uiState.canBuild) {
                 Text(if (uiState.isBuilding) "生成中…" else "まとめる")
             }
         }
@@ -531,11 +533,11 @@ private fun PreviewDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Button(onClick = onCopy, modifier = Modifier.weight(1f)) { Text("コピー") }
-                    OutlinedButton(onClick = onSave, modifier = Modifier.weight(1f)) {
+                    TacticalButton(onClick = onCopy, modifier = Modifier.weight(1f)) { Text("コピー") }
+                    TacticalOutlinedButton(onClick = onSave, modifier = Modifier.weight(1f)) {
                         Text("保存")
                     }
-                    OutlinedButton(onClick = onShare, modifier = Modifier.weight(1f)) {
+                    TacticalOutlinedButton(onClick = onShare, modifier = Modifier.weight(1f)) {
                         Text("共有")
                     }
                 }

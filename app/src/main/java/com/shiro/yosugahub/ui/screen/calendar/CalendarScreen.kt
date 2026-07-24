@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.calendarSyncMessage
@@ -84,7 +85,7 @@ fun CalendarScreen(
             }
         }
         item {
-            OutlinedButton(
+            TacticalOutlinedButton(
                 onClick = syncOrRequestPermission,
                 enabled = !uiState.isSyncing,
                 modifier = Modifier.fillMaxWidth(),

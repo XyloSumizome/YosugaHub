@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,12 +29,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.shiro.yosugahub.ui.theme.CyberTerminal
-import com.shiro.yosugahub.ui.theme.NeonAmber
-import com.shiro.yosugahub.ui.theme.NeonCyan
-import com.shiro.yosugahub.ui.theme.NeonGreen
-import com.shiro.yosugahub.ui.theme.NeonMagenta
-import com.shiro.yosugahub.ui.theme.NeonRed
+import com.shiro.yosugahub.ui.theme.TermAmber
+import com.shiro.yosugahub.ui.theme.TermConsole
+import com.shiro.yosugahub.ui.theme.TermCyan
+import com.shiro.yosugahub.ui.theme.TermGreen
+import com.shiro.yosugahub.ui.theme.TermLine
+import com.shiro.yosugahub.ui.theme.TermRed
+import com.shiro.yosugahub.ui.theme.TermText
 
 /**
  * 取り込み中に本物のログを1行ずつ流す端末パネル(v5 UI: ハッキング演出)。
@@ -57,8 +57,8 @@ fun ImportTerminal(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, NeonCyan.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-            .background(CyberTerminal, RoundedCornerShape(6.dp))
+            .border(1.dp, TermLine, androidx.compose.ui.graphics.RectangleShape)
+            .background(TermConsole)
             .padding(12.dp),
     ) {
         Row(
@@ -67,10 +67,10 @@ fun ImportTerminal(
         ) {
             Text(
                 text = "IMPORT SEQUENCE",
-                color = NeonCyan,
+                color = TermCyan,
                 style = MaterialTheme.typography.labelLarge,
             )
-            BlinkingCursor(active = running, color = NeonCyan)
+            BlinkingCursor(active = running, color = TermCyan)
         }
 
         LazyColumn(
@@ -113,9 +113,9 @@ private fun BlinkingCursor(active: Boolean, color: Color) {
 }
 
 private fun LogTone.color(): Color = when (this) {
-    LogTone.INFO -> Color(0xFFB6C6DE)
-    LogTone.OK -> NeonGreen
-    LogTone.WARN -> NeonAmber
-    LogTone.ERROR -> NeonRed
-    LogTone.ACCENT -> NeonMagenta
+    LogTone.INFO -> TermText
+    LogTone.OK -> TermGreen
+    LogTone.WARN -> TermAmber
+    LogTone.ERROR -> TermRed
+    LogTone.ACCENT -> TermAmber
 }

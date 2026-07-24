@@ -35,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
 import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
@@ -163,7 +164,7 @@ fun ProjectDetailScreen(
         }
 
         item {
-            OutlinedButton(
+            TacticalOutlinedButton(
                 onClick = { showNewTaskDialog = true },
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -352,7 +353,7 @@ private fun GitHubStatusCard(
 
             if (project.hasRepository) {
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
+                TacticalOutlinedButton(
                     onClick = onRefresh,
                     enabled = !isRefreshing,
                     modifier = Modifier.fillMaxWidth(),

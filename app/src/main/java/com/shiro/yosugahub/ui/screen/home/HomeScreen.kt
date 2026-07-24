@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalButton
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.component.SectionCard
@@ -180,15 +182,15 @@ fun HomeScreen(
         }
         item {
             Column {
-                Button(onClick = createExport, modifier = Modifier.fillMaxWidth()) {
+                TacticalButton(onClick = createExport, modifier = Modifier.fillMaxWidth()) {
                     Text("ChatGPT用JSONを作成")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
+                TacticalOutlinedButton(onClick = importResponse, modifier = Modifier.fillMaxWidth()) {
                     Text("回答JSONを取り込む(ファイル)")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
+                TacticalOutlinedButton(
                     onClick = { showPasteDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                 ) {

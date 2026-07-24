@@ -5,50 +5,51 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
 /**
- * サイバーパンクテーマ(v5 UI刷新)。
+ * ターミナル/ブルータリストテーマ(v5 UI)。
  *
- * **ダーク固定。**システム設定にもダイナミックカラーにも追従しない
- * (端末の壁紙由来の色が混ざると世界観が壊れるため、意図的に無効化)。
+ * **ダーク固定。**システム設定・ダイナミックカラーに追従しない。
+ * アクセントは Amber(主) / Cyan(情報) / Green(正常) / Red(警報) の4色のみ。
  */
-private val CyberColorScheme = darkColorScheme(
-    primary = NeonCyan,
-    onPrimary = OnNeonCyan,
-    primaryContainer = CyanContainer,
-    onPrimaryContainer = NeonCyan,
+private val TerminalColorScheme = darkColorScheme(
+    primary = TermAmber,
+    onPrimary = OnTermAmber,
+    primaryContainer = TermPanelHeader,
+    onPrimaryContainer = TermAmber,
 
-    secondary = NeonMagenta,
-    onSecondary = OnNeonMagenta,
-    secondaryContainer = MagentaContainer,
-    onSecondaryContainer = NeonMagenta,
+    secondary = TermCyan,
+    onSecondary = OnTermAmber,
+    secondaryContainer = TermPanelHeader,
+    onSecondaryContainer = TermCyan,
 
-    tertiary = NeonGreen,
-    onTertiary = OnNeonGreen,
+    tertiary = TermGreen,
+    onTertiary = OnTermAmber,
 
-    background = CyberBackground,
-    onBackground = CyberOnBackground,
+    background = TermBackground,
+    onBackground = TermText,
 
-    surface = CyberSurface,
-    onSurface = CyberOnBackground,
-    surfaceVariant = CyberSurfaceHigh,
-    onSurfaceVariant = CyberOnSurfaceVariant,
-    surfaceContainerHighest = CyberSurfaceHigh,
-    surfaceContainerHigh = CyberSurfaceHigh,
-    surfaceContainer = CyberSurface,
-    surfaceContainerLow = CyberSurface,
-    surfaceContainerLowest = CyberTerminal,
+    surface = TermPanel,
+    onSurface = TermText,
+    surfaceVariant = TermPanelHeader,
+    onSurfaceVariant = TermTextDim,
+    surfaceContainerHighest = TermPanelHeader,
+    surfaceContainerHigh = TermPanelHeader,
+    surfaceContainer = TermPanel,
+    surfaceContainerLow = TermPanel,
+    surfaceContainerLowest = TermConsole,
 
-    error = NeonRed,
-    onError = OnNeonRed,
+    error = TermRed,
+    onError = OnTermRed,
 
-    outline = CyberOutline,
-    outlineVariant = CyberOutline,
+    outline = TermLine,
+    outlineVariant = TermLine,
 )
 
 @Composable
 fun YosugaHubTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = CyberColorScheme,
+        colorScheme = TerminalColorScheme,
         typography = Typography,
+        shapes = TerminalShapes,
         content = content,
     )
 }

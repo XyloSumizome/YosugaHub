@@ -3,34 +3,29 @@ package com.shiro.yosugahub.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * サイバーパンク配色(v5 UI刷新)。ネオン系: シアン主体 + マゼンタのアクセント。
- * ダーク固定なのでライト用の色は持たない。
+ * 武骨なターミナル配色(v5 UI: Brutalist / Industrial)。
+ * 派手なネオンではなく、開発現場の計器風に低彩度で締める。グラデーションは使わない。
+ * アクセントは Amber / Green / Cyan / Red の4色のみ。
  */
 
-// ネオン(前景アクセント)
-val NeonCyan = Color(0xFF00E5FF)      // 主役。ボタン・見出し・端末ログ
-val NeonMagenta = Color(0xFFFF2E97)   // 対になるアクセント。強調・選択状態
-val NeonGreen = Color(0xFF39FF88)     // 成功・OK 行
-val NeonAmber = Color(0xFFFFB74D)     // 警告
-val NeonRed = Color(0xFFFF5370)       // エラー・破壊的操作
+// アクセント(計器の指示色。彩度は抑えめ)
+val TermAmber = Color(0xFFE0A62C)   // 主役。見出し・主要ボタン
+val TermCyan = Color(0xFF3EB8C7)    // 値・リンク・情報
+val TermGreen = Color(0xFF4CB86A)   // 正常・OK・LED点灯
+val TermRed = Color(0xFFD65C5C)     // エラー・警報・破壊的操作
 
-// 地(背景側)。真っ黒ではなく青みを残すと「夜の街」感が出る
-val CyberBackground = Color(0xFF0A0E14) // 画面の地
-val CyberSurface = Color(0xFF111826)    // カード
-val CyberSurfaceHigh = Color(0xFF182233) // ダイアログ・浮いた面
-val CyberTerminal = Color(0xFF060A10)   // 端末ログパネル(地より一段暗く)
+// 地(かなり暗い。真っ黒にはしない)
+val TermBackground = Color(0xFF0A0C0E) // 画面の地
+val TermPanel = Color(0xFF0D1013)      // パネルの中(地よりごく僅かに明るい)
+val TermPanelHeader = Color(0xFF14181C) // パネルの見出し帯・浮いた面
+val TermConsole = Color(0xFF07090B)    // ログコンソール(地より一段暗く)
 
-// 文字
-val CyberOnBackground = Color(0xFFD8E2F0) // 本文(白すぎない)
-val CyberOnSurfaceVariant = Color(0xFF8FA3BF) // 補足・薄い文字
-val CyberOutline = Color(0xFF2C3A52)    // 枠線・区切り
+// 線と文字
+val TermLine = Color(0xFF23292F)       // 細いパネル枠・区切り
+val TermLineActive = Color(0xFF35414A) // 選択・強調された枠
+val TermText = Color(0xFFBFC7CE)       // 本文(白すぎない灰)
+val TermTextDim = Color(0xFF6C7783)    // 補足・ラベルの薄い文字
 
-// ネオンの上に載せる濃色(ボタン文字など)
-val OnNeonCyan = Color(0xFF00252B)
-val OnNeonMagenta = Color(0xFF3A0019)
-val OnNeonGreen = Color(0xFF00391B)
-val OnNeonRed = Color(0xFF3F000E)
-
-// コンテナ(チップ・トナール面)
-val CyanContainer = Color(0xFF003D46)
-val MagentaContainer = Color(0xFF4A0E2C)
+// アクセントの上に載せる濃色(塗りボタンの文字)
+val OnTermAmber = Color(0xFF1A1200)
+val OnTermRed = Color(0xFF200304)

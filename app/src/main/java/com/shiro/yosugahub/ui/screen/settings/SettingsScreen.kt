@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.TacticalButton
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.data.repository.SampleDataStatus
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.syncResultMessage
@@ -100,7 +102,7 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedButton(
+                TacticalOutlinedButton(
                     onClick = { vaultPicker.launch(null) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
@@ -110,7 +112,7 @@ fun SettingsScreen(
                 // 「選べた」と「読める」は別。提供元によっては選択できても中身を返さない。
                 if (uiState.obsidianVaultUri.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = { viewModel.checkVault() },
                         enabled = !vaultChecking,
                         modifier = Modifier.fillMaxWidth(),
@@ -169,7 +171,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = { showSampleDataDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -221,7 +223,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = {
                             viewModel.saveSyncUrl(syncUrlInput)
                             if (syncTokenInput.isNotBlank()) {
@@ -243,7 +245,7 @@ fun SettingsScreen(
                         Text("設定を保存")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = {
                             syncTokenInput = viewModel.generateSyncToken()
                             Toast.makeText(
@@ -258,7 +260,7 @@ fun SettingsScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(
+                TacticalButton(
                     onClick = {
                         viewModel.syncNow { result ->
                             Toast.makeText(context, syncResultMessage(result), Toast.LENGTH_LONG).show()
@@ -292,7 +294,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    OutlinedButton(
+                    TacticalOutlinedButton(
                         onClick = {
                             viewModel.saveGitHubToken(tokenInput) { saved ->
                                 Toast.makeText(
@@ -310,7 +312,7 @@ fun SettingsScreen(
                     }
                     if (uiState.hasGitHubToken) {
                         Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedButton(
+                        TacticalOutlinedButton(
                             onClick = {
                                 viewModel.clearGitHubToken()
                                 tokenInput = ""
