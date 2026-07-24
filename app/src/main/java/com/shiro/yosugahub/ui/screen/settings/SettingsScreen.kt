@@ -5,7 +5,9 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,22 +15,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,12 +36,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.repository.SampleDataStatus
 import com.shiro.yosugahub.ui.component.DialogAction
-import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.TacticalButton
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
-import com.shiro.yosugahub.data.repository.SampleDataStatus
-import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.TerminalCheckbox
+import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.share.syncResultMessage
 
 @Composable
@@ -200,20 +200,18 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
+                TerminalField(
                     value = syncUrlInput,
                     onValueChange = { syncUrlInput = it },
-                    label = { Text("同期先URL(例: https://example.com/yosuga)") },
+                    label = "同期先URL(例: https://example.com/yosuga)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
+                TerminalField(
                     value = syncTokenInput,
                     onValueChange = { syncTokenInput = it },
-                    label = {
-                        Text(if (uiState.hasSyncToken) "トークン(設定済み・変更する場合のみ)" else "トークン")
-                    },
+                    label = if (uiState.hasSyncToken) "トークン(設定済み・変更する場合のみ)" else "トークン",
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
@@ -281,10 +279,10 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
+                TerminalField(
                     value = tokenInput,
                     onValueChange = { tokenInput = it },
-                    label = { Text("トークンを入力して保存") },
+                    label = "トークンを入力して保存",
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
@@ -451,16 +449,11 @@ private fun SampleDataDeleteDialog(
                 )
                 if (status.projects > 0) {
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(
-                            checked = includeProjects,
-                            onCheckedChange = { includeProjects = it },
-                        )
-                        Text(
-                            "プロジェクト${status.projects}件も削除する",
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                    }
+                    TerminalCheckbox(
+                        label = "プロジェクト${status.projects}件も削除する",
+                        checked = includeProjects,
+                        onCheckedChange = { includeProjects = it },
+                    )
                     Text(
                         "実在するゲームなら、チェックを外したまま残してください。" +
                             "その場合も「目標 / 作業中 / 次」の仮の文言は空にします。",

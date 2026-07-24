@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -19,6 +18,7 @@ import com.shiro.yosugahub.domain.model.DocumentClassification
 import com.shiro.yosugahub.domain.model.RelatedRef
 import com.shiro.yosugahub.ui.component.DialogAction
 import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 
 /** 修正ダイアログの編集結果(承認時に Repository へ渡す)。 */
 data class ClassificationEdits(
@@ -64,37 +64,37 @@ fun ClassificationEditDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = summary,
                     onValueChange = { summary = it },
-                    label = { Text("要約") },
+                    label = "要約",
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = documentType,
                     onValueChange = { documentType = it },
-                    label = { Text("文書種別") },
+                    label = "文書種別",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = projectIds,
                     onValueChange = { projectIds = it },
-                    label = { Text("プロジェクト(カンマ区切り)") },
+                    label = "プロジェクト(カンマ区切り)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = categories,
                     onValueChange = { categories = it },
-                    label = { Text("カテゴリ(カンマ区切り)") },
+                    label = "カテゴリ(カンマ区切り)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = tags,
                     onValueChange = { tags = it },
-                    label = { Text("タグ(カンマ区切り)") },
+                    label = "タグ(カンマ区切り)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

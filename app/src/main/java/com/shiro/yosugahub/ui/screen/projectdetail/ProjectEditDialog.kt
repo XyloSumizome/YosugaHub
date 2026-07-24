@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +18,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalChip
 import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.healthLabel
 
 /**
@@ -57,26 +57,26 @@ fun ProjectEditDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
-                OutlinedTextField(
+                TerminalField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("プロジェクト名") },
+                    label = "プロジェクト名",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = currentGoal,
                     onValueChange = { currentGoal = it },
-                    label = { Text("目標") },
+                    label = "目標",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(text = "状態", style = MaterialTheme.typography.labelMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     HEALTH_OPTIONS.forEach { option ->
-                        FilterChip(
+                        TerminalChip(
                             selected = health == option,
                             onClick = { health = option },
-                            label = { Text(healthLabel(option)) },
+                            label = healthLabel(option),
                         )
                     }
                 }
@@ -84,24 +84,24 @@ fun ProjectEditDialog(
                     text = "GitHub(.yosuga/status.json の取得先。空欄なら取得しない)",
                     style = MaterialTheme.typography.labelMedium,
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = repoOwner,
                     onValueChange = { repoOwner = it },
-                    label = { Text("owner") },
+                    label = "owner",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = repoName,
                     onValueChange = { repoName = it },
-                    label = { Text("リポジトリ名") },
+                    label = "リポジトリ名",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = repoBranch,
                     onValueChange = { repoBranch = it },
-                    label = { Text("ブランチ(空欄なら main)") },
+                    label = "ブランチ(空欄なら main)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

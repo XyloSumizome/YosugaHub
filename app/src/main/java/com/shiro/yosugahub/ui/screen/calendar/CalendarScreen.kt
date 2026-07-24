@@ -13,15 +13,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.component.EventRow
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.share.calendarSyncMessage
 
 @Composable

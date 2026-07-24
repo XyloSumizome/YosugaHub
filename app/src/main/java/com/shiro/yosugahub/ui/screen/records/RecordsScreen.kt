@@ -1,5 +1,6 @@
 package com.shiro.yosugahub.ui.screen.records
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,16 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.clickable
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -30,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.Document
@@ -38,8 +35,10 @@ import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.SectionCard
-import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.StatusTag
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
+import com.shiro.yosugahub.ui.component.TerminalChip
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.directiveStatusLabel
 import com.shiro.yosugahub.ui.component.documentStatusLabel
 import com.shiro.yosugahub.ui.component.entityTypeLabel
@@ -92,10 +91,10 @@ fun RecordsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 RecordsSection.entries.forEach { candidate ->
-                    FilterChip(
+                    TerminalChip(
                         selected = section == candidate,
                         onClick = { section = candidate },
-                        label = { Text(candidate.label) },
+                        label = candidate.label,
                     )
                 }
             }
@@ -128,18 +127,18 @@ fun RecordsScreen(
                                 .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            FilterChip(
+                            TerminalChip(
                                 selected = selectedTag == null,
                                 onClick = { selectedTag = null },
-                                label = { Text("すべて") },
+                                label = "すべて",
                             )
                             uiState.tagNames.forEach { tag ->
-                                FilterChip(
+                                TerminalChip(
                                     selected = selectedTag == tag,
                                     onClick = {
                                         selectedTag = if (selectedTag == tag) null else tag
                                     },
-                                    label = { Text("#$tag") },
+                                    label = "#$tag",
                                 )
                             }
                         }
@@ -206,18 +205,18 @@ fun RecordsScreen(
                             .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        FilterChip(
+                        TerminalChip(
                             selected = documentStatus == null,
                             onClick = { documentStatus = null },
-                            label = { Text("すべて") },
+                            label = "すべて",
                         )
                         DocumentStatus.entries.forEach { candidate ->
-                            FilterChip(
+                            TerminalChip(
                                 selected = documentStatus == candidate,
                                 onClick = {
                                     documentStatus = if (documentStatus == candidate) null else candidate
                                 },
-                                label = { Text(documentStatusLabel(candidate)) },
+                                label = documentStatusLabel(candidate),
                             )
                         }
                     }
@@ -254,18 +253,18 @@ fun RecordsScreen(
                                 .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            FilterChip(
+                            TerminalChip(
                                 selected = entityType == null,
                                 onClick = { entityType = null },
-                                label = { Text("すべて") },
+                                label = "すべて",
                             )
                             types.forEach { candidate ->
-                                FilterChip(
+                                TerminalChip(
                                     selected = entityType == candidate,
                                     onClick = {
                                         entityType = if (entityType == candidate) null else candidate
                                     },
-                                    label = { Text(entityTypeLabel(candidate)) },
+                                    label = entityTypeLabel(candidate),
                                 )
                             }
                         }
@@ -297,19 +296,19 @@ fun RecordsScreen(
                                 .horizontalScroll(rememberScrollState()),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            FilterChip(
+                            TerminalChip(
                                 selected = directiveProjectId == null,
                                 onClick = { directiveProjectId = null },
-                                label = { Text("すべて") },
+                                label = "すべて",
                             )
                             targets.forEach { project ->
-                                FilterChip(
+                                TerminalChip(
                                     selected = directiveProjectId == project.id,
                                     onClick = {
                                         directiveProjectId =
                                             if (directiveProjectId == project.id) null else project.id
                                     },
-                                    label = { Text(project.name) },
+                                    label = project.name,
                                 )
                             }
                         }

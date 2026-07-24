@@ -13,6 +13,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 
 /**
  * テキストを貼り付けて取り込む共用ダイアログ。

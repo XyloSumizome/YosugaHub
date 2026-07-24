@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -18,7 +16,9 @@ import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalChip
 import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 
 /**
  * タスクの新規作成・編集ダイアログ(v3-Step 1-c)。
@@ -45,17 +45,17 @@ fun TaskEditDialog(
         onDismissRequest = onDismiss,
         content = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
+                TerminalField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("タイトル") },
+                    label = "タイトル",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = detail,
                     onValueChange = { detail = it },
-                    label = { Text("詳細(任意)") },
+                    label = "詳細(任意)",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(text = "優先度", style = MaterialTheme.typography.labelMedium)
@@ -70,15 +70,13 @@ fun TaskEditDialog(
                     StatusChip("進行中", TaskStatus.DOING, status) { status = it }
                     StatusChip("完了", TaskStatus.DONE, status) { status = it }
                 }
-                OutlinedTextField(
+                TerminalField(
                     value = dueDateInput,
                     onValueChange = { dueDateInput = it },
-                    label = { Text("締切(任意・yyyy-MM-dd)") },
+                    label = "締切(任意・yyyy-MM-dd)",
                     singleLine = true,
                     isError = !dueDateValid,
-                    supportingText = if (!dueDateValid) {
-                        { Text("例: 2026-07-31 の形式で入力") }
-                    } else null,
+                    supportingText = if (!dueDateValid) "例: 2026-07-31 の形式で入力" else "",
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (onDelete != null) {
@@ -108,10 +106,10 @@ private fun PriorityChip(
     selected: String,
     onSelect: (String) -> Unit,
 ) {
-    FilterChip(
+    TerminalChip(
         selected = selected == value,
         onClick = { onSelect(value) },
-        label = { Text(label) },
+        label = label,
     )
 }
 
@@ -122,9 +120,9 @@ private fun StatusChip(
     selected: TaskStatus,
     onSelect: (TaskStatus) -> Unit,
 ) {
-    FilterChip(
+    TerminalChip(
         selected = selected == value,
         onClick = { onSelect(value) },
-        label = { Text(label) },
+        label = label,
     )
 }

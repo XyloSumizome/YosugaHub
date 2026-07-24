@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalChip
 import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.itemKindLabel
 
 /**
@@ -53,30 +53,30 @@ fun ItemEditDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     ItemKind.entries.forEach { candidate ->
-                        FilterChip(
+                        TerminalChip(
                             selected = kind == candidate,
                             onClick = { kind = candidate },
-                            label = { Text(itemKindLabel(candidate)) },
+                            label = itemKindLabel(candidate),
                         )
                     }
                 }
-                OutlinedTextField(
+                TerminalField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("タイトル") },
+                    label = "タイトル",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = body,
                     onValueChange = { body = it },
-                    label = { Text("本文(任意)") },
+                    label = "本文(任意)",
                     modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = tagsInput,
                     onValueChange = { tagsInput = it },
-                    label = { Text("タグ(任意・カンマ区切り)") },
+                    label = "タグ(任意・カンマ区切り)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

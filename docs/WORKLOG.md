@@ -51,8 +51,9 @@
 - ~~**紙エルの status.json**: `questionsForYosuga` の型ゆれ~~ → **2026-07-24 解決・実機確認済み**。
   オブジェクト配列 / 単体文字列 / null でも読めるようにした(下記の項参照)。
 - **UI の細部**: ~~戻るアイコン / AlertDialog~~ → **2026-07-24 統一・実機確認済み**。
-  残りは**フォームの中身**: ドロップダウン・チェックボックス・`OutlinedTextField`、
-  および FilterBar / SelectionBar の TextButton。
+  ~~フォームの中身(入力欄・チップ・チェック)~~ → **2026-07-24 端末化(実機未確認)**。
+  Material の `TextButton` / `FilterChip` / `Checkbox` / `AlertDialog` /
+  `OutlinedTextField` の直接呼び出しは UI 全体でゼロ。
 - **Morning Brief を実データで作り直す**(仮データ一掃後の確認)。
 - 将来: MCP(v4 Phase4)/ レコル再導入時のタグ整理。
 
@@ -61,6 +62,52 @@
 - コンソール `> IMPORT RESPONSE` にヨスガの `diary[]` JSON を貼る → 記録タブ「観測」へ。
 - 各コマンドで端末ログ + 走査線の演出を確認。
 - プロジェクト詳細 → GitHubから更新 で GITHUB FETCH の端末ログ。
+
+---
+
+## 2026-07-24: フォームの部品を端末化(Material の入力欄・チップ・チェックを置換)
+
+前項でダイアログの**枠**は寄せたが、**中身**は Material のままだった。ここを揃える。
+
+### 入力欄
+
+既存の `TerminalField` に **`label` / `isError` / `supportingText`** を足した。
+
+- Material の**浮くラベル**は入力すると消えてしまい、項目の多いフォーム
+  (分類修正は5欄)で「どの欄が何か」が分からなくなる。
+  代わりに**欄の上に固定の見出し**を出す
+- エラー時は枠・ラベル・補足を赤に(`TermRed`)
+
+置換: タスク編集 / プロジェクト編集 / アイテム編集 / 文書追加 / 分類修正 / 設定(3欄)。
+**`OutlinedTextField` の直接呼び出しはゼロ**になった(`TerminalField` の内部だけ)。
+
+### チップ・チェックボックス
+
+`TerminalChip` / `TerminalCheckbox` を新設(`ui/component/TerminalToggle.kt`)。
+
+- チップ: 選択で**緑に反転**する `[ ラベル ]`。Material の FilterChip(角丸 + ✓アイコン)をやめた。
+  選択を「色が濃い」だけで示さないのは、**等幅・単色の画面では濃淡が読み取りにくい**ため
+- チェック: `[x]` / `[ ]` の文字。ラベルも押せる(小さな箱だけを狙わせない)。
+  隣がラベルを持つ場所(タスク行・ノート一覧)は `label = ""` で箱だけにする
+
+置換: 記録タブの絞り込み(9) / タスク編集の優先度・状態 / プロジェクト編集の状態 /
+アイテム種類 / Obsidian の最近更新・タグ・形式 / タスクの完了チェック /
+ノート選択 / サンプルデータ削除の「プロジェクトも消す」。
+
+### 残っていた TextButton
+
+FilterBar の「解除」「タグで絞り込む」、SelectionBar の「選択解除」を `DialogAction` へ。
+**`TextButton` / `FilterChip` / `Checkbox` / `AlertDialog` / `OutlinedTextField` の
+直接呼び出しは、UI 全体でゼロになった。**
+
+### テスト
+
+全 **359件** 通過(見た目にテストは無いので件数は変わらない)。`assembleDebug` 成功。
+新規ライブラリなし。
+
+**未確認**: 実機での見え方・押しやすさ。特に
+**`[x]` のチェックは Material の箱より当たり判定が小さい**はず(タスク行の完了切り替え)。
+押しにくければ padding を足す。
 
 ---
 

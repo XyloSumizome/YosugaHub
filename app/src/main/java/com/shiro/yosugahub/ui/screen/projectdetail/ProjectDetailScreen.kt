@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -39,6 +38,7 @@ import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.SubScreenScaffold
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
+import com.shiro.yosugahub.ui.component.TerminalCheckbox
 import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.healthLabel
 import com.shiro.yosugahub.ui.share.statusFetchMessage
@@ -422,7 +422,8 @@ private fun TaskRow(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(checked = done, onCheckedChange = onToggleDone)
+        // ラベルはタスク名側が持つので、ここは箱だけ。
+        TerminalCheckbox(label = "", checked = done, onCheckedChange = onToggleDone)
         Column(
             modifier = Modifier
                 .weight(1f)

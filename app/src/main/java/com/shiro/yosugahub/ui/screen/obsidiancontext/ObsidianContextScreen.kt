@@ -21,23 +21,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -48,23 +44,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shiro.yosugahub.ui.component.TacticalButton
-import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
-import com.shiro.yosugahub.ui.component.OpTerminal
-import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
 import com.shiro.yosugahub.data.obsidian.TagIndex
 import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
-import com.shiro.yosugahub.data.repository.ContextHistoryEntry
 import com.shiro.yosugahub.data.repository.ContextBuildResult
+import com.shiro.yosugahub.data.repository.ContextHistoryEntry
 import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.OpTerminal
 import com.shiro.yosugahub.ui.component.SubScreenAction
 import com.shiro.yosugahub.ui.component.SubScreenScaffold
+import com.shiro.yosugahub.ui.component.TacticalButton
+import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
+import com.shiro.yosugahub.ui.component.TerminalChip
 import com.shiro.yosugahub.ui.component.TerminalDialog
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.share.shareMarkdownText
+import com.shiro.yosugahub.ui.theme.TermGreen
 
 /**
  * Obsidian から必要な範囲だけ選んで、ヨスガへ貼るコンテキストを作る画面(設計書v5 Phase 1-b)。
@@ -341,23 +339,25 @@ private fun FilterBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             VaultNoteFilters.RECENT_DAY_OPTIONS.forEach { days ->
-                FilterChip(
+                TerminalChip(
                     selected = filter.recentDays == days,
                     onClick = { onRecentDays(days) },
-                    label = { Text("${days}日以内") },
+                    label = "${days}日以内",
                 )
             }
             if (filter.isActive) {
-                TextButton(onClick = onClear) { Text("解除") }
+                DialogAction("解除", onClick = onClear)
             }
         }
 
         // タグは本文を開かないと分からない。索引は明示的に作らせる。
         if (!tagIndex.isBuilt) {
             Spacer(modifier = Modifier.height(4.dp))
-            TextButton(onClick = onBuildTagIndex, enabled = !isIndexing) {
-                Text(if (isIndexing) "タグを読み込み中…" else "タグで絞り込む(全ノートを読みます)")
-            }
+            DialogAction(
+                if (isIndexing) "タグを読み込み中…" else "タグで絞り込む(全ノートを読みます)",
+                onClick = onBuildTagIndex,
+                enabled = !isIndexing,
+            )
         } else {
             Spacer(modifier = Modifier.height(4.dp))
             Row(
@@ -365,10 +365,10 @@ private fun FilterBar(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 tagIndex.allTags.forEach { tag ->
-                    FilterChip(
+                    TerminalChip(
                         selected = tag in filter.tags,
                         onClick = { onToggleTag(tag) },
-                        label = { Text("#$tag") },
+                        label = "#$tag",
                     )
                 }
             }
@@ -426,7 +426,12 @@ private fun NoteList(
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Checkbox(checked = checked, onCheckedChange = { onToggle(note) })
+                    // 行全体が押せるので、ここは状態を示すマークだけ。
+                    Text(
+                        text = if (checked) "[x]" else "[ ]",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TermGreen,
+                    )
                     Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
                         Text(
                             text = note.title,
@@ -470,9 +475,7 @@ private fun SelectionBar(
                     )
                 }
             }
-            TextButton(onClick = onClear, enabled = uiState.selectedCount > 0) {
-                Text("選択解除")
-            }
+            DialogAction("選択解除", onClick = onClear, enabled = uiState.selectedCount > 0)
             TacticalButton(onClick = onBuild, enabled = uiState.canBuild) {
                 Text(if (uiState.isBuilding) "生成中…" else "まとめる")
             }
@@ -520,10 +523,10 @@ private fun PreviewDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ContextFormat.entries.forEach { option ->
-                        FilterChip(
+                        TerminalChip(
                             selected = format == option,
                             onClick = { onFormatChange(option) },
-                            label = { Text(option.label) },
+                            label = option.label,
                         )
                     }
                 }

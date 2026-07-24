@@ -1,9 +1,6 @@
 package com.shiro.yosugahub.ui.screen.projectdetail
 
 import androidx.lifecycle.ViewModel
-import com.shiro.yosugahub.ui.component.OpLogState
-import com.shiro.yosugahub.ui.component.LogTone
-import com.shiro.yosugahub.ui.component.LogLine
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.createSavedStateHandle
@@ -21,6 +18,9 @@ import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
+import com.shiro.yosugahub.ui.component.LogLine
+import com.shiro.yosugahub.ui.component.LogTone
+import com.shiro.yosugahub.ui.component.OpLogState
 import com.shiro.yosugahub.ui.navigation.ProjectDetailRoute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
