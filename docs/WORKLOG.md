@@ -2,6 +2,66 @@
 
 ---
 
+## ▶▶ 次回の再開ポイント(2026-07-24 時点・ここだけ読めば再開できる)
+
+### いまアプリはどういう状態か
+
+- **設計は v5「Obsidian ブリッジ」**(`yosuga_hub_design_v5_obsidian_bridge.md`)。
+  Hub は AI ではなく「情報を運ぶハブ」。知識の正本は Obsidian の Markdown。
+- **v5 Phase 1〜3 まで実装・実機で通し成功済み**。GitHub 実通信も成功。
+  - Phase1: Obsidian からコンテキスト抽出(選択→生成→コピー/保存/共有)
+  - Phase2: 絞り込み(検索/最近更新/タグ)/ JSON出力 / 出力履歴
+  - Phase3: 各ゲームの `.yosuga/notes/` を GitHub 取得 → type で振り分け → Vault 書込 /
+            会話ログ保存 / status.json 取得表示
+- **UI を全面刷新**: 下部ナビ廃止 → **オペレーションコンソール**(コマンドランチャー)。
+  フォスファーグリーン単色・全面等幅・角丸ゼロ・カード廃止・コマンド実行行。
+  取り込み/保存/生成/GitHub取得で**本物のログが端末に流れ、走査線が走る**演出付き。
+- **仮データ(SampleSeed)は削除機能で一掃済み**。再シードも停止。
+  プロジェクトの「作業中/次」はタスクから自動導出(案C)。
+- テスト **349件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
+  (`cmd.exe /c "set JAVA_HOME=...jbr&& gradlew.bat ..."`)。エミュは黒画面対策で
+  `fastboot.forceColdBoot=yes`(詳細は [[build-environments]] メモ)。
+
+### 画面の構成(下部ナビは無い)
+
+- 起動 = **コンソール**。`Yosuga` + 状態表示(PROJECT/PENDING/SYNC/STATUS) +
+  `> COMMAND` の実行行。
+  - オペレーション: IMPORT NOTES / SAVE SESSION / BUILD CONTEXT / EXPORT STATUS /
+    IMPORT RESPONSE / REVIEW
+  - DATA: PROJECTS / RECORDS / CALENDAR / SETTINGS
+- サブ画面は上辺 `<BACK`(緑の反転ブロック)で戻る。
+
+### 役割(重要・混同注意)
+
+- **ヨスガ**(通常ChatGPT) = 会話の相棒。**観測日記(記録タブ「観測」)を書くのはヨスガ**。
+  ゲームのアップデート状況(状況JSON)があれば材料に、無ければボイス/会話から書く。
+  出力は `diary[]` の回答JSON → コンソール `> IMPORT RESPONSE` に貼る → 承認。
+  ヨスガへの指示文は `docs/yosuga_prompt.md`(観測日記の節あり)。
+- **レコル**(カスタムGPT+Actions) = 情報の仕分け。日記は書かない。`docs/recoru_prompt.md`。
+- 各ゲームの **Claude Code** = `.yosuga/notes/`(知識ノート)と `.yosuga/status.json` を書く。
+  指示文は `docs/claude_code_onboarding.md`。
+
+### 未検証・残っている宿題
+
+- **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期の構成
+  (⚠ Vault は**共有ストレージ上**に。アプリ内フォルダだと Hub から読めない)。
+  共有シートに ChatGPT が出るか。
+- **紙エル(paper-armor-frog)の status.json**: `questionsForYosuga` が文字列配列か要確認
+  (オブジェクト配列だと「読み取れませんでした」で落ちる。ANRI は解決済み)。
+- **UI の細部**: 複雑なフォーム(タスク編集/プロジェクト編集/記録追加)は Material の
+  ドロップダウン・チェックボックスが残る。AlertDialog も Material のまま(角丸ゼロ・緑)。
+  プロジェクト詳細の戻るは旧アイコン(`<BACK` ブロックに揃える余地)。
+- **Morning Brief を実データで作り直す**(仮データ一掃後の確認)。
+- 将来: MCP(v4 Phase4)/ レコル再導入時のタグ整理。
+
+### すぐ試せること(実機)
+
+- コンソール `> IMPORT RESPONSE` にヨスガの `diary[]` JSON を貼る → 記録タブ「観測」へ。
+- 各コマンドで端末ログ + 走査線の演出を確認。
+- プロジェクト詳細 → GitHubから更新 で GITHUB FETCH の端末ログ。
+
+---
+
 ## 2026-07-24: v5 へ方針転換(Obsidian ブリッジ)+ Phase 1-a 実装
 
 ### 方針転換
