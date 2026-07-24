@@ -25,15 +25,23 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** ヨスガ連携画面が監視するUI状態。 */
+/** ヨスガ連携画面 / コンソールが監視するUI状態。 */
 data class AssistantUiState(
     val proposals: List<ProposalCardUi> = emptyList(),
     val recommendations: List<Recommendation> = emptyList(),
-)
+    /** コンソール上部の状態表示用。 */
+    val projectCount: Int = 0,
+    val lastSync: String = "",
+) {
+    val pendingCount: Int get() = proposals.size
+}
 
 class AssistantViewModel(
     private val assistantRepository: AssistantRepository,
@@ -42,7 +50,13 @@ class AssistantViewModel(
     private val proposalRepository: ProposalRepository,
     private val noteImportRepository: NoteImportRepository,
     private val conversationImportRepository: ConversationImportRepository,
+    private val projectRepository: ProjectRepository,
+    userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
+
+    private val projectCount = projectRepository.projects()
+        .map { it.size }
+    private val lastSync = userPreferencesRepository.lastSyncedAt
 
     /** ヨスガのセッションまとめを Obsidian へ保存する(v5 Phase 3-d)。 */
     fun saveConversation(body: String, onResult: (ConversationImportResult) -> Unit) {
@@ -130,10 +144,14 @@ class AssistantViewModel(
     val uiState: StateFlow<AssistantUiState> = combine(
         proposalRepository.pending(),
         assistantRepository.recommendations(),
-    ) { pending, recommendations ->
+        projectCount,
+        lastSync,
+    ) { pending, recommendations, projects, sync ->
         AssistantUiState(
             proposals = pending.map { it.toCardUi() },
             recommendations = recommendations,
+            projectCount = projects,
+            lastSync = sync,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -155,6 +173,8 @@ class AssistantViewModel(
                     proposalRepository = app.container.proposalRepository,
                     noteImportRepository = app.container.noteImportRepository,
                     conversationImportRepository = app.container.conversationImportRepository,
+                    projectRepository = app.container.projectRepository,
+                    userPreferencesRepository = app.container.userPreferencesRepository,
                 )
             }
         }

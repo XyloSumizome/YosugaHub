@@ -67,9 +67,6 @@ fun CalendarScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(text = "カレンダー", style = MaterialTheme.typography.headlineSmall)
-        }
-        item {
             SectionCard(title = "今日(${uiState.today})") {
                 EventList(uiState.todayEvents)
             }

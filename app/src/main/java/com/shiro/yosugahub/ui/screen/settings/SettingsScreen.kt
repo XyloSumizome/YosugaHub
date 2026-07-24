@@ -89,9 +89,6 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(text = "設定", style = MaterialTheme.typography.headlineSmall)
-        }
-        item {
             SectionCard(title = "Obsidian Vault") {
                 Text(
                     text = if (uiState.obsidianVaultUri.isEmpty()) {

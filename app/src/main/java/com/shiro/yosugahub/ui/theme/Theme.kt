@@ -11,17 +11,17 @@ import androidx.compose.runtime.Composable
  * アクセントは Amber(主) / Cyan(情報) / Green(正常) / Red(警報) の4色のみ。
  */
 private val TerminalColorScheme = darkColorScheme(
-    primary = TermAmber,
-    onPrimary = OnTermAmber,
+    primary = TermGreen,
+    onPrimary = OnTermGreen,
     primaryContainer = TermPanelHeader,
-    onPrimaryContainer = TermAmber,
+    onPrimaryContainer = TermGreen,
 
     secondary = TermCyan,
-    onSecondary = OnTermAmber,
+    onSecondary = OnTermGreen,
     secondaryContainer = TermPanelHeader,
     onSecondaryContainer = TermCyan,
 
-    tertiary = TermGreen,
+    tertiary = TermAmber,
     onTertiary = OnTermAmber,
 
     background = TermBackground,

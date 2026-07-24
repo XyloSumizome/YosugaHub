@@ -45,9 +45,6 @@ fun ProjectsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            Text(text = "プロジェクト", style = MaterialTheme.typography.headlineSmall)
-        }
         if (uiState.hasAnyRepository) {
             item {
                 TacticalOutlinedButton(

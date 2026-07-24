@@ -629,6 +629,32 @@ ANRI / Kamieru の Claude Code へ status.json を正しい schemaVersion:1 形�
 
 新規ライブラリなし。全349件通過。実機で確認。
 
+### UI: 下部ナビ廃止 → オペレーションコンソール + フォスファーグリーン端末
+
+ユーザー要望: 一般アプリではなく「開発ツール / オペレーションコンソール」。
+下部ナビ(ホーム/カレンダー/プロジェクト/記録/ヨスガ)は SNS 的なので**全廃**。
+ホーム概念も廃止し、起動画面を**コマンドランチャー**にする。参考画像=緑単色の端末UI。
+
+構造変更:
+- `ui/screen/console/ConsoleScreen.kt` … ルート画面。`YOSUGA HUB` + 状態表示
+  (PROJECT/PENDING/SYNC/STATUS) + `> COMMAND` の実行行を区切り線で列挙。カード不使用。
+  IMPORT NOTES はその場で実行(端末ログ)、他はコマンド実行 or サブ画面を開く。
+- `YosugaHubApp` から Scaffold/NavigationBar を撤去。startDestination=console。
+  サブ画面は `SubScreenScaffold`(上辺 `<BACK` の反転ブロック + タイトル)で戻る。
+- `YosugaDestination` を route だけの enum に(アイコン/ラベル廃止)。
+- edge-to-edge のインセットは NavHost に systemBarsPadding で確保。
+- 旧 HomeScreen/HomeViewModel は不使用に(削除は次回)。
+- `AssistantViewModel` に projectCount / lastSync を追加(コンソール状態表示用)。
+
+配色(参考画像に合わせフォスファーグリーン単色へ):
+- **primary をアンバー→グリーン**。アンバーは BUSY/警告のみに降格。
+- **白/灰の文字を全廃**。本文=1トーン落ちたグリーン、ラベル=さらに沈めたグリーン、
+  項目/値/見出し=明るいグリーン。区切り線も緑がかった暗線に。
+- `<BACK` を緑の反転ブロック(黒文字)に。LED を丸ドットに。
+- 各サブ画面の内部タイトル(設定/記録/…)はバーと重複するので削除。
+
+新規ライブラリなし。全349件通過。実機で全画面確認。
+
 ### UI方針を Brutalist / 仕事道具 へ転換
 
 ユーザー指摘: 前のネオンUIは「洗練されすぎ・お洒落すぎ」。

@@ -77,7 +77,7 @@ fun StatusLed(
     Box(
         modifier = modifier
             .size(size.dp)
-            .background(color),
+            .background(color, androidx.compose.foundation.shape.CircleShape),
     )
 }
 

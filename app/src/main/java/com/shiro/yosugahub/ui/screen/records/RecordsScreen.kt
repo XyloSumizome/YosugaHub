@@ -84,9 +84,6 @@ fun RecordsScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text(text = "記録", style = MaterialTheme.typography.headlineSmall)
-        }
-        item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
