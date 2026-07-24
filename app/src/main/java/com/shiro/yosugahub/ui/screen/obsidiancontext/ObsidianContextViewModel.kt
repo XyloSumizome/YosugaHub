@@ -9,8 +9,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.file.TextDocumentWriter
+import com.shiro.yosugahub.data.obsidian.NoteFilter
 import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.obsidian.VaultNote
+import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import com.shiro.yosugahub.data.repository.ContextBuildResult
 import com.shiro.yosugahub.data.repository.VaultRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +28,9 @@ data class ObsidianContextUiState(
     val notes: List<VaultNote> = emptyList(),
     /** 選択されたノートの相対パス。順序は一覧の並びに従うので Set で持つ。 */
     val selected: Set<String> = emptySet(),
+    val filter: NoteFilter = NoteFilter(),
+    /** [filter] を適用した表示対象。選択は絞り込みに影響されない。 */
+    val visible: List<VaultNote> = emptyList(),
     val errorMessage: String = "",
     val isBuilding: Boolean = false,
     /** 生成済みのコンテキスト。null ならプレビュー未生成。 */
@@ -34,9 +39,13 @@ data class ObsidianContextUiState(
     val selectedCount: Int get() = selected.size
     val canBuild: Boolean get() = selected.isNotEmpty() && !isBuilding
 
-    /** フォルダごとにまとめた一覧(Vault 直下は空文字キー)。 */
+    /** 絞り込みで隠れているだけの選択があるか(件数の食い違いを画面で説明するため)。 */
+    val hiddenSelectedCount: Int
+        get() = selected.count { path -> visible.none { it.relativePath == path } }
+
+    /** フォルダごとにまとめた表示用の一覧(Vault 直下は空文字キー)。 */
     val grouped: List<Pair<String, List<VaultNote>>>
-        get() = notes.groupBy { it.folder }.toList().sortedBy { it.first }
+        get() = visible.groupBy { it.folder }.toList().sortedBy { it.first }
 }
 
 /**
@@ -46,6 +55,8 @@ data class ObsidianContextUiState(
 class ObsidianContextViewModel(
     private val vaultRepository: VaultRepository,
     private val documentWriter: TextDocumentWriter,
+    /** 「最近更新」の基準時刻。テストで固定できるようにする。 */
+    private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ObsidianContextUiState())
@@ -69,6 +80,7 @@ class ObsidianContextViewModel(
                         loadState = VaultLoadState.LOADED,
                         notes = listing.notes,
                         selected = _uiState.value.selected intersect available,
+                        visible = filtered(listing.notes, _uiState.value.filter),
                     )
                 }
 
@@ -85,6 +97,31 @@ class ObsidianContextViewModel(
         }
     }
 
+    /** パス・ファイル名での絞り込み。ファイルは読まないので即座に効く。 */
+    fun setQuery(query: String) {
+        applyFilter(_uiState.value.filter.copy(query = query))
+    }
+
+    /** 「最近更新」の絞り込み。同じ日数をもう一度選ぶと解除する。 */
+    fun setRecentDays(days: Int?) {
+        val current = _uiState.value.filter
+        val next = if (current.recentDays == days) null else days
+        applyFilter(current.copy(recentDays = next))
+    }
+
+    fun clearFilter() {
+        applyFilter(NoteFilter())
+    }
+
+    private fun applyFilter(filter: NoteFilter) {
+        val state = _uiState.value
+        // 絞り込みは表示だけを変える。選択とプレビューには触らない。
+        _uiState.value = state.copy(filter = filter, visible = filtered(state.notes, filter))
+    }
+
+    private fun filtered(notes: List<VaultNote>, filter: NoteFilter): List<VaultNote> =
+        VaultNoteFilters.apply(notes, filter, nowMillis())
+
     fun toggle(note: VaultNote) {
         val current = _uiState.value.selected
         val next = if (note.relativePath in current) {
@@ -96,9 +133,12 @@ class ObsidianContextViewModel(
         _uiState.value = _uiState.value.copy(selected = next, preview = null)
     }
 
-    /** フォルダ単位のまとめて選択・解除。全部入っていれば解除、そうでなければ全選択。 */
+    /**
+     * フォルダ単位のまとめて選択・解除。全部入っていれば解除、そうでなければ全選択。
+     * 対象は**画面に出ているノートだけ**(絞り込みで隠れているものは動かさない)。
+     */
     fun toggleFolder(folder: String) {
-        val paths = _uiState.value.notes
+        val paths = _uiState.value.visible
             .filter { it.folder == folder }
             .map { it.relativePath }
             .toSet()

@@ -22,9 +22,11 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,7 +44,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
+import com.shiro.yosugahub.data.obsidian.NoteFilter
 import com.shiro.yosugahub.data.obsidian.VaultNote
+import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import com.shiro.yosugahub.data.repository.ContextBuildResult
 import com.shiro.yosugahub.ui.share.shareMarkdownText
 
@@ -126,12 +130,26 @@ fun ObsidianContextScreen(
                     )
                 }
             } else {
-                NoteList(
-                    uiState = uiState,
-                    onToggle = viewModel::toggle,
-                    onToggleFolder = viewModel::toggleFolder,
-                    modifier = Modifier.weight(1f),
+                FilterBar(
+                    filter = uiState.filter,
+                    onQueryChange = viewModel::setQuery,
+                    onRecentDays = viewModel::setRecentDays,
+                    onClear = viewModel::clearFilter,
                 )
+                if (uiState.visible.isEmpty()) {
+                    CenterMessage(modifier = Modifier.weight(1f)) {
+                        Text("条件に合うノートがありません。")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(onClick = viewModel::clearFilter) { Text("絞り込みを解除") }
+                    }
+                } else {
+                    NoteList(
+                        uiState = uiState,
+                        onToggle = viewModel::toggle,
+                        onToggleFolder = viewModel::toggleFolder,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 SelectionBar(
                     uiState = uiState,
                     onClear = viewModel::clearSelection,
@@ -155,6 +173,42 @@ fun ObsidianContextScreen(
             },
         )
     }
+}
+
+/** 絞り込み。ファイルを開かずに判定できる条件だけを置く(設計書v5 Phase 2)。 */
+@Composable
+private fun FilterBar(
+    filter: NoteFilter,
+    onQueryChange: (String) -> Unit,
+    onRecentDays: (Int?) -> Unit,
+    onClear: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+        OutlinedTextField(
+            value = filter.query,
+            onValueChange = onQueryChange,
+            label = { Text("パス・ファイル名で絞り込む") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            VaultNoteFilters.RECENT_DAY_OPTIONS.forEach { days ->
+                FilterChip(
+                    selected = filter.recentDays == days,
+                    onClick = { onRecentDays(days) },
+                    label = { Text("${days}日以内") },
+                )
+            }
+            if (filter.isActive) {
+                TextButton(onClick = onClear) { Text("解除") }
+            }
+        }
+    }
+    HorizontalDivider()
 }
 
 @Composable
@@ -231,11 +285,19 @@ private fun SelectionBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                text = "${uiState.selectedCount} / ${uiState.notes.size} 件",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${uiState.selectedCount} / ${uiState.notes.size} 件",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                // 絞り込みで見えていない選択があると件数が合わなく見えるため明示する。
+                if (uiState.hiddenSelectedCount > 0) {
+                    Text(
+                        text = "うち${uiState.hiddenSelectedCount}件は絞り込みで非表示",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
             TextButton(onClick = onClear, enabled = uiState.selectedCount > 0) {
                 Text("選択解除")
             }
@@ -318,9 +380,12 @@ private fun PreviewDialog(
 }
 
 @Composable
-private fun CenterMessage(content: @Composable () -> Unit) {
+private fun CenterMessage(
+    modifier: Modifier = Modifier.fillMaxSize(),
+    content: @Composable () -> Unit,
+) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier.fillMaxWidth().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {

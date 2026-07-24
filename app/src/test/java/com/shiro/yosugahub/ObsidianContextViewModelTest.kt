@@ -166,6 +166,70 @@ class ObsidianContextViewModelTest {
     }
 
     @Test
+    fun query_filters_the_visible_list_but_not_the_selection() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.toggle(lighting)
+        vm.setQuery("Logs")
+
+        assertEquals(listOf(log), vm.uiState.value.visible)
+        // 隠れても選択は残る。貼り忘れ・貼りすぎを防ぐため件数で知らせる。
+        assertEquals(setOf(lighting.relativePath), vm.uiState.value.selected)
+        assertEquals(1, vm.uiState.value.hiddenSelectedCount)
+    }
+
+    @Test
+    fun folder_toggle_only_touches_visible_notes() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setQuery("Lighting")
+        vm.toggleFolder("Games/ANRI/Design")
+
+        // 同じフォルダの Overview.md は絞り込みで隠れているので選ばれない
+        assertEquals(setOf(lighting.relativePath), vm.uiState.value.selected)
+    }
+
+    @Test
+    fun selecting_the_same_recent_range_twice_clears_it() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setRecentDays(7)
+        assertEquals(7, vm.uiState.value.filter.recentDays)
+
+        vm.setRecentDays(7)
+        assertEquals(null, vm.uiState.value.filter.recentDays)
+    }
+
+    @Test
+    fun clear_filter_restores_the_full_list() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setQuery("Logs")
+        assertEquals(1, vm.uiState.value.visible.size)
+
+        vm.clearFilter()
+        assertEquals(3, vm.uiState.value.visible.size)
+        assertFalse(vm.uiState.value.filter.isActive)
+    }
+
+    @Test
+    fun filter_survives_a_refresh() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setQuery("Logs")
+        vm.refresh()
+        advanceUntilIdle()
+
+        assertEquals("Logs", vm.uiState.value.filter.query)
+        assertEquals(listOf(log), vm.uiState.value.visible)
+    }
+
+    @Test
     fun refresh_drops_selection_of_notes_that_disappeared() = runTest(dispatcher) {
         val reader = object : VaultReader {
             var notes = listOf(lighting, log)
