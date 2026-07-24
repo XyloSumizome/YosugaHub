@@ -52,6 +52,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.TacticalButton
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.component.OpTerminal
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
@@ -327,10 +328,10 @@ private fun FilterBar(
     onClear: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
-        OutlinedTextField(
+        TerminalField(
             value = filter.query,
             onValueChange = onQueryChange,
-            label = { Text("パス・ファイル名で絞り込む") },
+            placeholder = "パス・ファイル名で絞り込む",
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )

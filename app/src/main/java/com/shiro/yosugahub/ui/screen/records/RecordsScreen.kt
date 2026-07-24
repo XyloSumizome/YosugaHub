@@ -38,6 +38,7 @@ import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.directiveStatusLabel
 import com.shiro.yosugahub.ui.component.documentStatusLabel
@@ -103,10 +104,10 @@ fun RecordsScreen(
         when (section) {
             RecordsSection.ITEMS -> {
                 item {
-                    OutlinedTextField(
+                    TerminalField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
-                        label = { Text("検索(タイトル・本文・タグ)") },
+                        placeholder = "検索(タイトル・本文・タグ)",
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -182,10 +183,10 @@ fun RecordsScreen(
 
             RecordsSection.DOCUMENTS -> {
                 item {
-                    OutlinedTextField(
+                    TerminalField(
                         value = documentQuery,
                         onValueChange = { documentQuery = it },
-                        label = { Text("検索(タイトル・原文・要約・タグ)") },
+                        placeholder = "検索(タイトル・原文・要約・タグ)",
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )

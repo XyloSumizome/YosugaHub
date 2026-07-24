@@ -23,6 +23,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontFamily
@@ -59,11 +62,21 @@ fun OpTerminal(
         if (lines.isNotEmpty()) listState.animateScrollToItem(lines.size - 1)
     }
 
+    // 実行中は掃引ラインを上→下へ動かす(データ転送している感じ)。
+    val sweep = rememberInfiniteTransition(label = "sweep")
+    val sweepPos by sweep.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(1600), RepeatMode.Restart),
+        label = "sweep-pos",
+    )
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .border(1.dp, TermLine, RectangleShape)
             .background(TermConsole)
+            .scanlines(running = running, sweepFraction = sweepPos)
             .padding(12.dp),
     ) {
         Row(
@@ -119,3 +132,41 @@ private fun LogTone.color(): Color = when (this) {
     LogTone.ERROR -> TermRed
     LogTone.ACCENT -> TermGreen
 }
+
+/**
+ * CRT 風の走査線を重ねる(v5 UI)。
+ * 常時: 3px 間隔の薄い横線。実行中: 明るい掃引ラインが上→下へ動く。
+ * どちらも低アルファで、文字の可読性は損なわない。
+ */
+private fun Modifier.scanlines(running: Boolean, sweepFraction: Float): Modifier =
+    drawWithContent {
+        drawContent()
+        // 常時の横縞
+        val gap = 3.dp.toPx()
+        var y = 0f
+        while (y < size.height) {
+            drawLine(
+                color = TermGreen.copy(alpha = 0.035f),
+                start = Offset(0f, y),
+                end = Offset(size.width, y),
+                strokeWidth = 1f,
+            )
+            y += gap
+        }
+        // 実行中の掃引ライン
+        if (running) {
+            val cy = size.height * sweepFraction
+            val band = 18.dp.toPx()
+            drawRect(
+                color = TermGreen.copy(alpha = 0.06f),
+                topLeft = Offset(0f, cy - band / 2f),
+                size = Size(size.width, band),
+            )
+            drawLine(
+                color = TermGreen.copy(alpha = 0.5f),
+                start = Offset(0f, cy),
+                end = Offset(size.width, cy),
+                strokeWidth = 1.5f,
+            )
+        }
+    }

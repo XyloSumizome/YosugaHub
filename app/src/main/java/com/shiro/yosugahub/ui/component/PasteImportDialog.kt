@@ -44,10 +44,10 @@ fun PasteImportDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedTextField(
+                TerminalField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text(label) },
+                    placeholder = label,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 160.dp, max = 280.dp),
