@@ -18,6 +18,12 @@
   取り込み/保存/生成/GitHub取得で**本物のログが端末に流れ、走査線が走る**演出付き。
 - **仮データ(SampleSeed)は削除機能で一掃済み**。再シードも停止。
   プロジェクトの「作業中/次」はタスクから自動導出(案C)。
+- **GitHub取得 → ロリポップ同期は自動**(2026-07-24)。「GitHubから更新」が成功したら、
+  そのままレコルが読む側へ push する。人が設定の「今すぐ同期」を踏む必要はない。
+- **UI から Material の素の部品は消えた**(2026-07-24)。`TextButton` / `FilterChip` /
+  `Checkbox` / `AlertDialog` / `OutlinedTextField` の直接呼び出しはゼロ。
+  代わりに `TacticalButton` / `TerminalChip` / `TerminalCheckbox` / `TerminalDialog` /
+  `DialogAction` / `TerminalField` / `SubScreenScaffold` を使う(すべて `ui/component/`)。
 - テスト **359件** 通過。Room は **v8**。新規ライブラリなし。ビルドは Windows 側 JBR
   (`cmd.exe /c "set JAVA_HOME=...jbr&& gradlew.bat ..."`)。エミュは黒画面対策で
   `fastboot.forceColdBoot=yes`(詳細は [[build-environments]] メモ)。
@@ -43,25 +49,44 @@
 - 各ゲームの **Claude Code** = `.yosuga/notes/`(知識ノート)と `.yosuga/status.json` を書く。
   指示文は `docs/claude_code_onboarding.md`。
 
+### 次にやること(この順で)
+
+1. **Morning Brief を実データで一周する**。手順は
+   `docs/recoru_prompt.md` の「Morning Brief の回し方」。
+   要点は **アプリを新しくしてからレコルに聞く**(逆順だと古い projects.json を読ませる)。
+   手順 4.(Brief の日付・数字が取り込んだものと合うか)が、
+   **「レコルが新しい projects.json を読む」の未確認分**の確認を兼ねる。
+2. **フォームUIを実機で見る**。特に **`[x]` チェックの当たり判定**
+   (Material の箱より小さいはず。タスク行の完了切り替えが押しにくければ padding を足す)。
+3. **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期の構成
+   (⚠ Vault は**共有ストレージ上**に。アプリ内フォルダだと Hub から読めない)。
+   共有シートに ChatGPT が出るか。
+
 ### 未検証・残っている宿題
 
-- **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期の構成
-  (⚠ Vault は**共有ストレージ上**に。アプリ内フォルダだと Hub から読めない)。
-  共有シートに ChatGPT が出るか。
 - ~~**紙エルの status.json**: `questionsForYosuga` の型ゆれ~~ → **2026-07-24 解決・実機確認済み**。
-  オブジェクト配列 / 単体文字列 / null でも読めるようにした(下記の項参照)。
-- **UI の細部**: ~~戻るアイコン / AlertDialog~~ → **2026-07-24 統一・実機確認済み**。
-  ~~フォームの中身(入力欄・チップ・チェック)~~ → **2026-07-24 端末化(実機未確認)**。
-  Material の `TextButton` / `FilterChip` / `Checkbox` / `AlertDialog` /
-  `OutlinedTextField` の直接呼び出しは UI 全体でゼロ。
-- **Morning Brief を実データで作り直す**(仮データ一掃後の確認)。
+- ~~**UI の細部**: 戻るアイコン / AlertDialog~~ → **2026-07-24 統一・実機確認済み**。
+  フォームの中身(入力欄・チップ・チェック)は**端末化したが実機未確認**(上記 2.)。
+- **レコルが新しい projects.json を読むところ**が未確認(上記 1.)。
+  ロリポップへの push までは Toast で確認済み。
 - 将来: MCP(v4 Phase4)/ レコル再導入時のタグ整理。
 
 ### すぐ試せること(実機)
 
 - コンソール `> IMPORT RESPONSE` にヨスガの `diary[]` JSON を貼る → 記録タブ「観測」へ。
 - 各コマンドで端末ログ + 走査線の演出を確認。
-- プロジェクト詳細 → GitHubから更新 で GITHUB FETCH の端末ログ。
+- プロジェクト詳細 → GitHubから更新 で GITHUB FETCH → `> SYNC lolipop` の端末ログ。
+
+### 2026-07-24 の後半にやったこと(新しい順)
+
+| コミット | 内容 |
+|---|---|
+| `5b9ed51` | レコルの役割を v5 へ(Obsidian入力の自動化)+ Morning Brief の手順 |
+| `83d1e21` | フォームの部品を端末化(入力欄・チップ・チェック) |
+| `3c37ced` | 戻り口とダイアログをコンソールUIへ統一 |
+| `2c2b155` | 自動同期とUI統一を実機で確認済みに更新 |
+| `eebfe10` | GitHub取得のあとに自動でサーバー同期する |
+| `29bd930` | status.json の `questionsForYosuga` の型ゆれを吸収(紙エル対策) |
 
 ---
 

@@ -102,11 +102,18 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **⚠ エミュレータの黒画面**: ハードウェア描画だと画面が黒くなり `system_server` が ANR する
   (アプリの問題ではない)。`emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect`
   で復旧。恒久対処は Device Manager → Edit → Graphics →「Software - GLES 2.0」。
-- **次にやること**:
-  1. **Morning Brief を作り直す**。実データだけで要約されるか確認。
-  2. **v5 Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /
-     会話ログ取り込み / 重複検出。⚠ **着手前に Vault のフォルダ構成を確定**する必要がある
-     (設計書v5 §6)。Obsidian へ**書き込む**フェーズなので、実運用 Vault の前にテスト用 Vault で通す。
+- **v5 Phase 3 完了・実機で通し成功**: GitHub の `.yosuga/notes/` を取得 → type で振り分け →
+  Vault へ書込 / 会話ログ保存 / status.json 取得表示。
+- **UI をオペレーションコンソール化**(下部ナビ廃止・フォスファーグリーン単色・端末ログ演出)。
+  2026-07-24 に **Material の素の部品を全廃**(`TextButton` / `FilterChip` / `Checkbox` /
+  `AlertDialog` / `OutlinedTextField` の直接呼び出しはゼロ)。代わりに `ui/component/` の
+  `TacticalButton` / `TerminalChip` / `TerminalCheckbox` / `TerminalDialog` / `DialogAction` /
+  `TerminalField` / `SubScreenScaffold` を使う。**新しい画面もこれらで組む**。
+- **GitHub取得 → ロリポップ同期は自動**(2026-07-24)。取得が成功した時だけ push する。
+- **次にやること**(詳細は WORKLOG 冒頭の再開ポイント):
+  1. **Morning Brief を実データで一周**。手順は `docs/recoru_prompt.md` の
+     「Morning Brief の回し方」。**アプリを新しくしてからレコルに聞く**のが要点。
+  2. **フォームUIを実機で確認**(特に `[x]` チェックの当たり判定)。
   3. **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期
      (⚠ Vault は**共有ストレージ上**に作ること。アプリ内フォルダだと Hub から読めない)/
      共有シートに ChatGPT が出るか。
@@ -114,6 +121,9 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
   **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。
   レコルの「Hub更新」は既存の 取込→承認→自動再同期 経路(直接書込はしない)。
+  **知識を活かすのはレコルではない**(人間かヨスガの仕事)。レコルの役目は
+  **Obsidian への入力を自動化すること**(2026-07-24 確定 / `items[].targetNote` を必ず付ける)。
+  **観測日記を書くのはヨスガ**(レコルではない)。
   新概念 **Morning Brief**(レコルがHubを要約→ヨスガに貼って1日を開始)。アプリ実装変更なし。
 - 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
 - アシスタント名は「ヨスガ」「レコル」(カタカナ表記)。
