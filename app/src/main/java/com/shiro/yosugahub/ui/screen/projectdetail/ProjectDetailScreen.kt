@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +55,7 @@ fun ProjectDetailScreen(
     var showNewTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
     var showProjectEditDialog by remember { mutableStateOf(false) }
+    var showProjectDeleteDialog by remember { mutableStateOf(false) }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -104,8 +106,13 @@ fun ProjectDetailScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    TextButton(onClick = { showProjectEditDialog = true }) {
-                        Text("プロジェクトを編集")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { showProjectEditDialog = true }) {
+                            Text("プロジェクトを編集")
+                        }
+                        TextButton(onClick = { showProjectDeleteDialog = true }) {
+                            Text("削除", color = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
             }
@@ -157,6 +164,35 @@ fun ProjectDetailScreen(
                 tasks = uiState.tasks.done,
                 onToggleDone = viewModel::setTaskDone,
                 onClickTask = { editingTask = it },
+            )
+        }
+    }
+
+    if (showProjectDeleteDialog) {
+        uiState.project?.let { project ->
+            AlertDialog(
+                onDismissRequest = { showProjectDeleteDialog = false },
+                title = { Text("プロジェクトを削除") },
+                text = {
+                    Text(
+                        "「${project.name}」と、このプロジェクトのタスク${uiState.tasks.size}件、" +
+                            "GitHubから取得した進捗を削除します。元に戻せません。",
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showProjectDeleteDialog = false
+                            // 消えた画面に留まらせず、一覧へ戻る。
+                            viewModel.deleteProject(onDeleted = onBack)
+                        },
+                    ) {
+                        Text("削除する", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showProjectDeleteDialog = false }) { Text("やめる") }
+                },
             )
         }
     }

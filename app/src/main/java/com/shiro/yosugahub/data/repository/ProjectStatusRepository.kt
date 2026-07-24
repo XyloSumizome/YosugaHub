@@ -46,6 +46,11 @@ class ProjectStatusRepository(
         return result
     }
 
+    /** 進捗キャッシュを捨てる(プロジェクト削除の後始末)。 */
+    suspend fun deleteCache(projectId: String) {
+        dao.deleteByProject(projectId)
+    }
+
     /**
      * リポジトリが設定されているプロジェクトをまとめて更新する。
      * 未設定のプロジェクトは通信せず結果からも除く。

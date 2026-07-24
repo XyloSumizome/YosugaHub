@@ -37,4 +37,10 @@ class ProjectRepository(
      */
     suspend fun updateHealth(projectId: String, health: String): Boolean =
         dao.updateHealth(id = projectId, health = health, lastUpdated = now()) > 0
+
+    /**
+     * プロジェクトを削除する。**この Repository はプロジェクト行だけを消す。**
+     * 紐づくタスク・進捗キャッシュの後始末は呼び出し側が行う(孤児レコードを残さないこと)。
+     */
+    suspend fun delete(projectId: String): Boolean = dao.deleteById(projectId) > 0
 }

@@ -60,6 +60,23 @@ class ProjectDetailViewModel(
         viewModelScope.launch { projectRepository.upsert(project) }
     }
 
+    /**
+     * プロジェクトを削除する(v5 / 選択A の残り)。
+     *
+     * **タスクと進捗キャッシュを先に消してから本体を消す。**
+     * 逆順だと、途中で失敗したときに親のいないタスクが残る。
+     * 完了後に [onDeleted] で画面を閉じてもらう(消えた画面に留まらせない)。
+     */
+    fun deleteProject(onDeleted: () -> Unit) {
+        val project = uiState.value.project ?: return
+        viewModelScope.launch {
+            taskRepository.deleteByProject(project.id)
+            projectStatusRepository.deleteCache(project.id)
+            projectRepository.delete(project.id)
+            onDeleted()
+        }
+    }
+
     /** 新規タスクを追加する(このプロジェクトに紐付け)。 */
     fun addTask(title: String, detail: String, priority: String, dueDate: String?, status: TaskStatus) {
         viewModelScope.launch {

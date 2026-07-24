@@ -81,6 +81,11 @@ class TaskRepository(
         )
     }
 
+    /** プロジェクト配下のタスクをまとめて削除する(プロジェクト削除の後始末)。 */
+    suspend fun deleteByProject(projectId: String) {
+        dao.deleteByProject(projectId)
+    }
+
     suspend fun delete(id: String) {
         dao.deleteById(id)
     }

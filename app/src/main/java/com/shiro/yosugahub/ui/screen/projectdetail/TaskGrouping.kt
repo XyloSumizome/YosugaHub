@@ -10,6 +10,9 @@ data class GroupedTasks(
     val done: List<Task> = emptyList(),
 ) {
     val isEmpty: Boolean get() = doing.isEmpty() && todo.isEmpty() && done.isEmpty()
+
+    /** 全体の件数(削除の確認文などで使う)。 */
+    val size: Int get() = doing.size + todo.size + done.size
 }
 
 /**

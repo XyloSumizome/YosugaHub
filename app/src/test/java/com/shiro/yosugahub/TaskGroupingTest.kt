@@ -2,12 +2,25 @@ package com.shiro.yosugahub
 
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
+import com.shiro.yosugahub.ui.screen.projectdetail.GroupedTasks
 import com.shiro.yosugahub.ui.screen.projectdetail.groupTasks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TaskGroupingTest {
+
+    @Test
+    fun size_counts_every_bucket() {
+        val grouped = GroupedTasks(
+            doing = listOf(task("a", TaskStatus.DOING)),
+            todo = listOf(task("b", TaskStatus.TODO), task("c", TaskStatus.TODO)),
+            done = listOf(task("d", TaskStatus.DONE)),
+        )
+
+        assertEquals(4, grouped.size)
+        assertEquals(0, GroupedTasks().size)
+    }
 
     private fun task(
         id: String,
