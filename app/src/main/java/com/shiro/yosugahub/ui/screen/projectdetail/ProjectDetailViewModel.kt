@@ -1,6 +1,9 @@
 package com.shiro.yosugahub.ui.screen.projectdetail
 
 import androidx.lifecycle.ViewModel
+import com.shiro.yosugahub.ui.component.OpLogState
+import com.shiro.yosugahub.ui.component.LogTone
+import com.shiro.yosugahub.ui.component.LogLine
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.createSavedStateHandle
@@ -42,17 +45,59 @@ class ProjectDetailViewModel(
 
     private val refreshing = MutableStateFlow(false)
 
-    /** GitHub から status.json を取得しキャッシュを更新する。結果は UI へ返す。 */
+    /** GitHub 取得の端末ログ(v5 UI)。 */
+    val opLog = OpLogState()
+
+    /** GitHub から status.json を取得しキャッシュを更新する。演出付き。 */
     fun refreshStatus(onResult: (StatusFetchResult) -> Unit) {
         val project = uiState.value.project ?: return
         viewModelScope.launch {
             refreshing.value = true
             try {
-                onResult(projectStatusRepository.refresh(project))
+                val result = opLog.run { emit ->
+                    emit.emit(LogLine("> CONNECT github.com", LogTone.ACCENT))
+                    emit.emit(
+                        LogLine(
+                            "  TARGET ${project.repoOwner.orEmpty()}/${project.repoName.orEmpty()}",
+                            LogTone.INFO,
+                        )
+                    )
+                    emit.emit(LogLine("  FETCH .yosuga/status.json …", LogTone.INFO))
+                    val r = projectStatusRepository.refresh(project)
+                    statusLines(r).forEach { emit.emit(it) }
+                    emit.emit(LogLine("> DONE", LogTone.ACCENT))
+                    r
+                } ?: return@launch
+                onResult(result)
             } finally {
                 refreshing.value = false
             }
         }
+    }
+
+    private fun statusLines(result: StatusFetchResult): List<LogLine> = when (result) {
+        is StatusFetchResult.Success -> listOf(
+            LogLine("  200 OK", LogTone.OK),
+            LogLine("  PARSE schemaVersion=1 … OK", LogTone.OK),
+        )
+        is StatusFetchResult.AuthFailed ->
+            listOf(LogLine("  401/403 認証に失敗", LogTone.ERROR))
+        is StatusFetchResult.FileNotFound ->
+            listOf(LogLine("  404 status.json が見つかりません", LogTone.ERROR))
+        is StatusFetchResult.NetworkError ->
+            listOf(LogLine("  ERR 通信できません", LogTone.ERROR))
+        is StatusFetchResult.HttpError ->
+            listOf(LogLine("  HTTP ${result.statusCode}", LogTone.ERROR))
+        is StatusFetchResult.InvalidJson ->
+            listOf(LogLine("  PARSE 失敗: 型が合いません", LogTone.ERROR))
+        is StatusFetchResult.UnsupportedSchema ->
+            listOf(LogLine("  未対応の schemaVersion=${result.version}", LogTone.WARN))
+        is StatusFetchResult.ProjectIdMismatch ->
+            listOf(LogLine("  projectId 不一致: ${result.actual}", LogTone.WARN))
+        is StatusFetchResult.NotConfigured ->
+            listOf(LogLine("  リポジトリ未設定", LogTone.WARN))
+        is StatusFetchResult.TokenMissing ->
+            listOf(LogLine("  GitHub トークン未設定", LogTone.WARN))
     }
 
     /** プロジェクト編集の保存(1-d)。lastUpdated は Repository が刻む。 */

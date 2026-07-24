@@ -1,12 +1,8 @@
 package com.shiro.yosugahub.ui.screen.assistant
 
 import com.shiro.yosugahub.data.repository.ImportEvent
-
-/** 端末ログ1行の種別。UI が色分けに使う。 */
-enum class LogTone { INFO, OK, WARN, ERROR, ACCENT }
-
-/** 端末風ログの1行。 */
-data class LogLine(val text: String, val tone: LogTone)
+import com.shiro.yosugahub.ui.component.LogLine
+import com.shiro.yosugahub.ui.component.LogTone
 
 /**
  * 取り込みイベントを端末ログ行へ整形する純粋ロジック(v5 UI: ハッキング演出)。

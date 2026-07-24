@@ -40,6 +40,7 @@ import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
 import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
+import com.shiro.yosugahub.ui.component.OpTerminal
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.healthLabel
@@ -54,6 +55,7 @@ fun ProjectDetailScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val opLines by viewModel.opLog.lines.collectAsState()
     var showNewTaskDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
     var showProjectEditDialog by remember { mutableStateOf(false) }
@@ -156,6 +158,7 @@ fun ProjectDetailScreen(
                 project = project,
                 status = uiState.status,
                 isRefreshing = uiState.isRefreshing,
+                opLines = opLines,
                 onRefresh = {
                     viewModel.refreshStatus { result ->
                         Toast.makeText(context, statusFetchMessage(result), Toast.LENGTH_LONG).show()
@@ -296,6 +299,7 @@ private fun GitHubStatusCard(
     project: com.shiro.yosugahub.domain.model.Project,
     status: ProjectStatusSnapshot?,
     isRefreshing: Boolean,
+    opLines: List<com.shiro.yosugahub.ui.component.LogLine>,
     onRefresh: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -360,6 +364,10 @@ private fun GitHubStatusCard(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (isRefreshing) "取得中..." else "GitHubから更新")
+                }
+                if (isRefreshing || opLines.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OpTerminal(title = "GITHUB FETCH", lines = opLines, running = isRefreshing)
                 }
             }
         }

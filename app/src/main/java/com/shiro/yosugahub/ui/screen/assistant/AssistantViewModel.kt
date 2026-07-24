@@ -30,6 +30,9 @@ import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
+import com.shiro.yosugahub.ui.component.LogTone
+import com.shiro.yosugahub.ui.component.LogLine
+import com.shiro.yosugahub.ui.component.OpLogState
 import kotlinx.coroutines.launch
 
 /** ヨスガ連携画面 / コンソールが監視するUI状態。 */
@@ -58,52 +61,53 @@ class AssistantViewModel(
         .map { it.size }
     private val lastSync = userPreferencesRepository.lastSyncedAt
 
-    /** ヨスガのセッションまとめを Obsidian へ保存する(v5 Phase 3-d)。 */
-    fun saveConversation(body: String, onResult: (ConversationImportResult) -> Unit) {
-        viewModelScope.launch { onResult(conversationImportRepository.save(body)) }
-    }
-
-    private val _noteImporting = MutableStateFlow(false)
-    val noteImporting: StateFlow<Boolean> = _noteImporting
+    /** 端末ログ(v5 UI)。取り込み・保存・生成などの操作すべてで共用する。 */
+    val opLog = OpLogState()
 
     private val _noteImportSummary = MutableStateFlow<NoteImportSummary?>(null)
     val noteImportSummary: StateFlow<NoteImportSummary?> = _noteImportSummary
 
-    /** 端末風ログの行(v5 UI: ハッキング演出)。取り込み中に1行ずつ積む。 */
-    private val _importLog = MutableStateFlow<List<LogLine>>(emptyList())
-    val importLog: StateFlow<List<LogLine>> = _importLog
-
     /**
      * 各ゲームの `.yosuga/notes/` を取り込んで Obsidian Vault へ収める(v5 Phase 3-c)。
-     * 取得済みのノートは飛ばすので、繰り返し押しても二重には入らない。
-     *
-     * 進捗イベントを端末ログとして1行ずつ流す(演出)。**実処理は本物**で、
-     * ログに出るファイル名・振り分け先は実際に処理したものと一致する。
+     * 進捗イベントを端末ログとして1行ずつ流す。**実処理は本物**。
      */
     fun importNotes() {
-        if (_noteImporting.value) return
         viewModelScope.launch {
-            _noteImporting.value = true
-            _noteImportSummary.value = null
-            _importLog.value = emptyList()
-            try {
-                val summary = noteImportRepository.importAll { event ->
-                    _importLog.value = _importLog.value + ImportLog.format(event)
-                    // 少しタメて1行ずつ見せる(処理自体は本物のまま進む)。
-                    delay(LOG_LINE_DELAY_MS)
-                }
-                // 最後の DONE 行を読む余韻を少し置いてから結果ダイアログへ。
-                delay(SUMMARY_DELAY_MS)
-                _noteImportSummary.value = summary
-            } finally {
-                _noteImporting.value = false
-            }
+            val summary = opLog.run { emit ->
+                noteImportRepository.importAll { event -> emit.emit(ImportLog.format(event)) }
+            } ?: return@launch
+            delay(SUMMARY_DELAY_MS)
+            _noteImportSummary.value = summary
         }
     }
 
     fun dismissNoteImportSummary() {
         _noteImportSummary.value = null
-        _importLog.value = emptyList()
+        opLog.clear()
+    }
+
+    /** ヨスガのセッションまとめを Obsidian へ保存する(v5 Phase 3-d)。演出付き。 */
+    fun saveConversation(body: String, onResult: (ConversationImportResult) -> Unit) {
+        viewModelScope.launch {
+            val result = opLog.run { emit ->
+                emit.emit(LogLine("> SAVE SESSION", LogTone.ACCENT))
+                emit.emit(LogLine("  PARSE session …", LogTone.INFO))
+                val r = conversationImportRepository.save(body)
+                when (r) {
+                    is ConversationImportResult.Saved ->
+                        emit.emit(LogLine("  WRITE ${r.path} … OK", LogTone.OK))
+                    ConversationImportResult.Empty ->
+                        emit.emit(LogLine("  ABORT 内容が空です", LogTone.ERROR))
+                    ConversationImportResult.VaultNotConfigured ->
+                        emit.emit(LogLine("  ABORT Vault 未設定", LogTone.ERROR))
+                    is ConversationImportResult.Failed ->
+                        emit.emit(LogLine("  FAIL ${r.reason}", LogTone.ERROR))
+                }
+                emit.emit(LogLine("> DONE", LogTone.ACCENT))
+                r
+            } ?: return@launch
+            onResult(result)
+        }
     }
 
     /** 提案を承認して本テーブルへ反映する。反映できない提案は棄却へ回る。 */
@@ -120,10 +124,24 @@ class AssistantViewModel(
         }
     }
 
-    /** 状況JSNを生成・保存し、結果(成功/失敗)を UI へ返す。共有と表示は UI 側で行う。 */
+    /** 状況JSNを生成・保存し、結果を UI へ返す。演出付き。 */
     fun createExport(onResult: (Result<ExportResult>) -> Unit) {
         viewModelScope.launch {
-            onResult(runCatching { exportRepository.createContextExport() })
+            val result = opLog.run { emit ->
+                emit.emit(LogLine("> EXPORT STATUS", LogTone.ACCENT))
+                emit.emit(LogLine("  COLLECT projects / tasks / events / decisions", LogTone.INFO))
+                emit.emit(LogLine("  BUILD context json …", LogTone.INFO))
+                val r = runCatching { exportRepository.createContextExport() }
+                r.onSuccess {
+                    emit.emit(LogLine("  WRITE ${it.fileName} … OK", LogTone.OK))
+                    emit.emit(LogLine("  SIZE ${it.json.length} bytes", LogTone.INFO))
+                }.onFailure {
+                    emit.emit(LogLine("  FAIL 生成に失敗しました", LogTone.ERROR))
+                }
+                emit.emit(LogLine("> DONE", LogTone.ACCENT))
+                r
+            } ?: return@launch
+            onResult(result)
         }
     }
 
@@ -160,7 +178,6 @@ class AssistantViewModel(
     )
 
     companion object {
-        private const val LOG_LINE_DELAY_MS = 160L
         private const val SUMMARY_DELAY_MS = 550L
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {

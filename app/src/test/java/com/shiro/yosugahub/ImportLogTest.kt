@@ -2,7 +2,7 @@ package com.shiro.yosugahub
 
 import com.shiro.yosugahub.data.repository.ImportEvent
 import com.shiro.yosugahub.ui.screen.assistant.ImportLog
-import com.shiro.yosugahub.ui.screen.assistant.LogTone
+import com.shiro.yosugahub.ui.component.LogTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test

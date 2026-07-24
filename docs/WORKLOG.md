@@ -655,6 +655,28 @@ ANRI / Kamieru の Claude Code へ status.json を正しい schemaVersion:1 形�
 
 新規ライブラリなし。全349件通過。実機で全画面確認。
 
+### 端末ログ演出を全操作へ拡張(B/C) + 端末部品の共通化
+
+A(ノート取り込み)だけだった「システムが動いている演出」を、他の操作にも広げた。
+
+共通化:
+- `ui/component/OpTerminal.kt` … 汎用の端末ログパネル(title 可変)。LogLine/LogTone もここへ集約。
+  旧 `ImportTerminal` は削除。
+- `ui/component/OpLogState.kt` … VM が1つ持つログ流し込みヘルパ。
+  `run { emit -> 本物の処理; emit(line) }` で各行にタメを入れて流す。多重起動を無視。
+
+適用(すべて本物のログ):
+- **SAVE SESSION**(会話ログ保存) / **EXPORT STATUS**(状況JSON生成) … コンソール上の共通端末に流す
+- **BUILD CONTEXT**(Obsidianコンテキスト生成) … 読込数・結合文字数・形式を流す
+- **GITHUB FETCH**(status.json 取得) … CONNECT/FETCH/200・404・401 等を流す(結果で色が変わる)
+
+構造整理:
+- 旧ヨスガ画面(AssistantScreen)はコンソールとコマンドが重複するため、**REVIEW(提案確認)専用**に縮小。
+- 文言: コンソール見出しを `YOSUGA HUB`→`Yosuga`、`ChatGPTとの会話`→`ヨスガとの会話`、
+  `ChatGPTへ貼るMarkdown`→`ヨスガへ貼るMarkdown` に修正。
+
+新規ライブラリなし。全349件通過。実機で各演出を確認。
+
 ### UI方針を Brutalist / 仕事道具 へ転換
 
 ユーザー指摘: 前のネオンUIは「洗練されすぎ・お洒落すぎ」。

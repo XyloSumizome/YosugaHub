@@ -51,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.ui.component.TacticalButton
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
+import com.shiro.yosugahub.ui.component.OpTerminal
 import com.shiro.yosugahub.data.obsidian.ContextFormat
 import com.shiro.yosugahub.data.obsidian.ContextMarkdown
 import com.shiro.yosugahub.data.obsidian.NoteFilter
@@ -72,6 +73,7 @@ fun ObsidianContextScreen(
     viewModel: ObsidianContextViewModel = viewModel(factory = ObsidianContextViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val opLines by viewModel.opLog.lines.collectAsState()
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val history by viewModel.history.collectAsState()
@@ -170,6 +172,14 @@ fun ObsidianContextScreen(
                         onToggle = viewModel::toggle,
                         onToggleFolder = viewModel::toggleFolder,
                         modifier = Modifier.weight(1f),
+                    )
+                }
+                if (uiState.isBuilding || opLines.isNotEmpty()) {
+                    OpTerminal(
+                        title = "BUILD CONTEXT",
+                        lines = opLines,
+                        running = uiState.isBuilding,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     )
                 }
                 SelectionBar(

@@ -2,6 +2,9 @@ package com.shiro.yosugahub.ui.screen.obsidiancontext
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel
+import com.shiro.yosugahub.ui.component.OpLogState
+import com.shiro.yosugahub.ui.component.LogTone
+import com.shiro.yosugahub.ui.component.LogLine
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -68,6 +71,9 @@ class ObsidianContextViewModel(
     /** 「最近更新」の基準時刻。テストで固定できるようにする。 */
     private val nowMillis: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
+
+    /** BUILD CONTEXT の端末ログ(v5 UI)。 */
+    val opLog = OpLogState()
 
     private val _uiState = MutableStateFlow(ObsidianContextUiState())
     val uiState: StateFlow<ObsidianContextUiState> = _uiState.asStateFlow()
@@ -193,9 +199,25 @@ class ObsidianContextViewModel(
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isBuilding = true)
-            val result = runCatching {
-                vaultRepository.format(vaultRepository.loadContext(targets), _uiState.value.format)
-            }
+            val result = opLog.run { emit ->
+                emit.emit(LogLine("> BUILD CONTEXT", LogTone.ACCENT))
+                emit.emit(LogLine("  READ ${targets.size} note(s) …", LogTone.INFO))
+                val r = runCatching {
+                    val data = vaultRepository.loadContext(targets)
+                    vaultRepository.format(data, _uiState.value.format)
+                }
+                r.onSuccess {
+                    if (it.skipped.isNotEmpty()) {
+                        emit.emit(LogLine("  SKIP ${it.skipped.size} unreadable", LogTone.WARN))
+                    }
+                    emit.emit(LogLine("  JOIN ${it.noteCount} note(s) → ${it.charCount} chars", LogTone.OK))
+                    emit.emit(LogLine("  FORMAT ${it.format.label}", LogTone.INFO))
+                }.onFailure {
+                    emit.emit(LogLine("  FAIL 生成に失敗しました", LogTone.ERROR))
+                }
+                emit.emit(LogLine("> DONE", LogTone.ACCENT))
+                r
+            } ?: return@launch
             _uiState.value = _uiState.value.copy(
                 isBuilding = false,
                 preview = result.getOrNull(),

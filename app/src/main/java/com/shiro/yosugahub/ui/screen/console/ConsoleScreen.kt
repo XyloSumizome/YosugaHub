@@ -26,9 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
+import com.shiro.yosugahub.ui.component.OpTerminal
 import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.screen.assistant.AssistantViewModel
-import com.shiro.yosugahub.ui.screen.assistant.ImportTerminal
 import com.shiro.yosugahub.ui.screen.assistant.NoteImportSummaryDialog
 import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.shareJsonText
@@ -55,8 +55,8 @@ fun ConsoleScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
-    val importing by viewModel.noteImporting.collectAsState()
-    val importLog by viewModel.importLog.collectAsState()
+    val importing by viewModel.opLog.running.collectAsState()
+    val opLines by viewModel.opLog.lines.collectAsState()
     val summary by viewModel.noteImportSummary.collectAsState()
 
     var showSaveSession by remember { mutableStateOf(false) }
@@ -109,7 +109,7 @@ fun ConsoleScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Text("YOSUGA HUB", style = MaterialTheme.typography.headlineSmall, color = TermGreen)
+        Text("Yosuga", style = MaterialTheme.typography.headlineSmall, color = TermGreen)
         Text(
             "> watcher toolkit // operations console",
             style = MaterialTheme.typography.labelMedium,
@@ -128,6 +128,12 @@ fun ConsoleScreen(
         Spacer(Modifier.height(10.dp))
         AsciiDivider()
 
+        // 実行中・直後は共通の端末ログをここに流す(取り込み/保存/生成すべて)。
+        if (importing || opLines.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            OpTerminal(title = "CONSOLE", lines = opLines, running = importing)
+        }
+
         // ── オペレーション ──
         Command(
             "IMPORT NOTES",
@@ -135,15 +141,10 @@ fun ConsoleScreen(
             enabled = !importing,
             onClick = viewModel::importNotes,
         )
-        if (importing || importLog.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            ImportTerminal(lines = importLog, running = importing)
-            Spacer(Modifier.height(8.dp))
-        }
         AsciiDivider()
-        Command("SAVE SESSION", "ChatGPTとの会話をObsidianへ保存") { showSaveSession = true }
+        Command("SAVE SESSION", "ヨスガとの会話をObsidianへ保存") { showSaveSession = true }
         AsciiDivider()
-        Command("BUILD CONTEXT", "Obsidianから情報をまとめChatGPTへ貼るMarkdownを生成", onClick = onOpenContext)
+        Command("BUILD CONTEXT", "Obsidianから情報をまとめヨスガへ貼るMarkdownを生成", onClick = onOpenContext)
         AsciiDivider()
         Command("EXPORT STATUS", "状況JSONを生成して共有") {
             viewModel.createExport { result ->

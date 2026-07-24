@@ -1,4 +1,4 @@
-package com.shiro.yosugahub.ui.screen.assistant
+package com.shiro.yosugahub.ui.component
 
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -21,35 +21,40 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.shiro.yosugahub.ui.theme.TermAmber
 import com.shiro.yosugahub.ui.theme.TermConsole
-import com.shiro.yosugahub.ui.theme.TermCyan
 import com.shiro.yosugahub.ui.theme.TermGreen
 import com.shiro.yosugahub.ui.theme.TermLine
 import com.shiro.yosugahub.ui.theme.TermRed
 import com.shiro.yosugahub.ui.theme.TermText
 
+/** 端末ログ1行の種別。UI が色分けに使う。 */
+enum class LogTone { INFO, OK, WARN, ERROR, ACCENT }
+
+/** 端末風ログの1行。 */
+data class LogLine(val text: String, val tone: LogTone = LogTone.INFO)
+
 /**
- * 取り込み中に本物のログを1行ずつ流す端末パネル(v5 UI: ハッキング演出)。
- * 色は種別だけで決まり、最新行へ自動スクロールし、末尾にカーソルを点滅させる。
+ * 汎用の端末ログパネル(v5 UI: システムが動いている演出)。
+ * 取り込み・保存・生成・同期など、あらゆる操作の進捗をこの端末に流す。
+ * 種別で色分けし、最新行へ自動スクロールし、末尾にカーソルを点滅させる。
  */
 @Composable
-fun ImportTerminal(
+fun OpTerminal(
+    title: String,
     lines: List<LogLine>,
     running: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
-
-    // 行が増えるたび最下部へ追従する(最新の処理が常に見える)。
     LaunchedEffect(lines.size) {
         if (lines.isNotEmpty()) listState.animateScrollToItem(lines.size - 1)
     }
@@ -57,7 +62,7 @@ fun ImportTerminal(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, TermLine, androidx.compose.ui.graphics.RectangleShape)
+            .border(1.dp, TermLine, RectangleShape)
             .background(TermConsole)
             .padding(12.dp),
     ) {
@@ -65,19 +70,14 @@ fun ImportTerminal(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = "IMPORT SEQUENCE",
-                color = TermCyan,
-                style = MaterialTheme.typography.labelLarge,
-            )
-            BlinkingCursor(active = running, color = TermCyan)
+            Text(text = title, color = TermGreen, style = MaterialTheme.typography.labelLarge)
+            BlinkingCursor(active = running, color = TermGreen)
         }
-
         LazyColumn(
             state = listState,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 120.dp, max = 260.dp)
+                .heightIn(min = 96.dp, max = 240.dp)
                 .padding(top = 8.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
@@ -117,5 +117,5 @@ private fun LogTone.color(): Color = when (this) {
     LogTone.OK -> TermGreen
     LogTone.WARN -> TermAmber
     LogTone.ERROR -> TermRed
-    LogTone.ACCENT -> TermAmber
+    LogTone.ACCENT -> TermGreen
 }
