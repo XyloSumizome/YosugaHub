@@ -41,6 +41,7 @@ import com.shiro.yosugahub.ui.share.shareJsonText
 
 @Composable
 fun AssistantScreen(
+    onOpenObsidianContext: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AssistantViewModel = viewModel(factory = AssistantViewModel.Factory),
 ) {
@@ -91,6 +92,19 @@ fun AssistantScreen(
     ) {
         item {
             Text(text = "ヨスガ連携", style = MaterialTheme.typography.headlineSmall)
+        }
+        item {
+            SectionCard(title = "Obsidianの文脈") {
+                Text(
+                    text = "Obsidianから必要な範囲だけを選び、ヨスガへ貼り付けるMarkdownにまとめます。" +
+                        "要約はせず、原文をそのまま連結します。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(onClick = onOpenObsidianContext, modifier = Modifier.fillMaxWidth()) {
+                    Text("Obsidianから文脈を作る")
+                }
+            }
         }
         item {
             SectionCard(title = "状況JSON") {

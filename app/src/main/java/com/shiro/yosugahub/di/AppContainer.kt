@@ -12,8 +12,11 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
 import com.shiro.yosugahub.data.local.db.MIGRATION_6_7
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
+import com.shiro.yosugahub.data.file.DocumentWriter
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
+import com.shiro.yosugahub.data.obsidian.NoteTransformer
 import com.shiro.yosugahub.data.obsidian.ObsidianVaultStore
+import com.shiro.yosugahub.data.obsidian.SafVaultReader
 import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
@@ -33,6 +36,7 @@ import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
+import com.shiro.yosugahub.data.repository.VaultRepository
 import com.shiro.yosugahub.data.sync.SyncApi
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.CoroutineScope
@@ -64,6 +68,8 @@ interface AppContainer {
     val importRepository: ImportRepository
     val syncSettingsRepository: SyncSettingsRepository
     val serverSyncRepository: ServerSyncRepository
+    val vaultRepository: VaultRepository
+    val documentWriter: DocumentWriter
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -113,6 +119,20 @@ class DefaultAppContainer(
     /** 長文知識の書き出し先(初期実装は Obsidian Vault / SAF)。 */
     private val knowledgeStore: KnowledgeStore by lazy {
         ObsidianVaultStore(context.applicationContext, userPreferencesRepository)
+    }
+
+    /** SAF で選ばれたファイルへの書き出し(v5 Phase 1-c)。 */
+    override val documentWriter: DocumentWriter by lazy {
+        DocumentWriter(context.applicationContext)
+    }
+
+    /** Vault の読み取り側(v5 Phase 1)。書き込み側の knowledgeStore と対になる。 */
+    override val vaultRepository: VaultRepository by lazy {
+        VaultRepository(
+            reader = SafVaultReader(context.applicationContext, userPreferencesRepository),
+            // Phase 1 は要約しない。Phase 4 で要約を入れる場合はここを差し替える。
+            transformer = NoteTransformer.Identity,
+        )
     }
 
     override val proposalRepository: ProposalRepository by lazy {

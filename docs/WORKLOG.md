@@ -2,6 +2,148 @@
 
 ---
 
+## 2026-07-24: v5 へ方針転換(Obsidian ブリッジ)+ Phase 1-a 実装
+
+### 方針転換
+
+最上位方針を **「AIプラットフォーム」から「情報を確実に運ぶハブ」へ差し替えた**。
+設計書: `yosuga_hub_design_v5_obsidian_bridge.md`(新規)。
+
+- 知識の正本を **Room DB → Obsidian の Markdown** へ移す
+- 意味付け(分類)は **生成元の Claude Code が出力時点で行う**。Hub は分類し直さない
+- **Hub に AI は載せない**。選び・集め・整形し・運ぶだけ
+- レコルは**必須コンポーネントから外す**(将来「知識の編集者」として再導入の余地は残す)
+- ヨスガの定義は維持(会話の相棒)
+
+v4.1(分類)/ v4.2(指示書)/ v4.3(役割分離)/ ロリポップ同期は **削除しない**。
+実機で一周しており、動いているものを剥がすのはリスクだけが増えるため。
+v5 では「維持するが必須ではない」に格下げする(設計書v5 §9)。
+
+### ▶ 判断待ち: Dropbox × Android(実機で5分)
+
+**Dropbox の Android アプリは PC と違ってローカル同期フォルダを作らない。**
+ファイルの実体はクラウド上にあり、Android から通常のフォルダとして見えるとは限らない。
+
+> 設定 → Obsidian Vault → 「Vaultフォルダを選択」 →
+> フォルダ選択画面に **Dropbox が出るか**、出るなら **Vault まで潜って選べるか**
+
+| 結果 | 対応 |
+|---|---|
+| 選べる | 現状の SAF のまま。読み取りが遅い可能性があるので一覧キャッシュは実装済み |
+| 選べない | 端末ローカルに Vault を置き、同期アプリ(Dropsync 等)で Dropbox と同期。**Hub の実装は変わらない** |
+
+`VaultReader` を interface にしてあるため、どちらでも設計は同一。
+**この確認を待たずに Phase 1 は進められる**ので先に実装した。
+
+### Phase 1-a 完了(data 層 + 純粋ロジック + テスト)
+
+| 追加 | 役割 |
+|---|---|
+| `data/obsidian/VaultNote.kt` | ノートのメタ情報 + `VaultListing`(未設定/失敗を区別) |
+| `data/obsidian/Frontmatter.kt` | 純粋パーサ。スカラー / リスト / 1段ネスト(`commit.hash`)/ インラインタグ |
+| `data/obsidian/LoadedNote.kt` | 本文込みの素データ + `NoteTransformer`(**要約の差し込み口**) |
+| `data/obsidian/ContextMarkdown.kt` | 純粋: 選択ノート → コンテキストMarkdown(設計書v5 §4 の形式) |
+| `data/obsidian/VaultReader.kt` | 読み取りの抽象化(書き込み側 `KnowledgeStore` と対) |
+| `data/obsidian/SafVaultReader.kt` | SAF 実装。`DocumentsContract` で幅優先に再帰列挙 |
+| `data/repository/VaultRepository.kt` | 一覧キャッシュ + 明示リフレッシュ + コンテキスト生成 |
+
+- 既存への変更は **`AppContainer` への配線のみ**
+- **Room スキーマ変更なし(v8 マイグレーション不要)/ 新規ライブラリなし**
+- テスト **22件追加**(`FrontmatterTest` 8 / `ContextMarkdownTest` 8 / `VaultRepositoryTest` 6)。全通過
+
+### 設計判断
+
+- **抽出と要約の境界を `NoteTransformer` 1点に集約した。**
+  Phase 1 は `NoteTransformer.Identity`(恒等変換)。Phase 4 で AI 要約を入れるなら
+  差し替えるのはここだけで、`ContextMarkdown` は純粋関数のまま触らない。
+  `VaultRepositoryTest.transformer_is_the_only_place_that_touches_the_body` で担保。
+- **`DocumentFile.listFiles()` を使わず `DocumentsContract` で直接 query した。**
+  前者は1件ごとに URI を組み立てるため Vault 規模で遅い。
+- **`.` で始まる名前をスキップ**(`.obsidian` / `.trash` を拾わないため)。
+- **Vault は読み取り専用**として扱う(Phase 1 では書き込まない)。
+  出力ファイル名に日付を入れて衝突させない。
+- 暴走防止に上限を設けた: 最大 5,000 ノート / 深さ 12 / 1ファイル 2MB。
+- 文字数は **60,000 字で警告のみ**。制限はしない。
+
+### Phase 1-a 実機確認 ✅(エミュレータ / Android 17)
+
+設定画面に **「Vaultを読み取れるか確認」ボタン**を追加した(`SettingsViewModel.checkVault()`)。
+「選べた」と「読める」は別なので、選択とは独立に列挙を試せるようにしたもの。
+
+`Documents/TestVault` にテスト用 Vault を置いて確認 → **5件ちょうど検出**。
+
+| 確認項目 | 結果 |
+|---|---|
+| サブフォルダの再帰列挙 | ✅ `Games/ANRI/Design/...` まで到達 |
+| 隠しフォルダの除外(`.obsidian/hidden.md`) | ✅ 拾わない |
+| 拡張子フィルタ(`reference.png`) | ✅ 拾わない |
+| 日本語ファイル名(`思いつき.md` / `未分類メモ.md`) | ✅ 化けない |
+
+### ▶ Dropbox との同期方式(判断待ち)
+
+**Yosuga Hub 自身は同期しない。** SAF で選んだフォルダを読み書きするだけで、
+そのフォルダが Dropbox と同期しているかは Hub の関知するところではない。選択肢は3つ:
+
+| | 方式 | 評価 |
+|---|---|---|
+| A | Dropbox アプリの SAF を直接読む | 未検証。オフライン不可・低速の懸念。Obsidian モバイルからは使えない |
+| B | **端末ローカル Vault + 同期アプリ**(FolderSync / Dropsync 等) | **推奨**。高速・オフライン可。Obsidian モバイルも同じフォルダを開ける |
+| C | Hub に Dropbox API を実装 | 却下。OAuth・競合解決を Hub が抱える = v5 §10「Hubは複雑な判断を持たない」に反する |
+
+**いずれを選んでも Hub の実装は変わらない**(`VaultReader` が interface のため)。
+
+### Phase 1-b 完了(UI: 一覧・複数選択・プレビュー・文字数)
+
+| 追加 | 役割 |
+|---|---|
+| `ui/screen/obsidiancontext/ObsidianContextViewModel.kt` | 一覧読込 / 選択状態 / プレビュー生成 |
+| `ui/screen/obsidiancontext/ObsidianContextScreen.kt` | フォルダ見出し付き一覧・チェック選択・プレビューダイアログ |
+| `ui/navigation/ObsidianContextRoute.kt` | ネストルート `obsidian_context` |
+
+既存への変更3箇所:
+- `YosugaHubApp.kt` … ルート追加 + ネスト時にヨスガタブを選択状態に保つ
+- `AssistantScreen.kt` … 「Obsidianの文脈」セクションと遷移ボタンを追加(引数 `onOpenObsidianContext`)
+- `SettingsScreen/ViewModel` … 1-a の確認ボタン(前述)
+
+**下部ナビは6個のまま**(7個目にしない)。出力先がヨスガなのでヨスガ画面からのネストにした。
+
+設計判断:
+- **選択を変えたらプレビューを捨てる**(古い内容を貼ってしまう事故を防ぐ)。
+  `changing_selection_drops_a_stale_preview` で担保。
+- **再読込時、消えたノートの選択は落とす**が、残っているものは維持する。
+- フォルダ見出しをタップで**フォルダ単位の一括選択/解除**。
+
+テスト **8件追加**(`ObsidianContextViewModelTest`)。全体で **248件** 通過。
+
+### Phase 1-c 完了(コピー / 保存 / 共有)
+
+プレビューダイアログに **[コピー] [保存] [共有]** を追加。
+
+| 追加 | 役割 |
+|---|---|
+| `data/file/DocumentWriter.kt` | `TextDocumentWriter`(interface)+ SAF 実装 |
+| `ui/share/ShareMarkdown.kt` | `ACTION_SEND` でコンテキストを渡す |
+
+設計判断:
+- **保存は SAF の `CreateDocument` にした。**保存先をその場で選ばせるため
+  **FileProvider も追加パーミッションも不要**。manifest は変更なし。
+- **共有の MIME は `text/plain`。**`text/markdown` を受け付けないアプリが多いため。
+- **書き込みは data 層(`DocumentWriter`)に置いた。**UI から contentResolver を直接触らない
+  (CLAUDE.md「UIから直接ネットワークやDBへアクセスしない」)。
+- `TextDocumentWriter` を interface にしたのは ViewModel をテストで組み立てられるようにするため。
+
+**これで Phase 1 は完了。** ビルド ✅ / テスト 248件 全通過。
+
+### 次にやること
+
+- **Phase 1 の実機通し確認**(コピー→ChatGPTへ貼り付け / 保存 / 共有)
+- **Phase 2**: タグ抽出 / 日付範囲 / 最近更新 / JSON出力 / 出力履歴
+- 並行: Obsidian モバイル + Remotely Save で Dropbox 同期の構成を作る
+  (⚠ Vault は**共有ストレージ上**に作ること。アプリ内フォルダだと Hub から読めない)
+- 上記と独立に、**SampleSeed(仮データ)の A/B 判断は未決のまま残っている**(下記参照)
+
+---
+
 ## 2026-07-24: Morning Brief 実地確認 → 仮データ(SampleSeed)が残っている問題が判明
 
 ### Morning Brief は成功

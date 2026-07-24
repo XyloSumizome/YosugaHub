@@ -49,6 +49,8 @@ fun SettingsScreen(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val importHistory by viewModel.importHistory.collectAsState()
+    val vaultChecking by viewModel.vaultChecking.collectAsState()
+    val vaultCheck by viewModel.vaultCheck.collectAsState()
     // ファイル一覧は Flow ではないので、画面を開いたときに読み直す。
     LaunchedEffect(Unit) { viewModel.refreshImportHistory() }
     var openedHistory by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -83,7 +85,7 @@ fun SettingsScreen(
             SectionCard(title = "Obsidian Vault") {
                 Text(
                     text = if (uiState.obsidianVaultUri.isEmpty()) {
-                        "未設定。承認した知識のObsidian書き出し(targetNote)に使います。"
+                        "未設定。知識の書き出しと、ヨスガへ渡すコンテキストの抽出に使います。"
                     } else {
                         "選択中: ${vaultDisplayName(uiState.obsidianVaultUri)}"
                     },
@@ -95,6 +97,36 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (uiState.obsidianVaultUri.isEmpty()) "Vaultフォルダを選択" else "Vaultフォルダを変更")
+                }
+
+                // 「選べた」と「読める」は別。提供元によっては選択できても中身を返さない。
+                if (uiState.obsidianVaultUri.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.checkVault() },
+                        enabled = !vaultChecking,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (vaultChecking) "確認中…" else "Vaultを読み取れるか確認")
+                    }
+                    vaultCheck?.let { result ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = result.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (result.isError) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
+                        )
+                        result.samplePaths.forEach { path ->
+                            Text(
+                                text = "・$path",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -14,11 +14,13 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.shiro.yosugahub.ui.navigation.ObsidianContextRoute
 import com.shiro.yosugahub.ui.navigation.ProjectDetailRoute
 import com.shiro.yosugahub.ui.navigation.YosugaDestination
 import com.shiro.yosugahub.ui.screen.assistant.AssistantScreen
 import com.shiro.yosugahub.ui.screen.calendar.CalendarScreen
 import com.shiro.yosugahub.ui.screen.home.HomeScreen
+import com.shiro.yosugahub.ui.screen.obsidiancontext.ObsidianContextScreen
 import com.shiro.yosugahub.ui.screen.projectdetail.ProjectDetailScreen
 import com.shiro.yosugahub.ui.screen.projects.ProjectsScreen
 import com.shiro.yosugahub.ui.screen.records.RecordsScreen
@@ -34,10 +36,12 @@ fun YosugaHubApp() {
         bottomBar = {
             NavigationBar {
                 YosugaDestination.entries.forEach { destination ->
-                    // 詳細画面(ネストルート)ではプロジェクトタブを選択状態のままにする
+                    // 詳細画面(ネストルート)では親タブを選択状態のままにする
                     val selected = currentRoute == destination.route ||
                         (destination == YosugaDestination.Projects &&
-                            currentRoute == ProjectDetailRoute.PATTERN)
+                            currentRoute == ProjectDetailRoute.PATTERN) ||
+                        (destination == YosugaDestination.Assistant &&
+                            currentRoute == ObsidianContextRoute.PATTERN)
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
@@ -74,7 +78,16 @@ fun YosugaHubApp() {
                 ProjectDetailScreen(onBack = { navController.popBackStack() })
             }
             composable(YosugaDestination.Records.route) { RecordsScreen() }
-            composable(YosugaDestination.Assistant.route) { AssistantScreen() }
+            composable(YosugaDestination.Assistant.route) {
+                AssistantScreen(
+                    onOpenObsidianContext = {
+                        navController.navigate(ObsidianContextRoute.PATTERN)
+                    },
+                )
+            }
+            composable(ObsidianContextRoute.PATTERN) {
+                ObsidianContextScreen(onBack = { navController.popBackStack() })
+            }
             composable(YosugaDestination.Settings.route) { SettingsScreen() }
         }
     }

@@ -16,13 +16,21 @@
 # Project Overview
 
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
-設計書: `yosuga_hub_android_design_v4.md`(必読 / 最上位方針: AIプラットフォーム構想)
-+ `yosuga_hub_design_v4_3_role_split.md`(**最新の運用方針: AI役割分離 ヨスガ/レコル + Morning Brief**)
-+ `yosuga_hub_design_v4_1_classification.md`(追加指示: AI分類ワークフロー / **実装完了・実機検証中**)
+設計書: `yosuga_hub_design_v5_obsidian_bridge.md`(**必読 / 最新の最上位方針: Obsidianブリッジ**)
++ `yosuga_hub_android_design_v4.md`(v5が最上位方針を上書き。技術資料として有効)
++ `yosuga_hub_design_v4_3_role_split.md`(役割分離 ヨスガ/レコル + Morning Brief。**レコルは必須から外れた**)
++ `yosuga_hub_design_v4_1_classification.md`(AI分類ワークフロー / 実装完了・維持)
 + `yosuga_hub_android_design_v3.md` / `_v3_1.md`(基本思想・知識ベース仕様として有効)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
-v4の核心: Hubは**人間のUIとAIのデータインターフェースの両方**を持つプラットフォーム。
-「AIが理解しやすい構造か」を最優先。v3の「クラウド同期なし」はv4が上書き(ロリポップ同期導入)。
+
+**v5の核心(2026-07-24 転換)**: Hubは**AIではなく「情報を確実に運ぶハブ」**。
+判断・要約をせず、**選び・集め・整形し・運ぶ**役割に徹する。
+知識の正本は **Room DB ではなく Obsidian の Markdown**。
+意味付け(分類)は**生成元の Claude Code が出力時点で行い**、Hub は分類し直さない。
+**Hub に AI は載せない**(AI要約を前提にしない設計にする)。
+
+v4の核心(v5が上書き): Hubは人間のUIとAIのデータインターフェースの両方を持つプラットフォーム。
+v3の「クラウド同期なし」はv4が上書き(ロリポップ同期導入)。
 
 v3の核心: **AI=頭脳 / Yosuga Hub=記憶・表示装置**。アプリは考えず、AIが整理した結果を保存・表示・編集・検索する。
 提案→ユーザーがOK→保存(自動更新しない・安全優先)。Android単体でクラウド同期なし。
@@ -75,10 +83,23 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **実地検証の到達点(2026-07-24)**: ロリポップ設置・実通信 ✅ / カスタムGPT(レコル)の
   Actions からの取得 ✅ / **v4.1 分類ワークフローが端から端まで一周** ✅ /
   Morning Brief の生成 ✅。残りは指示書(v4.2)の通しと、マイグレーションの実機確認。
-- **次にやること**: **仮データ(SampleSeed)の扱いを決める**。Morning Brief の中身が
-  ほぼ全部シードされた仮データだったため、実運用の前に片付ける必要がある。
-  A(削除機能+再シード防止)/ B(シードをやめる)の選択待ち — 詳細は WORKLOG 冒頭。
-  ※「仮データはすべて解消済み」は**画面のプレースホルダ表示**のことで、DBのシード行ではない。
+- **v5 Obsidianブリッジへ方針転換(2026-07-24)**: 設計書 `yosuga_hub_design_v5_obsidian_bridge.md`。
+  Obsidian を知識の正本にし、Hub は Vault への書き込みと、Vault からの抽出→ヨスガへの
+  貼り付け用 Markdown 生成を担う。v4.1/v4.2/v4.3・ロリポップ同期は**削除せず「維持するが必須ではない」**。
+- **v5 Phase 1-a 完了**: Vault 読み取りの data 層。`VaultReader`(interface)/ `SafVaultReader`
+  (DocumentsContract で再帰列挙)/ `Frontmatter`(純粋パーサ)/ `LoadedNote` + `NoteTransformer`
+  (**要約の差し込み口。Phase 1 は恒等変換**)/ `ContextMarkdown`(純粋)/ `VaultRepository`。
+  既存への変更は AppContainer の配線のみ。**Roomスキーマ変更なし・新規ライブラリなし**。テスト22件追加・全通過。
+- **未検証**: Phase 1-a は実機未確認(UI が無いため画面から呼べない。1-b で確認可能になる)。
+- **次にやること**:
+  1. **⚠ Dropbox × Android の実機確認**(5分): 設定→Obsidian Vault→「Vaultフォルダを選択」で
+     Dropbox が出るか / Vault まで潜って選べるか。Dropbox の Android アプリはローカル同期フォルダを
+     作らないため。選べない場合は端末ローカル Vault + 同期アプリへ切り替える(**Hub の実装は不変**)。
+  2. **v5 Phase 1-b**: UI(一覧・複数選択・プレビュー・文字数)。**下部ナビは6個のまま**、ヨスガ画面から遷移。
+  3. **v5 Phase 1-c**: コピー / SAF保存 / 共有。
+  4. **仮データ(SampleSeed)の扱い**(未決・v5とは独立): A(削除機能+再シード防止)/ B(シードをやめる)
+     の選択待ち — 詳細は WORKLOG。※「仮データはすべて解消済み」は**画面のプレースホルダ表示**の話で、
+     DBのシード行ではない。
 - **v4.3 AI役割分離(2026-07-23)**: 実地検証で「データを読めるAI(カスタムGPT+Actions)」と
   「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
   **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。

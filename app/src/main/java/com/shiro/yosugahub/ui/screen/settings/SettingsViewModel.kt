@@ -8,12 +8,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
+import com.shiro.yosugahub.data.obsidian.VaultListing
 import com.shiro.yosugahub.data.repository.GitHubSettingsRepository
 import com.shiro.yosugahub.data.repository.ImportHistoryEntry
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncResult
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
+import com.shiro.yosugahub.data.repository.VaultRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -30,15 +32,68 @@ data class SettingsUiState(
     val isSyncing: Boolean = false,
 )
 
+/**
+ * Vault の読み取り確認の結果(v5 Phase 1-a の実機確認用)。
+ * 「選べたか」だけでなく「実際に読めるか・実用的な速度か」を見るためのもの。
+ */
+data class VaultCheckResult(
+    val message: String,
+    val samplePaths: List<String> = emptyList(),
+    val isError: Boolean = false,
+)
+
 class SettingsViewModel(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val gitHubSettingsRepository: GitHubSettingsRepository,
     private val syncSettingsRepository: SyncSettingsRepository,
     private val serverSyncRepository: ServerSyncRepository,
     private val importRepository: ImportRepository,
+    private val vaultRepository: VaultRepository,
 ) : ViewModel() {
 
     private val syncing = MutableStateFlow(false)
+
+    private val _vaultChecking = MutableStateFlow(false)
+    val vaultChecking: StateFlow<Boolean> = _vaultChecking
+
+    private val _vaultCheck = MutableStateFlow<VaultCheckResult?>(null)
+    val vaultCheck: StateFlow<VaultCheckResult?> = _vaultCheck
+
+    /**
+     * Vault を列挙してみて、件数と所要時間を返す。
+     * SAF の提供元によっては「選べるが読めない」ことがあるため、選択とは別に確かめる。
+     */
+    fun checkVault() {
+        viewModelScope.launch {
+            _vaultChecking.value = true
+            _vaultCheck.value = null
+            val startedAt = System.currentTimeMillis()
+            val listing = vaultRepository.refresh()
+            val elapsedMs = System.currentTimeMillis() - startedAt
+
+            _vaultCheck.value = when (listing) {
+                is VaultListing.Success -> if (listing.notes.isEmpty()) {
+                    VaultCheckResult(
+                        message = "読み取れましたが .md が0件でした(${elapsedMs}ms)。" +
+                            "フォルダを間違えていないか、提供元が中身を返しているか確認してください。",
+                        isError = true,
+                    )
+                } else {
+                    VaultCheckResult(
+                        message = "${listing.notes.size}件の .md が見つかりました(${elapsedMs}ms)",
+                        samplePaths = listing.notes.take(SAMPLE_COUNT).map { it.relativePath },
+                    )
+                }
+
+                VaultListing.NotConfigured ->
+                    VaultCheckResult("Vaultフォルダが未選択です。", isError = true)
+
+                is VaultListing.Failed ->
+                    VaultCheckResult(listing.reason, isError = true)
+            }
+            _vaultChecking.value = false
+        }
+    }
 
     /**
      * 取り込み履歴。ファイル一覧は Flow ではないので、
@@ -129,8 +184,12 @@ class SettingsViewModel(
                     syncSettingsRepository = app.container.syncSettingsRepository,
                     serverSyncRepository = app.container.serverSyncRepository,
                     importRepository = app.container.importRepository,
+                    vaultRepository = app.container.vaultRepository,
                 )
             }
         }
+
+        /** 確認結果に出す一覧の件数(全部出すと画面が埋まるため先頭のみ)。 */
+        private const val SAMPLE_COUNT = 5
     }
 }
