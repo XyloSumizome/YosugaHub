@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,10 +49,17 @@ fun TerminalChip(
     )
 }
 
+/** 指で押せる最小の大きさ。文字を大きくせずに、押せる範囲だけをここまで広げる。 */
+private val MinTouchTarget = 48.dp
+
 /**
  * チェックボックス(v5 UI)。Material の丸みのある箱をやめ、`[x]` / `[ ]` の文字で示す。
  * ラベルも含めて押せる(小さな箱だけを狙わせない)。
  * ラベルを隣の要素が持っている場合は [label] を空にすると箱だけになる。
+ *
+ * `[x]` は文字なので、そのままだと当たり判定が Material の箱より小さくなる
+ * (等幅3文字 ≒ 24dp)。**見た目は文字のまま、押せる範囲だけ [MinTouchTarget] へ広げる**。
+ * 箱だけのときは横も広げるので、隣に並ぶ要素との間に余白が出る。
  */
 @Composable
 fun TerminalCheckbox(
@@ -65,6 +73,7 @@ fun TerminalCheckbox(
     Row(
         modifier = modifier
             .then(if (enabled) Modifier.clickable { onCheckedChange(!checked) } else Modifier)
+            .defaultMinSize(minWidth = MinTouchTarget, minHeight = MinTouchTarget)
             .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
