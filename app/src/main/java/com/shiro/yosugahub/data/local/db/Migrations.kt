@@ -10,6 +10,26 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 
 /** v6 → v7: Claude Code への指示書(v4.2)の directives を追加。 */
+/** v7 → v8: Vault へ取り込み済みの知識ノートの記録(v5 Phase 3-b)を追加。 */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `imported_notes` (`sha` TEXT NOT NULL, " +
+                "`projectId` TEXT NOT NULL, `sourcePath` TEXT NOT NULL, " +
+                "`vaultPath` TEXT NOT NULL, `noteType` TEXT NOT NULL, " +
+                "`importedAt` TEXT NOT NULL, PRIMARY KEY(`sha`))"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_imported_notes_projectId` " +
+                "ON `imported_notes` (`projectId`)"
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_imported_notes_importedAt` " +
+                "ON `imported_notes` (`importedAt`)"
+        )
+    }
+}
+
 val MIGRATION_6_7 = object : Migration(6, 7) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(

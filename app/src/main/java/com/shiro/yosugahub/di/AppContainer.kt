@@ -10,6 +10,7 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
 import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
 import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
 import com.shiro.yosugahub.data.local.db.MIGRATION_6_7
+import com.shiro.yosugahub.data.local.db.MIGRATION_7_8
 import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.file.DocumentWriter
@@ -17,6 +18,7 @@ import com.shiro.yosugahub.data.obsidian.KnowledgeStore
 import com.shiro.yosugahub.data.obsidian.NoteTransformer
 import com.shiro.yosugahub.data.obsidian.ObsidianVaultStore
 import com.shiro.yosugahub.data.obsidian.SafVaultReader
+import com.shiro.yosugahub.data.obsidian.SafVaultWriter
 import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
@@ -32,6 +34,7 @@ import com.shiro.yosugahub.data.repository.GitHubStatusRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.data.repository.RepoNoteRepository
@@ -76,6 +79,7 @@ interface AppContainer {
     val sampleDataRepository: SampleDataRepository
     val contextHistoryRepository: ContextHistoryRepository
     val repoNoteRepository: RepoNoteRepository
+    val noteImportRepository: NoteImportRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -91,7 +95,7 @@ class DefaultAppContainer(
     )
         .addMigrations(
             MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+            MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
         )
         .build()
 
@@ -138,6 +142,16 @@ class DefaultAppContainer(
             calendarEventDao = database.calendarEventDao(),
             projectStatusDao = database.projectStatusDao(),
             userPreferencesRepository = userPreferencesRepository,
+        )
+    }
+
+    /** 取得した知識ノートを Vault へ収める(v5 Phase 3-b)。 */
+    override val noteImportRepository: NoteImportRepository by lazy {
+        NoteImportRepository(
+            projectRepository = projectRepository,
+            repoNoteRepository = repoNoteRepository,
+            vaultWriter = SafVaultWriter(context.applicationContext, userPreferencesRepository),
+            dao = database.importedNoteDao(),
         )
     }
 

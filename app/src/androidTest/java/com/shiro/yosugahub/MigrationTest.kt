@@ -11,6 +11,7 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_3_4
 import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
 import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
 import com.shiro.yosugahub.data.local.db.MIGRATION_6_7
+import com.shiro.yosugahub.data.local.db.MIGRATION_7_8
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -43,7 +44,7 @@ class MigrationTest {
 
     private val allMigrations = arrayOf(
         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4,
-        MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7,
+        MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8,
     )
 
     /** 各段を1つずつ検証する。落ちた段が特定できるよう個別に流す。 */
@@ -145,6 +146,6 @@ class MigrationTest {
         const val TEST_DB = "migration-test.db"
 
         /** YosugaDatabase の @Database(version) と揃える。 */
-        const val LATEST_VERSION = 7
+        const val LATEST_VERSION = 8
     }
 }

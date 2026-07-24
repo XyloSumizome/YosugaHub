@@ -6,6 +6,7 @@ import com.shiro.yosugahub.data.local.db.dao.CalendarEventDao
 import com.shiro.yosugahub.data.local.db.dao.DiaryDao
 import com.shiro.yosugahub.data.local.db.dao.DirectiveDao
 import com.shiro.yosugahub.data.local.db.dao.DocumentDao
+import com.shiro.yosugahub.data.local.db.dao.ImportedNoteDao
 import com.shiro.yosugahub.data.local.db.dao.KnowledgeDao
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
 import com.shiro.yosugahub.data.local.db.dao.ProjectDao
@@ -17,6 +18,7 @@ import com.shiro.yosugahub.data.local.db.entity.DiaryEntryEntity
 import com.shiro.yosugahub.data.local.db.entity.DirectiveEntity
 import com.shiro.yosugahub.data.local.db.entity.DocumentClassificationEntity
 import com.shiro.yosugahub.data.local.db.entity.DocumentEntity
+import com.shiro.yosugahub.data.local.db.entity.ImportedNoteEntity
 import com.shiro.yosugahub.data.local.db.entity.ItemEntityCrossRef
 import com.shiro.yosugahub.data.local.db.entity.ItemTagCrossRef
 import com.shiro.yosugahub.data.local.db.entity.KnowledgeItemEntity
@@ -36,6 +38,7 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
  * v5: project_status_cache(GitHub の status.json キャッシュ)を追加。
  * v6: AI分類ワークフロー(v4.1)の documents / document_classifications を追加。
  * v7: Claude Code への指示書(v4.2)の directives を追加。
+ * v8: Vault へ取り込み済みの知識ノートの記録(v5 Phase 3-b)の imported_notes を追加。
  * マイグレーションは Migrations.kt。スキーマJSONは app/schemas/ に出力される。
  */
 @Database(
@@ -55,8 +58,9 @@ import com.shiro.yosugahub.data.local.db.entity.TrackedEntityEntity
         DocumentEntity::class,
         DocumentClassificationEntity::class,
         DirectiveEntity::class,
+        ImportedNoteEntity::class,
     ],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class YosugaDatabase : RoomDatabase() {
@@ -70,4 +74,6 @@ abstract class YosugaDatabase : RoomDatabase() {
     abstract fun projectStatusDao(): ProjectStatusDao
     abstract fun documentDao(): DocumentDao
     abstract fun directiveDao(): DirectiveDao
+
+    abstract fun importedNoteDao(): ImportedNoteDao
 }

@@ -446,12 +446,43 @@ Hub 側を「取得済みは再取得しない」設計にするため、後か�
 テスト **16件追加**(`NoteListParserTest` 8 / `RepoNoteRepositoryTest` 8、MockEngine)。
 全体 **304件** 通過。**実通信は未検証**(GitHub 連携全体がまだ実通信未確認)。
 
+### Phase 3-b 完了(振り分け + Vault へ書き込み)
+
+**Room v8**(`imported_notes`)を追加。マイグレーション手順4つ(定義 / version / addMigrations /
+スキーマJSON)はすべて実施済み。`8.json` 出力を確認、`MigrationTest` も v8 へ更新。
+
+| 追加 | 役割 |
+|---|---|
+| `entity/ImportedNoteEntity` + `dao/ImportedNoteDao` | 取り込み記録(**主キー = ブロブSHA**) |
+| `MIGRATION_7_8` | `imported_notes` の作成 |
+| `data/obsidian/NoteRouter.kt` | `type` → 保存先の純粋ロジック |
+| `data/obsidian/VaultWriter.kt` | `SafVaultWriter`。サブフォルダを作りながら新規作成 |
+| `data/repository/NoteImportRepository.kt` | 取得 → 振り分け → 書き込み → 記録 |
+
+設計判断:
+- **取り込み記録は Room。**件数が増える前提で、3-c の結果画面でもそのまま使える。
+  v5 §10「すべての自動処理に元ファイルと処理日時を残す」に沿って
+  `sourcePath` と `vaultPath` の両方を持つ。
+- **`project_id` が無いノートは Inbox 送りにしない。**どのリポジトリから取ったかは
+  分かっているので、そのプロジェクトのものとして扱う。
+  ただし**宣言と取得元が食い違う場合は Inbox**(取り違えの可能性があるので人に見せる)。
+- **既存ファイルを絶対に上書きしない。**同名があれば `-2`, `-3` と枝番を付けて別ファイルにする。
+  人が Obsidian で書いたノートを壊さないため(v5 §10)。
+- **書き込みに失敗したら記録しない。**次回やり直せるようにするため。
+- **Vault 未設定を検出したらそのプロジェクトの処理を打ち切る。**以降も全部失敗するので
+  無駄に試さない。
+- ファイル名は必ずサニタイズする(`../../etc/passwd` → `passwd.md`)。
+  リポジトリ側の名前を信用してディレクトリ外へ書かせない。
+
+テスト **16件追加**(`NoteRouterTest` 10 / `NoteImportRepositoryTest` 6)。全体 **320件** 通過。
+**実通信・実機は未検証。**
+
 ### 次にやること
 
+- **Phase 3-c**: 取り込み結果の画面(実行ボタン + 何を・どこへ / Inbox 行きの件数)
+  ※ **3-c ができるまで画面から実行できない**(いま呼び出し口が無い)
 - **各ゲームの Claude Code へ `docs/claude_code_onboarding.md` を渡す**
-  (ノートが1件も無いと 3-b の動作確認ができない)
-- **Phase 3-b**: `type` から保存先を決めて Vault へ書く。取得済み SHA の記録場所をここで決める
-  (Room v8 か DataStore か。書き込み記録は件数が増えるので Room が有力)
+  (ノートが1件も無いと通しの確認ができない)
 - **Morning Brief を作り直す**。レコルが実データだけを見て要約するか確認
   (これまでは中身がほぼ全部仮データだった)
 - **Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /
