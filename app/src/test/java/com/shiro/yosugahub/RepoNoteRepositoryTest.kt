@@ -11,6 +11,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -160,5 +161,32 @@ class RepoNoteRepositoryTest {
         assertTrue(
             repository.fetchNewNotes(project, emptySet()) is NoteFetchResult.InvalidListing,
         )
+    }
+
+    @Test
+    fun non_ascii_note_names_produce_a_valid_encoded_url() = runBlocking {
+        var bodyUrl = ""
+        val engine = MockEngine { request ->
+            val url = request.url.toString()
+            if (url.contains("/contents/.yosuga/notes?") || url.endsWith("/contents/.yosuga/notes")) {
+                respond(
+                    listingJson("2026-07-24-光の設計.md"),
+                    HttpStatusCode.OK,
+                    headersOf("Content-Type", "application/json"),
+                )
+            } else {
+                bodyUrl = url
+                respond("本文", HttpStatusCode.OK)
+            }
+        }
+        val repository = RepoNoteRepository(GitHubApi(engine = engine)) { "token" }
+
+        repository.fetchNewNotes(project, knownShas = emptySet())
+
+        // 日本語が生のまま URL に載らない(パーセントエンコードされる)
+        assertFalse(bodyUrl.contains("光"))
+        assertTrue(bodyUrl.contains("%"))
+        // 区切りの / は保たれている
+        assertTrue(bodyUrl.contains("/contents/.yosuga/notes/"))
     }
 }

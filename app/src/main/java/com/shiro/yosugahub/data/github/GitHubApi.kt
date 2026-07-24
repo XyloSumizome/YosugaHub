@@ -63,7 +63,7 @@ class GitHubApi(
             append(baseUrl)
             append("/repos/").append(owner.encodeURLPathPart())
             append("/").append(repo.encodeURLPathPart())
-            append("/contents/").append(path)
+            append("/contents/").append(encodePath(path))
             if (!branch.isNullOrBlank()) append("?ref=").append(branch.encodeURLPathPart())
         }
 
@@ -105,7 +105,7 @@ class GitHubApi(
             append(baseUrl)
             append("/repos/").append(owner.encodeURLPathPart())
             append("/").append(repo.encodeURLPathPart())
-            append("/contents/").append(path)
+            append("/contents/").append(encodePath(path))
             if (!branch.isNullOrBlank()) append("?ref=").append(branch.encodeURLPathPart())
         }
 
@@ -129,6 +129,14 @@ class GitHubApi(
             FetchResult.NetworkError
         }
     }
+
+    /**
+     * パスを URL 用にエンコードする。**区切りの `/` は残し、各区画だけ**エンコードする。
+     * 日本語・空白を含むファイル名でも壊れない URL にするため
+     * (Ktor の Url は非ASCIIを生のまま持つことがあり、エンジン依存になるのを避ける)。
+     */
+    private fun encodePath(path: String): String =
+        path.split('/').joinToString("/") { it.encodeURLPathPart() }
 
     companion object {
         const val STATUS_PATH = ".yosuga/status.json"
