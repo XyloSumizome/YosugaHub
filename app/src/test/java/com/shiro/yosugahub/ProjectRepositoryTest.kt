@@ -15,6 +15,20 @@ import org.junit.Test
 class ProjectRepositoryTest {
 
     private class FakeProjectDao(initial: List<ProjectEntity> = emptyList()) : ProjectDao {
+        override suspend fun clearSeededText(
+            id: String,
+            currentGoal: String,
+            inProgress: String,
+            nextTask: String,
+        ): Int = 0
+
+        override suspend fun countWithSeededText(
+            id: String,
+            currentGoal: String,
+            inProgress: String,
+            nextTask: String,
+        ): Int = 0
+
         override suspend fun deleteById(id: String): Int = 0
 
         override suspend fun countByIds(ids: List<String>): Int = 0

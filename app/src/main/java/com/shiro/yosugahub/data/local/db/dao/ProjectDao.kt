@@ -36,4 +36,36 @@ interface ProjectDao {
 
     @Query("SELECT COUNT(*) FROM projects WHERE id IN (:ids)")
     suspend fun countByIds(ids: List<String>): Int
+
+    /**
+     * シード由来の文言を空にする(選択A)。プロジェクト名は残したいが中身は架空、という状態を消す。
+     * **シード時の値と一致するときだけ**更新するので、ユーザーが書き換えた内容は巻き込まない。
+     */
+    @Query(
+        """
+        UPDATE projects SET currentGoal = '', inProgress = '', nextTask = ''
+        WHERE id = :id AND currentGoal = :currentGoal
+          AND inProgress = :inProgress AND nextTask = :nextTask
+        """
+    )
+    suspend fun clearSeededText(
+        id: String,
+        currentGoal: String,
+        inProgress: String,
+        nextTask: String,
+    ): Int
+
+    @Query(
+        """
+        SELECT COUNT(*) FROM projects
+        WHERE id = :id AND currentGoal = :currentGoal
+          AND inProgress = :inProgress AND nextTask = :nextTask
+        """
+    )
+    suspend fun countWithSeededText(
+        id: String,
+        currentGoal: String,
+        inProgress: String,
+        nextTask: String,
+    ): Int
 }

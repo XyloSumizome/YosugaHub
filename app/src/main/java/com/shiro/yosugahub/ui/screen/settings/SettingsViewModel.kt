@@ -94,6 +94,8 @@ class SettingsViewModel(
                             "日記${result.diaries}".takeIf { result.diaries > 0 },
                             "提案${result.recommendations}".takeIf { result.recommendations > 0 },
                             "予定${result.events}".takeIf { result.events > 0 },
+                            "プロジェクトの中身${result.clearedProjects}件を空に"
+                                .takeIf { result.clearedProjects > 0 },
                         ).joinToString(" / ")
                     )
                 }

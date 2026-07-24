@@ -163,6 +163,8 @@ fun SettingsScreen(
                             "アイテム${sampleData.items}件".takeIf { sampleData.items > 0 },
                             "日記${sampleData.diaries}件".takeIf { sampleData.diaries > 0 },
                             "予定${sampleData.events}件".takeIf { sampleData.events > 0 },
+                            "中身が仮のプロジェクト${sampleData.projectsWithSeedText}件"
+                                .takeIf { sampleData.projectsWithSeedText > 0 },
                         ).joinToString(" / "),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -441,6 +443,8 @@ private fun SampleDataDeleteDialog(
                         "アイテム${status.items}件".takeIf { status.items > 0 },
                         "日記${status.diaries}件".takeIf { status.diaries > 0 },
                         "予定${status.events}件".takeIf { status.events > 0 },
+                        "プロジェクト${status.projectsWithSeedText}件の仮の中身"
+                            .takeIf { status.projectsWithSeedText > 0 && status.projects > 0 },
                     ).joinToString(" / ").ifEmpty { "なし" },
                     style = MaterialTheme.typography.bodyMedium,
                 )
@@ -457,8 +461,8 @@ private fun SampleDataDeleteDialog(
                         )
                     }
                     Text(
-                        "ANRI / 紙装甲主人公と不死身のカエル / げんげきょう が" +
-                            "実在するゲームなら、チェックを外したまま残してください。",
+                        "実在するゲームなら、チェックを外したまま残してください。" +
+                            "その場合も「目標 / 作業中 / 次」の仮の文言は空にします。",
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }

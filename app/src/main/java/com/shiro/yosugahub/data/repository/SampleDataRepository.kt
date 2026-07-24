@@ -18,12 +18,15 @@ data class SampleDataStatus(
     val diaries: Int = 0,
     /** 端末カレンダー同期の前に投入された仮の予定。 */
     val events: Int = 0,
+    /** 名前は残したいが中身がシードのままのプロジェクト。 */
+    val projectsWithSeedText: Int = 0,
     /** 再シードを止める指示が既に出ているか。 */
     val seedingDisabled: Boolean = false,
 ) {
     /** プロジェクトを除いた仮データが残っているか。 */
     val hasNonProjectData: Boolean
-        get() = tasks > 0 || items > 0 || diaries > 0 || events > 0
+        get() = tasks > 0 || items > 0 || diaries > 0 || events > 0 ||
+            projectsWithSeedText > 0
 
     val hasAny: Boolean get() = hasNonProjectData || projects > 0
 }
@@ -36,9 +39,11 @@ data class SampleDataDeleteResult(
     val diaries: Int = 0,
     val recommendations: Int = 0,
     val events: Int = 0,
+    /** 中身だけ空にしたプロジェクト(削除ではない)。 */
+    val clearedProjects: Int = 0,
 ) {
     val total: Int
-        get() = projects + tasks + items + diaries + recommendations + events
+        get() = projects + tasks + items + diaries + recommendations + events + clearedProjects
 }
 
 /**
@@ -65,6 +70,7 @@ class SampleDataRepository(
         items = knowledgeDao.countItemsByIds(SampleSeed.itemIds),
         diaries = diaryDao.countByIds(SampleSeed.diaryIds),
         events = countSeededEvents(),
+        projectsWithSeedText = countProjectsWithSeedText(),
         seedingDisabled = userPreferencesRepository.isSeedingDisabled(),
     )
 
@@ -81,6 +87,7 @@ class SampleDataRepository(
         var recommendations = 0
         var projects = 0
         var events = 0
+        var clearedProjects = 0
 
         SampleSeed.taskIds.forEach { id ->
             if (taskDao.countByIds(listOf(id)) > 0) {
@@ -123,7 +130,18 @@ class SampleDataRepository(
             )
         }
 
-        if (includeProjects) {
+        if (!includeProjects) {
+            // プロジェクトは残すが、シードされた「目標 / 作業中 / 次」は空にする。
+            // これを残すと Morning Brief に架空の作業内容が載る。
+            SampleSeed.projects.forEach { project ->
+                clearedProjects += projectDao.clearSeededText(
+                    id = project.id,
+                    currentGoal = project.currentGoal,
+                    inProgress = project.inProgress,
+                    nextTask = project.nextTask,
+                )
+            }
+        } else {
             SampleSeed.projectIds.forEach { id ->
                 // プロジェクトに紐づくタスクと進捗キャッシュも残さない。
                 taskDao.deleteByProject(id)
@@ -142,8 +160,19 @@ class SampleDataRepository(
             diaries = diaries,
             recommendations = recommendations,
             events = events,
+            clearedProjects = clearedProjects,
         )
     }
+
+    private suspend fun countProjectsWithSeedText(): Int =
+        SampleSeed.projects.count { project ->
+            projectDao.countWithSeededText(
+                id = project.id,
+                currentGoal = project.currentGoal,
+                inProgress = project.inProgress,
+                nextTask = project.nextTask,
+            ) > 0
+        }
 
     private suspend fun countSeededEvents(): Int =
         SampleSeed.events.sumOf { event ->
