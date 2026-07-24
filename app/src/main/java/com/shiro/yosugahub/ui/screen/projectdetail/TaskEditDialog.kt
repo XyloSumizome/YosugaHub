@@ -4,12 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 
 /**
  * タスクの新規作成・編集ダイアログ(v3-Step 1-c)。
@@ -40,10 +40,10 @@ fun TaskEditDialog(
     val dueDateValid = isValidDueDateInput(dueDateInput)
     val canSave = title.isNotBlank() && dueDateValid
 
-    AlertDialog(
+    TerminalDialog(
+        title = if (original == null) "タスクを追加" else "タスクを編集",
         onDismissRequest = onDismiss,
-        title = { Text(if (original == null) "タスクを追加" else "タスクを編集") },
-        text = {
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = title,
@@ -82,24 +82,21 @@ fun TaskEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text("このタスクを削除", color = MaterialTheme.colorScheme.error)
-                    }
+                    DialogAction("このタスクを削除", onClick = onDelete, danger = true)
                 }
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = canSave,
+            DialogAction(
+                "保存",
                 onClick = {
                     onSave(title.trim(), detail.trim(), priority, dueDateForSave(dueDateInput), status)
                 },
-            ) {
-                Text("保存")
-            }
+                enabled = canSave,
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            DialogAction("キャンセル", onClick = onDismiss)
         },
     )
 }

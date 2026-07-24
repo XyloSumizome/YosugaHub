@@ -5,19 +5,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentClassification
 import com.shiro.yosugahub.domain.model.DocumentStatus
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.StatusTag
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.classificationOriginLabel
 import com.shiro.yosugahub.ui.component.documentStatusLabel
 
@@ -36,10 +36,10 @@ fun DocumentDetailDialog(
     onReclassify: () -> Unit,
     onArchive: () -> Unit,
 ) {
-    AlertDialog(
+    TerminalDialog(
+        title = document.title,
         onDismissRequest = onDismiss,
-        title = { Text(document.title) },
-        text = {
+        content = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -97,16 +97,15 @@ fun DocumentDetailDialog(
                     }
                 }
 
-                TextButton(onClick = onDelete) {
-                    Text("この文書を削除", color = MaterialTheme.colorScheme.error)
-                }
+                DialogAction("この文書を削除", onClick = onDelete, danger = true)
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                // needs_review の間は閉じる = 保留(状態を動かさない)。
-                Text(if (document.status == DocumentStatus.NEEDS_REVIEW) "保留して閉じる" else "閉じる")
-            }
+            // needs_review の間は閉じる = 保留(状態を動かさない)。
+            DialogAction(
+                if (document.status == DocumentStatus.NEEDS_REVIEW) "保留して閉じる" else "閉じる",
+                onClick = onDismiss,
+            )
         },
     )
 }
@@ -130,17 +129,17 @@ private fun ReviewActions(
     val hasClassification = document.currentClassification != null
     Column(modifier = modifier.fillMaxWidth()) {
         if (hasClassification && document.status == DocumentStatus.NEEDS_REVIEW) {
-            TextButton(onClick = onApprove) { Text("この分類で承認") }
-            TextButton(onClick = onEdit) { Text("修正して承認") }
+            DialogAction("この分類で承認", onClick = onApprove)
+            DialogAction("修正して承認", onClick = onEdit)
         }
         if (hasClassification && document.status == DocumentStatus.CLASSIFIED) {
-            TextButton(onClick = onEdit) { Text("分類を修正") }
+            DialogAction("分類を修正", onClick = onEdit)
         }
         if (hasClassification && document.status != DocumentStatus.ARCHIVED) {
-            TextButton(onClick = onReclassify) { Text("再分類をヨスガに依頼") }
+            DialogAction("再分類をヨスガに依頼", onClick = onReclassify)
         }
         if (document.status != DocumentStatus.ARCHIVED) {
-            TextButton(onClick = onArchive) { Text("アーカイブ") }
+            DialogAction("アーカイブ", onClick = onArchive)
         }
     }
 }

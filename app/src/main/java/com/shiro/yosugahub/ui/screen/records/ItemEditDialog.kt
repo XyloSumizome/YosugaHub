@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.itemKindLabel
 
 /**
@@ -40,10 +40,10 @@ fun ItemEditDialog(
     var body by remember(original) { mutableStateOf(original?.body ?: "") }
     var tagsInput by remember(original) { mutableStateOf(original?.tags?.joinToString(", ") ?: "") }
 
-    AlertDialog(
+    TerminalDialog(
+        title = if (original == null) "アイテムを追加" else "アイテムを編集",
         onDismissRequest = onDismiss,
-        title = { Text(if (original == null) "アイテムを追加" else "アイテムを編集") },
-        text = {
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(text = "種類", style = MaterialTheme.typography.labelMedium)
                 Row(
@@ -81,24 +81,21 @@ fun ItemEditDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (onDelete != null) {
-                    TextButton(onClick = onDelete) {
-                        Text("このアイテムを削除", color = MaterialTheme.colorScheme.error)
-                    }
+                    DialogAction("このアイテムを削除", onClick = onDelete, danger = true)
                 }
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = title.isNotBlank(),
+            DialogAction(
+                "保存",
                 onClick = {
                     onSave(kind, title.trim(), body.trim(), parseTagsInput(tagsInput))
                 },
-            ) {
-                Text("保存")
-            }
+                enabled = title.isNotBlank(),
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            DialogAction("キャンセル", onClick = onDismiss)
         },
     )
 }

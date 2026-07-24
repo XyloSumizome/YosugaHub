@@ -4,11 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,10 +31,10 @@ fun PasteImportDialog(
 ) {
     var text by remember { mutableStateOf("") }
 
-    AlertDialog(
+    TerminalDialog(
+        title = title,
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
+        content = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = description,
@@ -55,15 +52,10 @@ fun PasteImportDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = text.isNotBlank(),
-                onClick = { onImport(text) },
-            ) {
-                Text(confirmLabel)
-            }
+            DialogAction(confirmLabel, onClick = { onImport(text) }, enabled = text.isNotBlank())
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            DialogAction("キャンセル", onClick = onDismiss)
         },
     )
 }

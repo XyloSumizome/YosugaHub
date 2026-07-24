@@ -18,11 +18,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -40,6 +38,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.TacticalButton
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.data.repository.SampleDataStatus
@@ -396,10 +396,10 @@ fun SettingsScreen(
     }
 
     openedHistory?.let { (fileName, content) ->
-        AlertDialog(
+        TerminalDialog(
+            title = fileName,
             onDismissRequest = { openedHistory = null },
-            title = { Text(fileName) },
-            text = {
+            content = {
                 Text(
                     text = content,
                     style = MaterialTheme.typography.bodySmall,
@@ -407,7 +407,7 @@ fun SettingsScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = { openedHistory = null }) { Text("閉じる") }
+                DialogAction("閉じる", onClick = { openedHistory = null })
             },
         )
     }
@@ -425,10 +425,12 @@ private fun SampleDataDeleteDialog(
 ) {
     var includeProjects by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    TerminalDialog(
+        title = "サンプルデータを削除",
         onDismissRequest = onDismiss,
-        title = { Text("サンプルデータを削除") },
-        text = {
+        // 破壊的操作なので見出しのLEDも赤にする。
+        ledColor = MaterialTheme.colorScheme.error,
+        content = {
             Column {
                 Text(
                     "ID を指定して消すため、あなたが作ったデータや取り込んだデータは残ります。" +
@@ -468,10 +470,10 @@ private fun SampleDataDeleteDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(includeProjects) }) { Text("削除する") }
+            DialogAction("削除する", onClick = { onConfirm(includeProjects) }, danger = true)
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("やめる") }
+            DialogAction("やめる", onClick = onDismiss)
         },
     )
 }

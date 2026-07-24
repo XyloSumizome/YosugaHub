@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +17,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.DocumentClassification
 import com.shiro.yosugahub.domain.model.RelatedRef
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 
 /** 修正ダイアログの編集結果(承認時に Repository へ渡す)。 */
 data class ClassificationEdits(
@@ -51,10 +51,10 @@ fun ClassificationEditDialog(
     }
     var tags by remember(original) { mutableStateOf(original?.tags?.joinToString(", ") ?: "") }
 
-    AlertDialog(
+    TerminalDialog(
+        title = "分類を修正して承認",
         onDismissRequest = onDismiss,
-        title = { Text("分類を修正して承認") },
-        text = {
+        content = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -101,9 +101,9 @@ fun ClassificationEditDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            DialogAction(
                 // 要約が空の分類を確定させない(既存の ItemEditDialog と同じ方針)。
-                enabled = summary.isNotBlank(),
+                "承認",
                 onClick = {
                     onApprove(
                         ClassificationEdits(
@@ -117,12 +117,11 @@ fun ClassificationEditDialog(
                         )
                     )
                 },
-            ) {
-                Text("承認")
-            }
+                enabled = summary.isNotBlank(),
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            DialogAction("キャンセル", onClick = onDismiss)
         },
     )
 }

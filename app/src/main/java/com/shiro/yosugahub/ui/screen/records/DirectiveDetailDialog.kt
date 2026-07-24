@@ -4,18 +4,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.DirectiveStatus
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.StatusTag
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.directiveStatusLabel
 
 /**
@@ -31,10 +31,10 @@ fun DirectiveDetailDialog(
     onReopen: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    AlertDialog(
+    TerminalDialog(
+        title = directive.title.ifBlank { "$targetName への指示" },
         onDismissRequest = onDismiss,
-        title = { Text(directive.title.ifBlank { "$targetName への指示" }) },
-        text = {
+        content = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -56,17 +56,15 @@ fun DirectiveDetailDialog(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    TextButton(onClick = onMarkDone) { Text("対応済みにする") }
+                    DialogAction("対応済みにする", onClick = onMarkDone)
                 } else {
-                    TextButton(onClick = onReopen) { Text("配信中に戻す") }
+                    DialogAction("配信中に戻す", onClick = onReopen)
                 }
-                TextButton(onClick = onDelete) {
-                    Text("この指示書を削除", color = MaterialTheme.colorScheme.error)
-                }
+                DialogAction("この指示書を削除", onClick = onDelete, danger = true)
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("閉じる") }
+            DialogAction("閉じる", onClick = onDismiss)
         },
     )
 }

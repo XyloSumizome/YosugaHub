@@ -7,12 +7,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,6 +19,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.healthLabel
 
 /**
@@ -48,10 +48,10 @@ fun ProjectEditDialog(
     var repoName by remember(original) { mutableStateOf(original.repoName.orEmpty()) }
     var repoBranch by remember(original) { mutableStateOf(original.repoBranch.orEmpty()) }
 
-    AlertDialog(
+    TerminalDialog(
+        title = "プロジェクトを編集",
         onDismissRequest = onDismiss,
-        title = { Text("プロジェクトを編集") },
-        text = {
+        content = {
             // 項目が増えたためダイアログ内をスクロール可能にする
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -108,8 +108,8 @@ fun ProjectEditDialog(
             }
         },
         confirmButton = {
-            TextButton(
-                enabled = name.isNotBlank(),
+            DialogAction(
+                "保存",
                 onClick = {
                     onSave(
                         name.trim(),
@@ -120,12 +120,11 @@ fun ProjectEditDialog(
                         repoBranch.trim().ifEmpty { null },
                     )
                 },
-            ) {
-                Text("保存")
-            }
+                enabled = name.isNotBlank(),
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("キャンセル") }
+            DialogAction("キャンセル", onClick = onDismiss)
         },
     )
 }

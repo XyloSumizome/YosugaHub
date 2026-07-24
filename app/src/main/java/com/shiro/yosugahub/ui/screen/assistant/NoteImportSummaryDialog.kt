@@ -5,15 +5,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProjectImportOutcome
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.TerminalDialog
 
 /**
  * ノート取り込みの結果(v5 Phase 3-c)。
@@ -24,10 +24,10 @@ fun NoteImportSummaryDialog(
     summary: NoteImportSummary,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    TerminalDialog(
+        title = "ノートの取り込み",
         onDismissRequest = onDismiss,
-        title = { Text("ノートの取り込み") },
-        text = {
+        content = {
             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 if (summary.vaultNotConfigured) {
                     Text(
@@ -64,7 +64,7 @@ fun NoteImportSummaryDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("閉じる") } },
+        confirmButton = { DialogAction("閉じる", onClick = onDismiss) },
     )
 }
 

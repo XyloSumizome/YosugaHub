@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -61,6 +60,10 @@ import com.shiro.yosugahub.data.obsidian.VaultNote
 import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import com.shiro.yosugahub.data.repository.ContextHistoryEntry
 import com.shiro.yosugahub.data.repository.ContextBuildResult
+import com.shiro.yosugahub.ui.component.DialogAction
+import com.shiro.yosugahub.ui.component.SubScreenAction
+import com.shiro.yosugahub.ui.component.SubScreenScaffold
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.share.shareMarkdownText
 
 /**
@@ -96,98 +99,95 @@ fun ObsidianContextScreen(
         ActivityResultContracts.CreateDocument(ContextFormat.JSON.mimeType),
     ) { uri -> if (uri != null) viewModel.saveTo(uri, onSaved) }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = onBack) { Text("戻る") }
-            Text(
-                text = "Obsidianから文脈を作る",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f).padding(start = 8.dp),
-            )
-            TextButton(onClick = { showHistory = true }) { Text("履歴") }
-            TextButton(
+    // 戻り口・画面固有の操作とも、他のサブ画面と同じ上辺バーに載せる。
+    SubScreenScaffold(
+        title = "BUILD CONTEXT",
+        onBack = onBack,
+        modifier = modifier,
+        actions = {
+            SubScreenAction("履歴", onClick = { showHistory = true })
+            SubScreenAction(
+                "再読込",
                 onClick = viewModel::refresh,
                 enabled = uiState.loadState != VaultLoadState.LOADING,
-            ) { Text("再読込") }
-        }
-        HorizontalDivider()
+            )
+        },
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            when (uiState.loadState) {
+                VaultLoadState.LOADING, VaultLoadState.IDLE -> CenterMessage {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Vaultを読み込んでいます…")
+                }
 
-        when (uiState.loadState) {
-            VaultLoadState.LOADING, VaultLoadState.IDLE -> CenterMessage {
-                CircularProgressIndicator()
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("Vaultを読み込んでいます…")
-            }
-
-            VaultLoadState.NOT_CONFIGURED -> CenterMessage {
-                Text("Vaultフォルダが未選択です。", style = MaterialTheme.typography.titleSmall)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "設定 → Obsidian Vault からフォルダを選んでください。",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-
-            VaultLoadState.FAILED -> CenterMessage {
-                Text(
-                    text = uiState.errorMessage.ifBlank { "Vaultの読み取りに失敗しました。" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                TacticalOutlinedButton(onClick = viewModel::refresh) { Text("もう一度試す") }
-            }
-
-            VaultLoadState.LOADED -> if (uiState.notes.isEmpty()) {
-                CenterMessage {
-                    Text("Markdownが1件も見つかりませんでした。")
+                VaultLoadState.NOT_CONFIGURED -> CenterMessage {
+                    Text("Vaultフォルダが未選択です。", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "選んだフォルダが Vault のルートか確認してください。",
+                        "設定 → Obsidian Vault からフォルダを選んでください。",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-            } else {
-                FilterBar(
-                    filter = uiState.filter,
-                    tagIndex = uiState.tagIndex,
-                    isIndexing = uiState.isIndexing,
-                    onQueryChange = viewModel::setQuery,
-                    onRecentDays = viewModel::setRecentDays,
-                    onBuildTagIndex = viewModel::buildTagIndex,
-                    onToggleTag = viewModel::toggleTag,
-                    onClear = viewModel::clearFilter,
-                )
-                if (uiState.visible.isEmpty()) {
-                    CenterMessage(modifier = Modifier.weight(1f)) {
-                        Text("条件に合うノートがありません。")
+
+                VaultLoadState.FAILED -> CenterMessage {
+                    Text(
+                        text = uiState.errorMessage.ifBlank { "Vaultの読み取りに失敗しました。" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    TacticalOutlinedButton(onClick = viewModel::refresh) { Text("もう一度試す") }
+                }
+
+                VaultLoadState.LOADED -> if (uiState.notes.isEmpty()) {
+                    CenterMessage {
+                        Text("Markdownが1件も見つかりませんでした。")
                         Spacer(modifier = Modifier.height(8.dp))
-                        TacticalOutlinedButton(onClick = viewModel::clearFilter) { Text("絞り込みを解除") }
+                        Text(
+                            "選んだフォルダが Vault のルートか確認してください。",
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                     }
                 } else {
-                    NoteList(
+                    FilterBar(
+                        filter = uiState.filter,
+                        tagIndex = uiState.tagIndex,
+                        isIndexing = uiState.isIndexing,
+                        onQueryChange = viewModel::setQuery,
+                        onRecentDays = viewModel::setRecentDays,
+                        onBuildTagIndex = viewModel::buildTagIndex,
+                        onToggleTag = viewModel::toggleTag,
+                        onClear = viewModel::clearFilter,
+                    )
+                    if (uiState.visible.isEmpty()) {
+                        CenterMessage(modifier = Modifier.weight(1f)) {
+                            Text("条件に合うノートがありません。")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TacticalOutlinedButton(onClick = viewModel::clearFilter) { Text("絞り込みを解除") }
+                        }
+                    } else {
+                        NoteList(
+                            uiState = uiState,
+                            onToggle = viewModel::toggle,
+                            onToggleFolder = viewModel::toggleFolder,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (uiState.isBuilding || opLines.isNotEmpty()) {
+                        OpTerminal(
+                            title = "BUILD CONTEXT",
+                            lines = opLines,
+                            running = uiState.isBuilding,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        )
+                    }
+                    SelectionBar(
                         uiState = uiState,
-                        onToggle = viewModel::toggle,
-                        onToggleFolder = viewModel::toggleFolder,
-                        modifier = Modifier.weight(1f),
+                        onClear = viewModel::clearSelection,
+                        onBuild = viewModel::buildPreview,
                     )
                 }
-                if (uiState.isBuilding || opLines.isNotEmpty()) {
-                    OpTerminal(
-                        title = "BUILD CONTEXT",
-                        lines = opLines,
-                        running = uiState.isBuilding,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    )
-                }
-                SelectionBar(
-                    uiState = uiState,
-                    onClear = viewModel::clearSelection,
-                    onBuild = viewModel::buildPreview,
-                )
             }
         }
     }
@@ -253,10 +253,10 @@ private fun HistoryDialog(
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    TerminalDialog(
+        title = "出力履歴",
         onDismissRequest = onDismiss,
-        title = { Text("出力履歴") },
-        text = {
+        content = {
             if (entries.isEmpty()) {
                 Text(
                     "まだありません。コピー・保存・共有したものがここに残ります。",
@@ -282,13 +282,13 @@ private fun HistoryDialog(
                                     style = MaterialTheme.typography.bodySmall,
                                 )
                             }
-                            TextButton(onClick = { onDelete(entry.fileName) }) { Text("削除") }
+                            DialogAction("削除", onClick = { onDelete(entry.fileName) }, danger = true)
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("閉じる") } },
+        confirmButton = { DialogAction("閉じる", onClick = onDismiss) },
     )
 }
 
@@ -300,18 +300,18 @@ private fun HistoryContentDialog(
     onCopy: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
+    TerminalDialog(
+        title = fileName,
         onDismissRequest = onDismiss,
-        title = { Text(fileName) },
-        text = {
+        content = {
             Text(
                 text = content,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             )
         },
-        confirmButton = { TextButton(onClick = onCopy) { Text("コピー") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("閉じる") } },
+        confirmButton = { DialogAction("コピー", onClick = onCopy) },
+        dismissButton = { DialogAction("閉じる", onClick = onDismiss) },
     )
 }
 
@@ -556,7 +556,7 @@ private fun PreviewDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("閉じる") }
+                    DialogAction("閉じる", onClick = onDismiss)
                 }
             }
         }
