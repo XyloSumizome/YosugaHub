@@ -108,7 +108,7 @@ class DefaultAppContainer(
         )
     }
     override val projectRepository: ProjectRepository by lazy {
-        ProjectRepository(database.projectDao())
+        ProjectRepository(database.projectDao(), database.taskDao())
     }
     override val taskRepository: TaskRepository by lazy {
         TaskRepository(database.taskDao())

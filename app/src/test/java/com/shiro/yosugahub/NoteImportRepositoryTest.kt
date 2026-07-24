@@ -121,7 +121,7 @@ class NoteImportRepositoryTest {
         val writer = RecordingWriter()
         val dao = FakeImportedNoteDao()
         val repository = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(
                 note("2026-07-24-a.md", frontmatter("design")),
                 note("2026-07-24-b.md", frontmatter("development-log")),
@@ -145,7 +145,7 @@ class NoteImportRepositoryTest {
     fun imported_notes_are_recorded_so_they_are_not_fetched_again() = runBlocking {
         val dao = FakeImportedNoteDao()
         fun build() = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(note("2026-07-24-a.md", frontmatter("design"))),
             vaultWriter = RecordingWriter(),
             dao = dao,
@@ -166,7 +166,7 @@ class NoteImportRepositoryTest {
     fun unroutable_notes_go_to_inbox_but_still_count_as_imported() = runBlocking {
         val writer = RecordingWriter()
         val repository = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(note("memo.md", "# Frontmatter なし")),
             vaultWriter = writer,
             dao = FakeImportedNoteDao(),
@@ -184,7 +184,7 @@ class NoteImportRepositoryTest {
     fun a_failed_write_is_reported_and_not_recorded() = runBlocking {
         val dao = FakeImportedNoteDao()
         val repository = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(note("2026-07-24-a.md", frontmatter("design"))),
             vaultWriter = RecordingWriter { _, _ -> VaultWriteResult.Failed("書けません") },
             dao = dao,
@@ -204,7 +204,7 @@ class NoteImportRepositoryTest {
         val writer = RecordingWriter { _, _ -> VaultWriteResult.NotConfigured }
         val dao = FakeImportedNoteDao()
         val repository = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(
                 note("2026-07-24-a.md", frontmatter("design")),
                 note("2026-07-24-b.md", frontmatter("design")),
@@ -227,7 +227,7 @@ class NoteImportRepositoryTest {
     fun a_project_without_a_repository_is_reported_not_failed() = runBlocking {
         val local = anri.copy(id = "local", repoOwner = null, repoName = null)
         val repository = NoteImportRepository(
-            projectRepository = ProjectRepository(FakeProjectDao(listOf(local))),
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(local)), EmptyTaskDao()),
             repoNoteRepository = repoNotes(),
             vaultWriter = RecordingWriter(),
             dao = FakeImportedNoteDao(),

@@ -1,11 +1,14 @@
 package com.shiro.yosugahub.data.repository
 
 import com.shiro.yosugahub.data.local.db.dao.ProjectDao
+import com.shiro.yosugahub.data.local.db.dao.TaskDao
 import com.shiro.yosugahub.data.local.db.toDomain
 import com.shiro.yosugahub.data.local.db.toEntity
 import com.shiro.yosugahub.domain.model.Project
+import com.shiro.yosugahub.domain.model.ProjectProgress
 import com.shiro.yosugahub.util.formatSyncTime
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
 
@@ -16,11 +19,24 @@ import java.time.LocalDateTime
  */
 class ProjectRepository(
     private val dao: ProjectDao,
+    private val taskDao: TaskDao,
     private val now: () -> String = { formatSyncTime(LocalDateTime.now()) },
 ) {
 
+    /**
+     * プロジェクト一覧。**「作業中 / 次」はタスクから導出して差し替える**(案C)。
+     *
+     * ここで一度だけ導出することで、ホーム・一覧・AI向けエクスポートのすべてが
+     * 同じ値を見る。画面ごとに計算すると、どこか1つを直し忘れて食い違う。
+     * タスクが無いプロジェクトは保存済みの文字列のまま(導出で空にしない)。
+     */
     fun projects(): Flow<List<Project>> =
-        dao.observeAll().map { projects -> projects.map { it.toDomain() } }
+        combine(dao.observeAll(), taskDao.observeAll()) { projects, tasks ->
+            ProjectProgress.deriveAll(
+                projects = projects.map { it.toDomain() },
+                tasks = tasks.map { it.toDomain() },
+            )
+        }
 
     /** 実在するプロジェクトIDか(指示書の宛先確認など)。 */
     suspend fun exists(projectId: String): Boolean =

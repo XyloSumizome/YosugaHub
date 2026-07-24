@@ -194,7 +194,7 @@ class ProposalRepositoryTest {
         taskRepository = TaskRepository(env.taskDao, now = { fixedNow }, newId = { "t-${counter++}" }),
         knowledgeRepository = KnowledgeRepository(env.knowledgeDao, now = { fixedNow }, newId = { "k-${counter++}" }),
         diaryRepository = DiaryRepository(env.diaryDao, now = { fixedNow }, newId = { "d-${counter++}" }),
-        projectRepository = ProjectRepository(env.projectDao, now = { fixedNow }),
+        projectRepository = ProjectRepository(env.projectDao, env.taskDao, now = { fixedNow }),
         knowledgeStore = env.knowledgeStore,
         directiveRepository = DirectiveRepository(
             env.directiveDao, now = { fixedNow }, newId = { "dir-${counter++}" },

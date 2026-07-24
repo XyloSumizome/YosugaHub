@@ -56,7 +56,7 @@ class ProjectRepositoryTest {
 
     private val fixedNow = "2026-07-23 12:00"
 
-    private val repository = ProjectRepository(FakeProjectDao(SampleSeed.projects))
+    private val repository = ProjectRepository(FakeProjectDao(SampleSeed.projects), EmptyTaskDao())
 
     @Test
     fun projects_flow_maps_entities_to_domain_in_order() = runBlocking {
@@ -69,7 +69,7 @@ class ProjectRepositoryTest {
     @Test
     fun upsert_stamps_lastUpdated_and_saves_edited_fields() = runBlocking {
         val dao = FakeProjectDao(SampleSeed.projects)
-        val repo = ProjectRepository(dao, now = { fixedNow })
+        val repo = ProjectRepository(dao, EmptyTaskDao(), now = { fixedNow })
         val original = repo.projects().first().first { it.id == "anri" }
 
         repo.upsert(original.copy(name = "ANRI(改)", currentGoal = "体験版の完成", health = "attention"))
