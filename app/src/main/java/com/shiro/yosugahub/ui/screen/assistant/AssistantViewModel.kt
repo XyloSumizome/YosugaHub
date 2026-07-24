@@ -14,6 +14,8 @@ import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ImportResult
+import com.shiro.yosugahub.data.repository.ConversationImportRepository
+import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProposalRepository
@@ -38,7 +40,13 @@ class AssistantViewModel(
     private val importRepository: ImportRepository,
     private val proposalRepository: ProposalRepository,
     private val noteImportRepository: NoteImportRepository,
+    private val conversationImportRepository: ConversationImportRepository,
 ) : ViewModel() {
+
+    /** ヨスガのセッションまとめを Obsidian へ保存する(v5 Phase 3-d)。 */
+    fun saveConversation(body: String, onResult: (ConversationImportResult) -> Unit) {
+        viewModelScope.launch { onResult(conversationImportRepository.save(body)) }
+    }
 
     private val _noteImporting = MutableStateFlow(false)
     val noteImporting: StateFlow<Boolean> = _noteImporting
@@ -126,6 +134,7 @@ class AssistantViewModel(
                     importRepository = app.container.importRepository,
                     proposalRepository = app.container.proposalRepository,
                     noteImportRepository = app.container.noteImportRepository,
+                    conversationImportRepository = app.container.conversationImportRepository,
                 )
             }
         }

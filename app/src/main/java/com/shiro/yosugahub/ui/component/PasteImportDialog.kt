@@ -18,32 +18,36 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 /**
- * 回答JSONの貼り付け取り込み(v4.3 運用)。
- * レコルの回答をコピーしてそのまま貼る。コードブロックの囲いは取り込み側で外れる。
- * ホームとヨスガ画面で共用。
+ * テキストを貼り付けて取り込む共用ダイアログ。
+ * 既定は回答JSON(v4.3 運用: レコルの回答をコピーして貼る。コードブロックの囲いは
+ * 取り込み側で外れる)。文言を差し替えれば会話ログの保存にも使える(v5 Phase 3-d)。
  */
 @Composable
 fun PasteImportDialog(
     onDismiss: () -> Unit,
     onImport: (String) -> Unit,
+    title: String = "回答JSONを貼り付け",
+    description: String = "レコルの回答をコピーして、ここに貼り付けてください。" +
+        "コードブロックの囲い(```)ごとでも構いません。",
+    label: String = "回答JSON",
+    confirmLabel: String = "取り込む",
 ) {
     var text by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("回答JSONを貼り付け") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "レコルの回答をコピーして、ここに貼り付けてください。" +
-                        "コードブロックの囲い(```)ごとでも構いません。",
+                    text = description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("回答JSON") },
+                    label = { Text(label) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 160.dp, max = 280.dp),
@@ -55,7 +59,7 @@ fun PasteImportDialog(
                 enabled = text.isNotBlank(),
                 onClick = { onImport(text) },
             ) {
-                Text("取り込む")
+                Text(confirmLabel)
             }
         },
         dismissButton = {

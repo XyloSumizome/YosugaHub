@@ -23,6 +23,7 @@ import com.shiro.yosugahub.data.security.KeystoreTokenCrypto
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.CalendarRepository
 import com.shiro.yosugahub.data.repository.ContextHistoryRepository
+import com.shiro.yosugahub.data.repository.ConversationImportRepository
 import com.shiro.yosugahub.data.repository.DiaryRepository
 import com.shiro.yosugahub.data.repository.DirectiveRepository
 import com.shiro.yosugahub.data.repository.DocumentRepository
@@ -80,6 +81,7 @@ interface AppContainer {
     val contextHistoryRepository: ContextHistoryRepository
     val repoNoteRepository: RepoNoteRepository
     val noteImportRepository: NoteImportRepository
+    val conversationImportRepository: ConversationImportRepository
 }
 
 /** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
@@ -145,12 +147,22 @@ class DefaultAppContainer(
         )
     }
 
+    /** Vault への書き込み口(v5 Phase 3-b / 3-d で共用)。 */
+    private val vaultWriter by lazy {
+        SafVaultWriter(context.applicationContext, userPreferencesRepository)
+    }
+
+    /** ヨスガの会話まとめを Vault へ保存する(v5 Phase 3-d)。 */
+    override val conversationImportRepository: ConversationImportRepository by lazy {
+        ConversationImportRepository(vaultWriter)
+    }
+
     /** 取得した知識ノートを Vault へ収める(v5 Phase 3-b)。 */
     override val noteImportRepository: NoteImportRepository by lazy {
         NoteImportRepository(
             projectRepository = projectRepository,
             repoNoteRepository = repoNoteRepository,
-            vaultWriter = SafVaultWriter(context.applicationContext, userPreferencesRepository),
+            vaultWriter = vaultWriter,
             dao = database.importedNoteDao(),
         )
     }

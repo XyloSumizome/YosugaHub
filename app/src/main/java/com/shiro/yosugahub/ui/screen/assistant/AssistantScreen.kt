@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.obsidian.AppendOutcome
 import com.shiro.yosugahub.data.repository.ApproveResult
+import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.share.importResultMessage
@@ -75,10 +76,35 @@ fun AssistantScreen(
     val importResponse = { importLauncher.launch(arrayOf("application/json", "text/plain")) }
 
     var showPasteDialog by remember { mutableStateOf(false) }
+    var showConversationDialog by remember { mutableStateOf(false) }
     noteImportSummary?.let { summary ->
         NoteImportSummaryDialog(
             summary = summary,
             onDismiss = viewModel::dismissNoteImportSummary,
+        )
+    }
+
+    if (showConversationDialog) {
+        PasteImportDialog(
+            onDismiss = { showConversationDialog = false },
+            onImport = { text ->
+                showConversationDialog = false
+                viewModel.saveConversation(text) { result ->
+                    val message = when (result) {
+                        is ConversationImportResult.Saved -> "保存しました: ${result.path}"
+                        ConversationImportResult.Empty -> "内容が空です"
+                        ConversationImportResult.VaultNotConfigured ->
+                            "Obsidian Vault が未設定です。設定で選んでください。"
+                        is ConversationImportResult.Failed -> result.reason
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                }
+            },
+            title = "会話ログを保存",
+            description = "ヨスガの「セッションまとめ」をコピーして貼り付けてください。" +
+                "Obsidian の Conversations/Yosuga/ へそのまま保存します(要約しません)。",
+            label = "会話まとめ(Markdown)",
+            confirmLabel = "保存",
         )
     }
 
@@ -117,6 +143,22 @@ fun AssistantScreen(
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(if (noteImporting) "取り込み中…" else "ノートを取り込む")
+                }
+            }
+        }
+        item {
+            SectionCard(title = "会話ログをObsidianへ") {
+                Text(
+                    text = "ヨスガの「セッションまとめ」を貼り付けると、" +
+                        "Conversations/Yosuga/ へ保存します。原文のまま保存し、要約はしません。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { showConversationDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("会話ログを保存")
                 }
             }
         }
