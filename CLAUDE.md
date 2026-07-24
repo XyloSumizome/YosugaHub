@@ -90,16 +90,26 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   (DocumentsContract で再帰列挙)/ `Frontmatter`(純粋パーサ)/ `LoadedNote` + `NoteTransformer`
   (**要約の差し込み口。Phase 1 は恒等変換**)/ `ContextMarkdown`(純粋)/ `VaultRepository`。
   既存への変更は AppContainer の配線のみ。**Roomスキーマ変更なし・新規ライブラリなし**。テスト22件追加・全通過。
-- **未検証**: Phase 1-a は実機未確認(UI が無いため画面から呼べない。1-b で確認可能になる)。
+- **v5 Phase 1 完了・実機確認済み**: 1-b UI(フォルダ別一覧・複数選択・プレビュー・文字数、
+  ヨスガ画面から `obsidian_context` へ遷移。**下部ナビは6個のまま**)/ 1-c(コピー・SAF保存・共有)。
+  設定画面に「Vaultを読み取れるか確認」を追加(選べる≠読める の切り分け用)。
+- **v5 Phase 2 完了・実機確認済み**: 絞り込み(パス検索 / 最近更新1・7・30日)、JSON出力
+  (`ContextData` を挟み**形式切替でファイルを読み直さない**)、出力履歴
+  (**外へ出した時だけ**記録・最新20件)、タグ絞り込み(`TagIndex` を明示的に作る・複数タグは OR)。
+- **仮データ(SampleSeed)問題 解決(選択A)**: `SampleDataRepository` が **ID 指定で**削除し
+  (実データを巻き込まない)、DataStore `seeding_disabled` で再シードを止める。
+  プロジェクトの個別削除UIも追加。**「消しても復活する」問題は実機で解消を確認済み**。
+- **⚠ エミュレータの黒画面**: ハードウェア描画だと画面が黒くなり `system_server` が ANR する
+  (アプリの問題ではない)。`emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect`
+  で復旧。恒久対処は Device Manager → Edit → Graphics →「Software - GLES 2.0」。
 - **次にやること**:
-  1. **⚠ Dropbox × Android の実機確認**(5分): 設定→Obsidian Vault→「Vaultフォルダを選択」で
-     Dropbox が出るか / Vault まで潜って選べるか。Dropbox の Android アプリはローカル同期フォルダを
-     作らないため。選べない場合は端末ローカル Vault + 同期アプリへ切り替える(**Hub の実装は不変**)。
-  2. **v5 Phase 1-b**: UI(一覧・複数選択・プレビュー・文字数)。**下部ナビは6個のまま**、ヨスガ画面から遷移。
-  3. **v5 Phase 1-c**: コピー / SAF保存 / 共有。
-  4. **仮データ(SampleSeed)の扱い**(未決・v5とは独立): A(削除機能+再シード防止)/ B(シードをやめる)
-     の選択待ち — 詳細は WORKLOG。※「仮データはすべて解消済み」は**画面のプレースホルダ表示**の話で、
-     DBのシード行ではない。
+  1. **Morning Brief を作り直す**。実データだけで要約されるか確認。
+  2. **v5 Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /
+     会話ログ取り込み / 重複検出。⚠ **着手前に Vault のフォルダ構成を確定**する必要がある
+     (設計書v5 §6)。Obsidian へ**書き込む**フェーズなので、実運用 Vault の前にテスト用 Vault で通す。
+  3. **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期
+     (⚠ Vault は**共有ストレージ上**に作ること。アプリ内フォルダだと Hub から読めない)/
+     共有シートに ChatGPT が出るか。
 - **v4.3 AI役割分離(2026-07-23)**: 実地検証で「データを読めるAI(カスタムGPT+Actions)」と
   「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
   **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。
