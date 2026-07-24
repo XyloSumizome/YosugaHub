@@ -38,6 +38,7 @@ import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.EntityType
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.directiveStatusLabel
 import com.shiro.yosugahub.ui.component.documentStatusLabel
 import com.shiro.yosugahub.ui.component.entityTypeLabel
@@ -463,7 +464,7 @@ private fun ItemCard(item: KnowledgeItem, onClick: () -> Unit, modifier: Modifie
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AssistChip(onClick = {}, label = { Text(itemKindLabel(item.kind)) })
+                StatusTag(itemKindLabel(item.kind))
             }
             if (item.body.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -510,7 +511,7 @@ private fun DocumentCard(document: Document, onClick: () -> Unit, modifier: Modi
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AssistChip(onClick = {}, label = { Text(documentStatusLabel(document.status)) })
+                StatusTag(documentStatusLabel(document.status))
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(text = documentPreviewOf(document), style = MaterialTheme.typography.bodyMedium)
@@ -549,7 +550,7 @@ private fun DirectiveCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AssistChip(onClick = {}, label = { Text(directiveStatusLabel(directive.status)) })
+                StatusTag(directiveStatusLabel(directive.status))
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
@@ -575,7 +576,7 @@ private fun EntityCard(entry: EntityIndex, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                AssistChip(onClick = {}, label = { Text(entityTypeLabel(entry.entity.type)) })
+                StatusTag(entityTypeLabel(entry.entity.type))
             }
             if (entry.items.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))

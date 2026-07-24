@@ -39,6 +39,7 @@ import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.PasteImportDialog
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.shareJsonText
 
@@ -276,7 +277,7 @@ private fun ProposalCard(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f),
                 )
-                AssistChip(onClick = {}, label = { Text(card.typeLabel) })
+                StatusTag(card.typeLabel)
             }
             if (card.body.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))

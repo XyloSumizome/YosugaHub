@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.ui.component.healthLabel
@@ -81,10 +82,7 @@ private fun ProjectCard(project: Project, onClick: () -> Unit, modifier: Modifie
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(text = project.name, style = MaterialTheme.typography.titleMedium)
-                AssistChip(
-                    onClick = {},
-                    label = { Text(healthLabel(project.health)) },
-                )
+                StatusTag(healthLabel(project.health))
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (project.currentGoal.isNotBlank()) {

@@ -13,6 +13,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.domain.model.Directive
 import com.shiro.yosugahub.domain.model.DirectiveStatus
 import com.shiro.yosugahub.ui.component.directiveStatusLabel
@@ -38,10 +39,7 @@ fun DirectiveDetailDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(directiveStatusLabel(directive.status)) },
-                )
+                StatusTag(directiveStatusLabel(directive.status))
                 Text(
                     text = "宛先: $targetName / 優先度: ${directivePriorityLabel(directive.priority)}" +
                         "\n承認 ${directive.createdAt.take(10)}",

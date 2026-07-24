@@ -41,6 +41,7 @@ import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import com.shiro.yosugahub.ui.component.SectionCard
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.healthLabel
 import com.shiro.yosugahub.ui.share.statusFetchMessage
 
@@ -110,7 +111,7 @@ fun ProjectDetailScreen(
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
                         )
-                        AssistChip(onClick = {}, label = { Text(healthLabel(project.health)) })
+                        StatusTag(healthLabel(project.health))
                     }
                     // 作業中 / 次 はタスクから導出(案C)。無ければ行ごと隠す。
                     if (project.inProgress.isNotBlank()) {

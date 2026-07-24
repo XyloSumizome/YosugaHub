@@ -614,6 +614,21 @@ ANRI / Kamieru の Claude Code へ status.json を正しい schemaVersion:1 形�
 ⚠ 積み残し: A運用では GitHub進捗カードが主役なので、将来
 **ローカルの「プロジェクト情報」カードをさらに控えめにする**候補(今回は見た目のみ整えた)。
 
+### UI: 「ボタン」→「コマンド実行行」+ 角ばった状態タグ
+
+ユーザー指摘: まだ Android アプリ感が残る(巨大な塗りCTA)。
+「ボタンを押す」より「コマンドを走らせる」印象にする。
+
+- `TacticalButton` / `TacticalOutlinedButton` を **Material Button から自作の
+  コマンド実行行へ**作り替え(全画面が自動で切り替わる):
+  - 主コマンド `▶ ラベル` … 左に細いアクセント帯 + うっすら地色 + 細枠。塗りCTAは廃止
+  - 副コマンド `> ラベル` … トークン + 細枠だけ
+  - content 内の Text は `LocalContentColor` / `LocalTextStyle` を継ぐので、
+    既存の呼び出し(`{ Text("...") }`)を1つも書き換えずに見た目だけ変わった
+- `AssistChip`(丸い Material チップ)を **`[ TEXT ]` の角ばった `StatusTag`** へ全置換
+
+新規ライブラリなし。全349件通過。実機で確認。
+
 ### UI方針を Brutalist / 仕事道具 へ転換
 
 ユーザー指摘: 前のネオンUIは「洗練されすぎ・お洒落すぎ」。

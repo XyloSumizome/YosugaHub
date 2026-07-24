@@ -90,3 +90,23 @@ fun AsciiDivider(modifier: Modifier = Modifier) {
         color = TermLine,
     )
 }
+
+/**
+ * 状態タグ(v5 UI)。丸い Material チップの代わりに `[ TEXT ]` の角ばったラベルにする。
+ * 色は状態(健康/種別)に応じて呼び出し側が渡す。
+ */
+@Composable
+fun StatusTag(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+) {
+    Text(
+        text = "[ $text ]",
+        style = MaterialTheme.typography.labelMedium,
+        color = color,
+        modifier = modifier
+            .border(1.dp, TermLine, RectangleShape)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    )
+}

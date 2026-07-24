@@ -14,6 +14,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.domain.model.Document
 import com.shiro.yosugahub.domain.model.DocumentClassification
 import com.shiro.yosugahub.domain.model.DocumentStatus
@@ -43,10 +44,7 @@ fun DocumentDetailDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text(documentStatusLabel(document.status)) },
-                )
+                StatusTag(documentStatusLabel(document.status))
                 Text(
                     text = "保存 ${document.createdAt.take(10)} / 更新 ${document.updatedAt.take(10)}",
                     style = MaterialTheme.typography.bodySmall,
