@@ -133,6 +133,7 @@ class DefaultAppContainer(
             knowledgeDao = database.knowledgeDao(),
             diaryDao = database.diaryDao(),
             recommendationDao = database.recommendationDao(),
+            calendarEventDao = database.calendarEventDao(),
             projectStatusDao = database.projectStatusDao(),
             userPreferencesRepository = userPreferencesRepository,
         )

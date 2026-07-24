@@ -294,8 +294,48 @@ cd <SDK>/emulator && ./emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftsh
 Cold Boot はアプリのデータを消さない(消えるのは Wipe Data)。
 恒久対処は Device Manager → Edit → Graphics → 「Software - GLES 2.0」。
 
+### 追撃: 仮の**予定**が消し漏れていた
+
+実機確認のあとホーム画面を見ると、タスク・アイテム・日記は消えているのに
+**「今日の予定」に歯医者 / ANRI 作業時間 / 買い物 / げんげきょう ミーティングが残っていた。**
+
+原因: `seedIfEmpty()` は現在カレンダーをシードしないが、**過去のバージョンが入れた行が
+DB に残っている**。`SampleDataRepository` はカレンダーを見ていなかった。
+このままだと設定画面が「残っていません」と言うのに Morning Brief には架空の予定が載る。
+
+対処: `SampleSeed.events` を **bucket + title + start** で特定して削除する
+(自動採番のため ID が使えない)。件数表示・削除結果にも「予定」を追加。
+
+※ 端末カレンダーと同期すれば洗い替わるが、**同期前・権限拒否のときは残り続ける**ため、
+  削除機能側でも面倒を見る必要がある。
+
+テスト1件追加(全 **288件** 通過)。
+
+### エミュレータの黒画面: 真因はスナップショットだった
+
+`-gpu swiftshader_indirect` で直ったので描画方式が原因かと思ったが、**違った**。
+
+- このバージョンの emulator は `swiftshader_indirect` を**無効な値として拒否**し `auto` に戻す
+  (有効値は `auto` / `host` / `software` / `swiftshader`)
+- `auto`(ホストGPU)のままコールドブートしたら**正常に描画された**
+
+つまり効いていたのは `-no-snapshot-load`(コールドブート)のほう。
+`fastboot.forceFastBoot=yes` によるスナップショット復元で、Android が壊れた状態から起き上がっていた。
+
+**最終的な AVD 設定**(`~/.android/avd/Pixel_10.avd/config.ini`、変更前は `.bak-before-gpu-change`):
+
+```
+hw.gpu.mode=auto              ← 描画は速いまま
+fastboot.forceColdBoot=yes    ← 毎回コールドブート(黒画面の真因を潰す)
+fastboot.forceFastBoot=no
+vm.heapSize=512               ← 228 から引き上げ
+```
+
+この設定で起動15秒・描画正常を確認済み。
+
 ### 次にやること
 
+- **仮の予定の削除を実行**(設定 → サンプルデータ → 削除)。ホームから架空の予定が消えるか確認
 - **Morning Brief を作り直す**。レコルが実データだけを見て要約するか確認
   (これまでは中身がほぼ全部仮データだった)
 - **Phase 3**: GitHub取得データのObsidian自動保存 / Claude Code出力の自動振り分け /

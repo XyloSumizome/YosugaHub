@@ -22,6 +22,13 @@ interface CalendarEventDao {
     @Query("DELETE FROM calendar_events")
     suspend fun deleteAll()
 
+    /** 仮データの後片付け用。自動採番のため bucket + title + start で特定する。 */
+    @Query("DELETE FROM calendar_events WHERE bucket = :bucket AND title = :title AND start = :start")
+    suspend fun deleteByBucketTitleStart(bucket: String, title: String, start: String): Int
+
+    @Query("SELECT COUNT(*) FROM calendar_events WHERE bucket = :bucket AND title = :title AND start = :start")
+    suspend fun countByBucketTitleStart(bucket: String, title: String, start: String): Int
+
     /** 端末カレンダーの取得結果で丸ごと置き換える(同期は常に全件洗い替え)。 */
     @Transaction
     suspend fun replaceAll(events: List<CalendarEventEntity>) {

@@ -42,6 +42,14 @@ class SampleSeedIdsTest {
     }
 
     @Test
+    fun seeded_events_can_be_identified_without_an_id() {
+        // カレンダーは自動採番のため bucket + title + start で特定する。
+        val keys = SampleSeed.events.map { Triple(it.bucket, it.title, it.start) }
+        assertEquals(keys.size, keys.distinct().size)
+        assertTrue(SampleSeed.events.all { it.title.isNotBlank() && it.start.isNotBlank() })
+    }
+
+    @Test
     fun seeded_recommendations_can_be_identified_without_an_id() {
         // recommendations は自動採番のため projectId + title で特定する。
         val keys = SampleSeed.recommendations.map { it.projectId to it.title }

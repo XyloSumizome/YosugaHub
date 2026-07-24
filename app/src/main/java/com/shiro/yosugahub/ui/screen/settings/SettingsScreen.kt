@@ -162,6 +162,7 @@ fun SettingsScreen(
                             "タスク${sampleData.tasks}件".takeIf { sampleData.tasks > 0 },
                             "アイテム${sampleData.items}件".takeIf { sampleData.items > 0 },
                             "日記${sampleData.diaries}件".takeIf { sampleData.diaries > 0 },
+                            "予定${sampleData.events}件".takeIf { sampleData.events > 0 },
                         ).joinToString(" / "),
                         style = MaterialTheme.typography.bodyMedium,
                     )
@@ -439,6 +440,7 @@ private fun SampleDataDeleteDialog(
                         "タスク${status.tasks}件".takeIf { status.tasks > 0 },
                         "アイテム${status.items}件".takeIf { status.items > 0 },
                         "日記${status.diaries}件".takeIf { status.diaries > 0 },
+                        "予定${status.events}件".takeIf { status.events > 0 },
                     ).joinToString(" / ").ifEmpty { "なし" },
                     style = MaterialTheme.typography.bodyMedium,
                 )

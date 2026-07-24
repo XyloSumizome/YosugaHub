@@ -93,6 +93,7 @@ class SettingsViewModel(
                             "アイテム${result.items}".takeIf { result.items > 0 },
                             "日記${result.diaries}".takeIf { result.diaries > 0 },
                             "提案${result.recommendations}".takeIf { result.recommendations > 0 },
+                            "予定${result.events}".takeIf { result.events > 0 },
                         ).joinToString(" / ")
                     )
                 }

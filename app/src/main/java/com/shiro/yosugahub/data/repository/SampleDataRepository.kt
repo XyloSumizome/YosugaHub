@@ -2,6 +2,7 @@ package com.shiro.yosugahub.data.repository
 
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
 import com.shiro.yosugahub.data.local.db.SampleSeed
+import com.shiro.yosugahub.data.local.db.dao.CalendarEventDao
 import com.shiro.yosugahub.data.local.db.dao.DiaryDao
 import com.shiro.yosugahub.data.local.db.dao.KnowledgeDao
 import com.shiro.yosugahub.data.local.db.dao.ProjectDao
@@ -15,11 +16,14 @@ data class SampleDataStatus(
     val tasks: Int = 0,
     val items: Int = 0,
     val diaries: Int = 0,
+    /** 端末カレンダー同期の前に投入された仮の予定。 */
+    val events: Int = 0,
     /** 再シードを止める指示が既に出ているか。 */
     val seedingDisabled: Boolean = false,
 ) {
     /** プロジェクトを除いた仮データが残っているか。 */
-    val hasNonProjectData: Boolean get() = tasks > 0 || items > 0 || diaries > 0
+    val hasNonProjectData: Boolean
+        get() = tasks > 0 || items > 0 || diaries > 0 || events > 0
 
     val hasAny: Boolean get() = hasNonProjectData || projects > 0
 }
@@ -31,8 +35,10 @@ data class SampleDataDeleteResult(
     val items: Int = 0,
     val diaries: Int = 0,
     val recommendations: Int = 0,
+    val events: Int = 0,
 ) {
-    val total: Int get() = projects + tasks + items + diaries + recommendations
+    val total: Int
+        get() = projects + tasks + items + diaries + recommendations + events
 }
 
 /**
@@ -48,6 +54,7 @@ class SampleDataRepository(
     private val knowledgeDao: KnowledgeDao,
     private val diaryDao: DiaryDao,
     private val recommendationDao: RecommendationDao,
+    private val calendarEventDao: CalendarEventDao,
     private val projectStatusDao: ProjectStatusDao,
     private val userPreferencesRepository: UserPreferencesRepository,
 ) {
@@ -57,6 +64,7 @@ class SampleDataRepository(
         tasks = taskDao.countByIds(SampleSeed.taskIds),
         items = knowledgeDao.countItemsByIds(SampleSeed.itemIds),
         diaries = diaryDao.countByIds(SampleSeed.diaryIds),
+        events = countSeededEvents(),
         seedingDisabled = userPreferencesRepository.isSeedingDisabled(),
     )
 
@@ -72,6 +80,7 @@ class SampleDataRepository(
         var diaries = 0
         var recommendations = 0
         var projects = 0
+        var events = 0
 
         SampleSeed.taskIds.forEach { id ->
             if (taskDao.countByIds(listOf(id)) > 0) {
@@ -104,6 +113,16 @@ class SampleDataRepository(
             )
         }
 
+        // 予定は端末カレンダー同期で洗い替わるが、同期前・権限拒否のときは残り続ける。
+        // 自動採番のため bucket + title + start で特定する。
+        SampleSeed.events.forEach { event ->
+            events += calendarEventDao.deleteByBucketTitleStart(
+                bucket = event.bucket,
+                title = event.title,
+                start = event.start,
+            )
+        }
+
         if (includeProjects) {
             SampleSeed.projectIds.forEach { id ->
                 // プロジェクトに紐づくタスクと進捗キャッシュも残さない。
@@ -122,6 +141,16 @@ class SampleDataRepository(
             items = items,
             diaries = diaries,
             recommendations = recommendations,
+            events = events,
         )
     }
+
+    private suspend fun countSeededEvents(): Int =
+        SampleSeed.events.sumOf { event ->
+            calendarEventDao.countByBucketTitleStart(
+                bucket = event.bucket,
+                title = event.title,
+                start = event.start,
+            )
+        }
 }
