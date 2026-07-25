@@ -330,7 +330,20 @@ private fun GitHubStatusCard(
                     }
                     StatusLineGroup("作業中", status.inProgress)
                     StatusLineGroup("次のタスク", status.nextTasks)
-                    StatusLineGroup("ブロッカー", status.blockers)
+                    // ブロッカーは「いつから」を見せたいので専用の行にする。
+                    StatusLineGroup(
+                        "ブロッカー",
+                        status.blockers.map { blocker ->
+                            StatusLine(
+                                title = blocker.title,
+                                detail = buildList {
+                                    if (blocker.since.isNotBlank()) add("${blocker.since}〜")
+                                    if (blocker.severity.isNotBlank()) add("深刻度: ${blocker.severity}")
+                                    if (blocker.detail.isNotBlank()) add(blocker.detail)
+                                }.joinToString(" / "),
+                            )
+                        },
+                    )
                     StatusLineGroup("決定事項", status.decisions)
                     if (status.questionsForYosuga.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(8.dp))

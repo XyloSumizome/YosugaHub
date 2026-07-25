@@ -7,6 +7,20 @@ data class StatusLine(
 )
 
 /**
+ * status.json の `blockers` / `risks`(進行を妨げているもの)。
+ *
+ * [StatusLine] と分けているのは **いつから起きているかを保つ**ため(2026-07-25)。
+ * 「先週から止まっている」と「今朝出たばかり」は、読み手にとって別の情報。
+ */
+data class StatusBlockerLine(
+    val title: String,
+    val detail: String = "",
+    val severity: String = "",
+    /** "yyyy-MM-dd"。ゲーム側が書かなければ空。 */
+    val since: String = "",
+)
+
+/**
  * status.json の `recentChanges`(各ゲームの Claude Code が書く修正のログ)。
  *
  * [StatusLine] と分けているのは **日付で絞れるようにする**ため。
@@ -32,7 +46,7 @@ data class ProjectStatusSnapshot(
     val goalDetail: String,
     val inProgress: List<StatusLine>,
     val nextTasks: List<StatusLine>,
-    val blockers: List<StatusLine>,
+    val blockers: List<StatusBlockerLine>,
     /**
      * ゲーム側で確定した設計判断(status.json の decisions)。
      * AIがこれに矛盾する提案をしないよう、表示とAI向けJSONの両方へ流す。

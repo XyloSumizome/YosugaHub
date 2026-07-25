@@ -7,6 +7,7 @@ import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusBlockerLine
 import com.shiro.yosugahub.domain.model.StatusChangeLine
 import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
@@ -72,7 +73,9 @@ class ContextExporterTest {
             goalDetail = "第2章まで",
             inProgress = listOf(StatusLine("第2章の執筆", "50%")),
             nextTasks = listOf(StatusLine("戦闘調整", "優先度: high")),
-            blockers = listOf(StatusLine("素材待ち", "深刻度: high")),
+            blockers = listOf(
+                StatusBlockerLine("素材待ち", detail = "発注済み", severity = "high", since = "2026-07-18"),
+            ),
             decisions = listOf(StatusLine("リズム判定は3段階にする", "2026-07-20 / 操作を単純に保つため")),
             questionsForYosuga = listOf("難易度はどうすべきか"),
             generatedAt = "2026-07-23T21:00:00+09:00",
@@ -91,10 +94,14 @@ class ContextExporterTest {
         assertTrue(project.statusMarkdown.contains("## Summary"))
         assertTrue(project.statusMarkdown.contains("第2章を執筆中"))
         assertTrue(project.statusMarkdown.contains("## Blockers"))
-        assertTrue(project.statusMarkdown.contains("素材待ち(深刻度: high)"))
+        assertTrue(project.statusMarkdown.contains("素材待ち(2026-07-18〜 / 深刻度: high / 発注済み)"))
         assertTrue(project.statusMarkdown.contains("## Questions for Yosuga"))
         assertTrue(project.statusMarkdown.contains("abc123"))
-        assertEquals(listOf("素材待ち(深刻度: high)"), project.blockers)
+        // ブロッカーは「いつから」を保つ(2026-07-25)。文字列に畳まない。
+        val blocker = project.blockers.single()
+        assertEquals("素材待ち", blocker.title)
+        assertEquals("2026-07-18", blocker.since)
+        assertEquals("high", blocker.severity)
         assertEquals(listOf("難易度はどうすべきか"), project.questionsForYosuga)
         // ゲーム側の確定事項もAIへ渡す(これに矛盾する提案をさせないため)
         assertTrue(project.statusMarkdown.contains("## Decisions"))

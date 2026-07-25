@@ -76,7 +76,8 @@
   "inProgress": [ { "id": "task-002", "title": "作業中の項目", "detail": "現在の状態", "progressPercent": 50 } ],
   "nextTasks":  [ { "id": "task-003", "title": "次に行う作業", "detail": "具体的な作業内容",
                     "priority": "high", "estimatedMinutes": 60, "dependencies": [] } ],
-  "blockers":   [ { "id": "blocker-001", "title": "進行を妨げている問題", "detail": "何が問題か", "severity": "medium" } ],
+  "blockers":   [ { "id": "blocker-001", "title": "進行を妨げている問題", "detail": "何が問題か",
+                    "severity": "medium", "since": "2026-07-18" } ],
   "recentChanges": [ { "date": "2026-07-22", "summary": "変更内容の要約", "commit": "<SHA>" } ],
   "risks": [],
   "decisions": [],
@@ -91,6 +92,10 @@
 - 完了していない問題は blockers または risks に記録する
 - 実装済みと未実装を混同しない。実際のコード・テスト結果・Git履歴に基づく
 - 更新後にJSON検証を実行し、失敗した状態でコミットしない
+- **`blockers` / `risks` の各件に `since`("yyyy-MM-dd")を書く**(2026-07-25〜)。
+  **いつから起きているか**が無いと、読み手は「先週から止まっている」と
+  「今朝出たばかり」を区別できない。分からなければ空でよいが、
+  気づいた日を入れておくほうが役に立つ。
 - **`recentChanges` の各件に `date`("yyyy-MM-dd")を必ず書く**(2026-07-25〜)。
   Hub は近況報告に**直近2週間分だけ**を載せるので、日付が無いと期間で絞れない。
   日付が空の行は「いつの変更か分からない」ものとして**常に載り続ける**。

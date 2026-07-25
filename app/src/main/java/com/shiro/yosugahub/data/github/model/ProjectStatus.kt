@@ -55,6 +55,12 @@ data class StatusBlocker(
     val title: String = "",
     val detail: String = "",
     val severity: String = "medium",
+    /**
+     * いつから起きているか("yyyy-MM-dd" / 2026-07-25 追加)。
+     * ヨスガが「先週から止まっている」と「今朝出たばかり」を区別できるようにする。
+     * ゲーム側が書かなければ空。**空でも壊さない**(既存の status.json をそのまま読む)。
+     */
+    val since: String = "",
 )
 
 @Serializable

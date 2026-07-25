@@ -62,7 +62,8 @@ data class ProjectExport(
     val lastUpdated: String,
     val source: String = "local",
     val health: String = "",
-    val blockers: List<String> = emptyList(),
+    /** 進行を妨げているもの。**いつから起きているか**を保つ(2026-07-25)。 */
+    val blockers: List<BlockerExport> = emptyList(),
     val questionsForYosuga: List<String> = emptyList(),
     /** ゲーム側で確定した設計判断。AIがこれに矛盾する提案をしないための材料。 */
     val decisions: List<String> = emptyList(),
@@ -72,6 +73,16 @@ data class ProjectExport(
      * (2026-07-25 追加)。文字列に畳まず日付を残すのは、AIが期間で絞れるようにするため。
      */
     val recentChanges: List<ChangeExport> = emptyList(),
+)
+
+/** 進行を妨げているもの1件(status.json の blockers 由来)。 */
+@Serializable
+data class BlockerExport(
+    val title: String,
+    val detail: String = "",
+    val severity: String = "",
+    /** いつから起きているか("yyyy-MM-dd")。ゲーム側が書かなければ空。 */
+    val since: String = "",
 )
 
 /** 修正のログ1件(status.json の recentChanges 由来)。 */
@@ -92,6 +103,10 @@ data class TaskExport(
     val status: String,     // todo / doing / done
     val priority: String,   // high / medium / low
     val dueDate: String? = null,
+    /** 作ったとき(ISO 8601)。「いつからあるタスクか」を読み手に渡す(2026-07-25)。 */
+    val createdAt: String = "",
+    /** 最後に触ったとき(ISO 8601)。停滞の判断材料(2026-07-25)。 */
+    val updatedAt: String = "",
     /**
      * DONE にした時刻(ISO 8601)。未完了は null。
      *

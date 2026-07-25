@@ -6,6 +6,7 @@ import com.shiro.yosugahub.data.github.model.StatusChange
 import com.shiro.yosugahub.data.github.model.StatusDecision
 import com.shiro.yosugahub.data.github.model.StatusTask
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusBlockerLine
 import com.shiro.yosugahub.domain.model.StatusChangeLine
 import com.shiro.yosugahub.domain.model.StatusLine
 
@@ -71,13 +72,13 @@ private fun List<StatusChange>.toChangeLines(): List<StatusChangeLine> =
         )
     }
 
-private fun List<StatusBlocker>.toBlockerLines(): List<StatusLine> =
+/** ブロッカー。**severity と since を畳まずに残す**(いつからかを読み手に渡すため)。 */
+private fun List<StatusBlocker>.toBlockerLines(): List<StatusBlockerLine> =
     filter { it.title.isNotBlank() }.map { blocker ->
-        StatusLine(
+        StatusBlockerLine(
             title = blocker.title,
-            detail = buildList {
-                if (blocker.detail.isNotBlank()) add(blocker.detail)
-                if (blocker.severity.isNotBlank()) add("深刻度: ${blocker.severity}")
-            }.joinToString(" / "),
+            detail = blocker.detail,
+            severity = blocker.severity,
+            since = blocker.since,
         )
     }

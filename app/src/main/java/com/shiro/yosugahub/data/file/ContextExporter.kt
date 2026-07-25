@@ -1,6 +1,7 @@
 package com.shiro.yosugahub.data.file
 
 import com.shiro.yosugahub.data.file.model.CalendarExport
+import com.shiro.yosugahub.data.file.model.BlockerExport
 import com.shiro.yosugahub.data.file.model.ChangeExport
 import com.shiro.yosugahub.data.file.model.ContextExport
 import com.shiro.yosugahub.data.file.model.DecisionExport
@@ -12,6 +13,7 @@ import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusBlockerLine
 import com.shiro.yosugahub.domain.model.StatusChangeLine
 import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
@@ -70,6 +72,8 @@ object ContextExporter {
         status = task.status.dbValue,
         priority = task.priority,
         dueDate = task.dueDate,
+        createdAt = task.createdAt,
+        updatedAt = task.updatedAt,
         completedAt = task.completedAt,
     )
 
@@ -126,7 +130,12 @@ object ContextExporter {
                 source = SOURCE_GITHUB,
                 health = snapshot.health.ifBlank { project.health },
                 blockers = snapshot.blockers.map { line ->
-                    if (line.detail.isBlank()) line.title else "${line.title}(${line.detail})"
+                    BlockerExport(
+                        title = line.title,
+                        detail = line.detail,
+                        severity = line.severity,
+                        since = line.since,
+                    )
                 },
                 questionsForYosuga = snapshot.questionsForYosuga,
                 decisions = snapshot.decisions.map { line ->
@@ -186,6 +195,16 @@ object ContextExporter {
 
     private fun StatusLine.toMarkdownLine(): String =
         if (detail.isBlank()) title else "$title(${detail})"
+
+    /** `素材待ち(2026-07-18〜 / 深刻度: high / 詳細)` の形。分かる分だけ添える。 */
+    private fun StatusBlockerLine.toMarkdownLine(): String {
+        val notes = buildList {
+            if (since.isNotBlank()) add("${since}〜")
+            if (severity.isNotBlank()) add("深刻度: $severity")
+            if (detail.isNotBlank()) add(detail)
+        }
+        return if (notes.isEmpty()) title else "$title(${notes.joinToString(" / ")})"
+    }
 
     /** `2026-07-24 要約(abc1234)` の形。日付とコミットは分かる分だけ添える。 */
     private fun StatusChangeLine.toMarkdownLine(): String = buildString {

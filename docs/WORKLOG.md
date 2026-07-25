@@ -237,6 +237,75 @@ GitHub取得成功時(`AppContainer.kt:226`)。
 
 ---
 
+## 2026-07-25: 状況JSON の全項目に「いつ」を持たせる
+
+### きっかけ
+
+シロさんの指示: 「ヨスガが困らないように、**全ての情報にはいつそうなったか・
+いつ発生した問題か**の情報を欠かさないように」。
+
+### 棚卸しで見つかった穴
+
+状況JSON の各項目に日時があるか機械的に洗った結果:
+
+| 項目 | 日時 | 判定 |
+|---|---|---|
+| `generatedAt` | あり | ✅ |
+| `calendar.events` | start / end | ✅ |
+| `projects.lastUpdated` | あり | ✅ |
+| `projects.recentChanges` | date | ✅(今朝追加) |
+| `projects.decisions` | detail に埋め込み | △ |
+| `recentDecisions` | date | ✅ |
+| **`projects.blockers`** | **無し** | ❌ |
+| **`tasks`** | `dueDate` / `completedAt` のみ | ❌ 作成・更新が無い |
+
+**特に blockers。** 「いつ発生した問題か」というシロさんの指示に直接あたる項目に、
+日付が1つも無かった。しかも**ゲーム側の `status.json` にも欄が無い**ので、
+Hub だけでは埋められない。
+
+### 直したもの
+
+**1. blockers を構造化して `since` を持たせる**
+
+- `StatusBlocker`(通信DTO)に `since` を追加。**既定は空**なので既存の
+  status.json をそのまま読める。
+- `StatusBlockerLine`(ドメイン)を新設。`StatusLine` と分けたのは
+  **severity と since を畳まずに残す**ため。
+  従来は `detail` に「深刻度: high」と文字列で埋めていたので、
+  読み手が機械的に扱えなかった。
+- `BlockerExport`(書き出し)も `title` / `detail` / `severity` / `since` の構造体に。
+  **文字列に畳まない**——recentChanges と同じ判断。
+- Markdown 側は `素材待ち(2026-07-18〜 / 深刻度: high / 発注済み)`。
+- プロジェクト詳細の表示も同じ形に揃えた。
+
+**2. タスクに作成日・更新日**
+
+`TaskExport` に `createdAt` / `updatedAt`。
+`completedAt`(今朝追加)だけでは「**いつからあるタスクか**」
+「**最後に触ったのはいつか**」が分からず、停滞の判断ができなかった。
+どちらも `Task` が元から持っていて、書き出していなかっただけ。
+
+**3. ゲーム側への依頼**
+
+`claude_code_onboarding.md` に「`blockers` / `risks` の各件に `since` を書く」を追加。
+分からなければ空でよいが、**気づいた日**を入れておくほうが役に立つ、と添えた。
+`recoru_prompt.md` にも blockers の構造を明記。
+
+### 残した穴(正直に)
+
+- `questionsForYosuga` は**文字列の配列**なので日付を持てない。
+  構造を変えるとゲーム側の互換が切れるため、今回は触っていない。
+- `projects.decisions` は日付を `detail` に埋め込んだままの文字列配列。
+  同上の理由で保留。**必要になったら recentChanges と同じ手当てをする。**
+
+### テスト
+
+`assembleDebug` + `testDebugUnitTest` 成功。**379件 通過**。
+`ContextExporterTest` / `ProjectStatusRepositoryTest` を構造化後の形へ更新
+(since と severity が畳まれずに残ることを検証)。
+
+---
+
 ## 2026-07-25: コンソールのコマンドを1行にする
 
 ### 変更

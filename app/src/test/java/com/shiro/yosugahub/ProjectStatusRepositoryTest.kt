@@ -72,7 +72,9 @@ class ProjectStatusRepositoryTest {
                 StatusTask(title = ""),  // 空タイトルは落とす
             ),
             nextTasks = listOf(StatusTask(title = "次", priority = "high")),
-            blockers = listOf(StatusBlocker(title = "詰まり", severity = "high")),
+            blockers = listOf(
+                StatusBlocker(title = "詰まり", severity = "high", since = "2026-07-18"),
+            ),
             decisions = listOf(
                 StatusDecision(date = "2026-07-20", title = "3段階にする", detail = "単純に保つため"),
                 StatusDecision(title = ""),  // 空タイトルは落とす
@@ -86,7 +88,10 @@ class ProjectStatusRepositoryTest {
         assertEquals(1, snapshot.inProgress.size)
         assertTrue(snapshot.inProgress.first().detail.contains("50%"))
         assertTrue(snapshot.nextTasks.first().detail.contains("優先度: high"))
-        assertTrue(snapshot.blockers.first().detail.contains("深刻度: high"))
+        // severity と since は畳まずに保つ(2026-07-25)。
+        val blocker = snapshot.blockers.first()
+        assertEquals("high", blocker.severity)
+        assertEquals("2026-07-18", blocker.since)
         assertEquals(listOf("質問"), snapshot.questionsForYosuga)
         // 決定事項も拾う(日付を先頭に置く)
         assertEquals(1, snapshot.decisions.size)

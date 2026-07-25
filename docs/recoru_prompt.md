@@ -55,7 +55,8 @@ Actions の登録手順は `server/README-server.md` の「A」、定義は `ser
 - まず file=index で更新時刻を確認し、必要なファイルだけ読む(毎回全部読まない)
 - projects: 各ゲームの状況。`decisions` は**ゲーム側で確定した設計判断**で、
   これに矛盾する提案をしない。`blockers` / `questionsForYosuga` /
-  **`recentChanges[]`(直近2週間の修正ログ。date / summary / commit)**もここ
+  **`recentChanges[]`(直近2週間の修正ログ。date / summary / commit)**と
+  **`blockers[]`(title / detail / severity / **since** = いつから)**もここ
 - tasks: タスク一覧 / knowledge: 情報アイテム・観測(既存タグの語彙)
 - calendar: 予定 / conversations: 取込履歴
 - documents: 未整理文書(分類対象) / directives: 配信中の指示書(重複を出さないため)
