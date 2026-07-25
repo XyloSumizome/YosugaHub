@@ -120,13 +120,28 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   `TacticalButton` / `TerminalChip` / `TerminalCheckbox` / `TerminalDialog` / `DialogAction` /
   `TerminalField` / `SubScreenScaffold` を使う。**新しい画面もこれらで組む**。
 - **GitHub取得 → ロリポップ同期は自動**(2026-07-24)。取得が成功した時だけ push する。
+- **AI との受け渡しが一通り実データで通った**(2026-07-25):
+  Morning Brief / レコルの巡回(合図なしで分類→回答JSON)/ ヨスガの観測日記。
+- **コンソールのコマンドは1行表記**(2026-07-25): `GitHub → Obsidian` / `会話 → Obsidian` /
+  `ヨスガへ共有` / `回答JSON → Hub` / `レコルを開く` / `REVIEW`。
+  **画面名(REVIEW / RECORDS 等)は英字のまま**——`ImportMessage` の案内がその名前で
+  行き先を指しているため、変えると案内が壊れる。
+- **Vault は更新反映する**(2026-07-25 / 実機未確認): 同じ `sourcePath` の新しい sha は
+  **記録済みの場所へ上書き**(枝番を作らない)。削除は**報告のみ**で Vault 側は残す。
+  観測日記は**同じ日付なら差し替え**。セッションログは**無尽蔵に追加**し、
+  整理はヨスガが Frontmatter(`date`/`games`/`category`/`tags`)で行う。
+- **⚠ プロンプトには文字数上限がある**。レコル(カスタムGPT)の Instructions は **8000字**で、
+  超えると**黙って末尾が切れる**。編集したら `python3 scripts/measure_prompts.py` で測る。
+  ヨスガは**カスタムGPTではない**(Instructions 欄が無い)のでメモリに覚えさせる。
+- **⚠ `connectedDebugAndroidTest` はアプリをアンインストールする**。実行後にデータが
+  全部消える(プロジェクト・トークン・Vault選択)。トークンは Keystore の鍵ごと消えるため再入力必須。
+- **使い方の一覧**: `docs/how-to-use.html`(ブラウザで開く)。
 - **次にやること**(詳細は WORKLOG 冒頭の再開ポイント):
-  1. **Morning Brief を実データで一周**。手順は `docs/recoru_prompt.md` の
-     「Morning Brief の回し方」。**アプリを新しくしてからレコルに聞く**のが要点。
-  2. **フォームUIを実機で確認**(特に `[x]` チェックの当たり判定)。
+  1. **AI 側の指示を貼り直す**(2026-07-25 にレコル・ヨスガ・ゲーム向けを直したため)。
+  2. **ノートの上書き反映を実機で確認**(既存ノートを修正 → push → 「更新 1件」が出るか)。
   3. **実機(スマホ)側**: Obsidian + Remotely Save で Dropbox 同期
      (⚠ Vault は**共有ストレージ上**に作ること。アプリ内フォルダだと Hub から読めない)/
-     共有シートに ChatGPT が出るか。
+     **ChatGPT の共有シートに Yosuga Hub が出るか**(出なければ共有経路は没)。
 - **v4.3 AI役割分離(2026-07-23)**: 実地検証で「データを読めるAI(カスタムGPT+Actions)」と
   「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
   **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。
