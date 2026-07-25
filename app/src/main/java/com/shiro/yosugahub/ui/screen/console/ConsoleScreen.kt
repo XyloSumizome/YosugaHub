@@ -170,18 +170,8 @@ fun ConsoleScreen(
         AsciiDivider()
         Command("会話 → Obsidian") { showSaveSession = true }
         AsciiDivider()
-        Command("Obsidian → ヨスガ", onClick = onOpenContext)
-        AsciiDivider()
-        Command("状況JSON → 共有") {
-            viewModel.createExport { result ->
-                result.onSuccess {
-                    Toast.makeText(context, "EXPORT: ${it.fileName}", Toast.LENGTH_SHORT).show()
-                    shareJsonText(context, it.json)
-                }.onFailure {
-                    Toast.makeText(context, "生成に失敗しました", Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
+        // 現況(既定)+ 必要なら過去ログ。渡す口を1つに統べた(2026-07-25)。
+        Command("ヨスガへ共有", onClick = onOpenContext)
         AsciiDivider()
         // レコル(整理)とヨスガ(観測日記)の両方が同じ口から入る。
         Command("回答JSON → Hub") {

@@ -108,6 +108,8 @@ class VaultRepository(
     suspend fun loadContext(
         selected: List<VaultNote>,
         now: OffsetDateTime = OffsetDateTime.now(zoneId),
+        /** 一緒に渡す現況(状況JSONの本文)。空なら過去ログだけ。 */
+        status: String = "",
     ): ContextData {
         val loaded = mutableListOf<LoadedNote>()
         val skipped = mutableListOf<String>()
@@ -132,6 +134,7 @@ class VaultRepository(
             date = now.toLocalDate().toString(),
             scope = ContextScope.of(transformed),
             skipped = skipped,
+            status = status,
         )
     }
 
@@ -143,6 +146,7 @@ class VaultRepository(
                 vaultName = data.vaultName,
                 generatedAt = data.generatedAt,
                 scope = data.scope,
+                status = data.status,
             )
 
             ContextFormat.JSON -> ContextJson.build(
@@ -150,6 +154,7 @@ class VaultRepository(
                 vaultName = data.vaultName,
                 generatedAt = data.generatedAt,
                 scope = data.scope,
+                status = data.status,
             )
         }
         return ContextBuildResult(data = data, format = format, content = content)

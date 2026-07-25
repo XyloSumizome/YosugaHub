@@ -1,0 +1,636 @@
+<title>Yosuga Hub の使い方</title>
+
+<style>
+  :root {
+    color-scheme: light dark;
+
+    /* アプリのテーマ(ui/theme/Color.kt)から採った値。 */
+    --green:      #177A3C;
+    --green-hi:   #0E5C2C;
+    --ink:        #16301F;
+    --ink-dim:    #4A6B55;
+    --ground:     #F1F4EF;
+    --panel:      #E7ECE5;
+    --console:    #10161A;
+    --console-fg: #8FD0A2;
+    --rule:       #C6D4C8;
+    --rule-hi:    #9DB6A4;
+    --amber:      #8A5D00;
+    --red:        #A63131;
+
+    --mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas,
+            "Noto Sans Mono CJK JP", monospace;
+    --sans: system-ui, -apple-system, "Hiragino Kaku Gothic ProN",
+            "Noto Sans JP", "Yu Gothic UI", sans-serif;
+
+    --step--1: 0.8125rem;
+    --step-0:  1rem;
+    --step-1:  1.1875rem;
+    --step-2:  1.5rem;
+    --step-3:  2rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --green:      #33DD6B;
+      --green-hi:   #6BF09B;
+      --ink:        #8FD0A2;
+      --ink-dim:    #5C9370;
+      --ground:     #0A0C0E;
+      --panel:      #0D1013;
+      --console:    #07090B;
+      --console-fg: #8FD0A2;
+      --rule:       #1C2A20;
+      --rule-hi:    #2E4A38;
+      --amber:      #E0A62C;
+      --red:        #D65C5C;
+    }
+  }
+
+  /* 閲覧者のテーマ切り替えは media query より強く効かせる。 */
+  :root[data-theme="dark"] {
+    --green:      #33DD6B;
+    --green-hi:   #6BF09B;
+    --ink:        #8FD0A2;
+    --ink-dim:    #5C9370;
+    --ground:     #0A0C0E;
+    --panel:      #0D1013;
+    --console:    #07090B;
+    --console-fg: #8FD0A2;
+    --rule:       #1C2A20;
+    --rule-hi:    #2E4A38;
+    --amber:      #E0A62C;
+    --red:        #D65C5C;
+  }
+  :root[data-theme="light"] {
+    --green:      #177A3C;
+    --green-hi:   #0E5C2C;
+    --ink:        #16301F;
+    --ink-dim:    #4A6B55;
+    --ground:     #F1F4EF;
+    --panel:      #E7ECE5;
+    --console:    #10161A;
+    --console-fg: #8FD0A2;
+    --rule:       #C6D4C8;
+    --rule-hi:    #9DB6A4;
+    --amber:      #8A5D00;
+    --red:        #A63131;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    line-height: 1.75;
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap { max-width: 46rem; margin: 0 auto; }
+
+  /* ── 見出し ─────────────────────────── */
+  .masthead { padding: 3.5rem 0 0; }
+  .masthead h1 {
+    font-family: var(--mono);
+    font-size: var(--step-3);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--green);
+    margin: 0;
+    text-wrap: balance;
+  }
+  .masthead .sub {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-dim);
+    margin: 0.4rem 0 0;
+    letter-spacing: 0.02em;
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--rule);
+    margin: 2.5rem 0;
+    border: 0;
+  }
+
+  h2 {
+    font-family: var(--mono);
+    font-size: var(--step-2);
+    font-weight: 600;
+    color: var(--green);
+    margin: 0 0 0.25rem;
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+  h2::before {
+    content: "> ";
+    color: var(--ink-dim);
+  }
+  h3 {
+    font-family: var(--mono);
+    font-size: var(--step-1);
+    font-weight: 600;
+    color: var(--ink);
+    margin: 2rem 0 0.25rem;
+    text-wrap: balance;
+  }
+  .lede { color: var(--ink-dim); margin: 0 0 1.5rem; }
+
+  p { margin: 0 0 1rem; max-width: 62ch; }
+  strong { color: var(--green-hi); font-weight: 600; }
+
+  section { margin: 0 0 3.5rem; }
+
+  /* ── コマンド・コード ─────────────────── */
+  code {
+    font-family: var(--mono);
+    font-size: 0.9em;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 0.05em 0.35em;
+    color: var(--green);
+    white-space: nowrap;
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    background: var(--console);
+    color: var(--console-fg);
+    border: 1px solid var(--rule-hi);
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    line-height: 1.6;
+    margin: 0 0 1.25rem;
+  }
+  pre code { background: none; border: 0; padding: 0; color: inherit; white-space: pre; }
+
+  /* ── 表 ──────────────────────────── */
+  .scroll { overflow-x: auto; margin: 0 0 1.5rem; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: var(--step--1);
+    min-width: 30rem;
+  }
+  th, td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.6rem 0.9rem 0.6rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  th {
+    font-family: var(--mono);
+    font-weight: 600;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.75rem;
+    border-bottom-color: var(--rule-hi);
+    white-space: nowrap;
+  }
+  td:first-child { font-family: var(--mono); color: var(--green); white-space: nowrap; }
+  td.wrapcell { font-family: var(--sans); color: var(--ink); white-space: normal; }
+
+  /* ── 手順(実際に時系列なので番号を振る)── */
+  ol.flow { list-style: none; counter-reset: step; padding: 0; margin: 0; }
+  ol.flow > li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 2.75rem 1fr;
+    gap: 0 0.75rem;
+    padding: 1.1rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  ol.flow > li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-dim);
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.15rem;
+  }
+  ol.flow h4 {
+    font-family: var(--mono);
+    font-size: var(--step-0);
+    margin: 0 0 0.3rem;
+    color: var(--green);
+    font-weight: 600;
+  }
+  ol.flow p { margin: 0 0 0.5rem; }
+  ol.flow p:last-child { margin-bottom: 0; }
+
+  ul { padding-left: 1.1rem; margin: 0 0 1rem; max-width: 62ch; }
+  li { margin: 0 0 0.4rem; }
+
+  /* ── 注意書き ───────────────────────── */
+  .note {
+    border-left: 3px solid var(--rule-hi);
+    padding: 0.1rem 0 0.1rem 1rem;
+    margin: 0 0 1.25rem;
+    max-width: 62ch;
+  }
+  .note.warn { border-left-color: var(--amber); }
+  .note.warn strong { color: var(--amber); }
+  .note.stop { border-left-color: var(--red); }
+  .note.stop strong { color: var(--red); }
+  .note p:last-child { margin-bottom: 0; }
+
+  .label {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    display: block;
+    margin: 0 0 0.5rem;
+  }
+
+  footer {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink-dim);
+    border-top: 1px solid var(--rule);
+    padding-top: 1.25rem;
+  }
+
+  a { color: var(--green); text-underline-offset: 0.2em; }
+  a:focus-visible, li:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+
+  @media (max-width: 34rem) {
+    :root { --step-3: 1.6rem; --step-2: 1.25rem; }
+    ol.flow > li { grid-template-columns: 2rem 1fr; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <h1>Yosuga Hub の使い方</h1>
+    <p class="sub">2026-07-25 時点 / v5 Obsidian ブリッジ</p>
+  </header>
+
+  <hr class="rule">
+
+  <section>
+    <h2>このアプリは何をするか</h2>
+    <p class="lede">Hub は考えない。<strong>選び・集め・整形し・運ぶ</strong>だけ。</p>
+    <p>
+      Yosuga Hub は AI ではない。要約も分類もしない。
+      やるのは、散らばった情報を<strong>確実に運ぶ</strong>ことだけ。
+    </p>
+    <p>
+      知識の正本は Hub の中ではなく <strong>Obsidian の Markdown</strong> にある。
+      Hub はそこへ運び込み、そこから持ち出す。
+      意味付け（これは何の情報か、どのゲームの話か）は<strong>情報を作った側</strong>が
+      出力の時点で済ませておく。だから Hub が読み直す必要がない。
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>登場するのは3人と、ゲームの数だけの Claude Code</h2>
+    <p>
+      いちばん間違えやすいのがここ。<strong>誰が何をするかで、渡す先が変わる。</strong>
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>役</th><th>正体</th><th>Hubを読めるか</th><th>仕事</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ヨスガ</td>
+            <td class="wrapcell">通常の ChatGPT（ボイス・メモリあり）</td>
+            <td class="wrapcell">読めない</td>
+            <td class="wrapcell">会話の相棒。相談・設計・アイデア出し。<strong>観測日記を書く</strong></td>
+          </tr>
+          <tr>
+            <td>レコル</td>
+            <td class="wrapcell">カスタムGPT + Actions</td>
+            <td class="wrapcell">読める</td>
+            <td class="wrapcell">情報の仕分け。Morning Brief の作成。文書の分類</td>
+          </tr>
+          <tr>
+            <td>シロ</td>
+            <td class="wrapcell">人間</td>
+            <td class="wrapcell">—</td>
+            <td class="wrapcell">承認する。運ぶ。<strong>知識を活かすのはここ</strong></td>
+          </tr>
+          <tr>
+            <td>Claude&nbsp;Code</td>
+            <td class="wrapcell">各ゲームのリポジトリに常駐</td>
+            <td class="wrapcell">—</td>
+            <td class="wrapcell"><code>.yosuga/status.json</code> と知識ノートを書く</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note">
+      <p>
+        <strong>ヨスガは Hub を読めない。</strong>
+        だから朝の Morning Brief が要る。レコルが Hub を読んで要約し、
+        それを人間がヨスガへ貼る。この橋渡しが仕組みの背骨。
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>コンソールのコマンド</h2>
+    <p class="lede">起動するとコンソールが開く。ここから全部始まる。</p>
+
+    <pre><code>Yosuga
+&gt; watcher toolkit // operations console
+
+PROJECT : 3
+PENDING : 0
+SYNC    : 2026-07-25 06:26
+STATUS  : [ READY ]
+
+&gt; GitHub → Obsidian
+&gt; 会話 → Obsidian
+&gt; ヨスガへ共有
+&gt; 回答JSON → Hub
+&gt; レコルを開く
+&gt; REVIEW
+
+DATA
+&gt; PROJECTS (3)
+&gt; RECORDS
+&gt; CALENDAR
+&gt; SETTINGS</code></pre>
+
+    <p>
+      上段は<strong>動作</strong>、矢印は情報がどこからどこへ動くかを表す。
+      下段の <code>DATA</code> は<strong>行き先</strong>で、画面が開くだけ。
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>コマンド</th><th>何が起きるか</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>GitHub → Obsidian</td>
+            <td class="wrapcell">
+              各ゲームの <code>.yosuga/notes/</code> を取得し、種別ごとに
+              <code>Games/&lt;ゲーム&gt;/</code> へ振り分けて保存。取得済みは飛ばす
+            </td>
+          </tr>
+          <tr>
+            <td>会話 → Obsidian</td>
+            <td class="wrapcell">ヨスガのセッションまとめを、原文のまま <code>Conversations/Yosuga/</code> へ</td>
+          </tr>
+          <tr>
+            <td>ヨスガへ共有</td>
+            <td class="wrapcell">
+              ヨスガに渡す資料を作る。<strong>現況は既定で入る</strong>。
+              過去ログ（Obsidian のノート）は選んだときだけ足される
+            </td>
+          </tr>
+          <tr>
+            <td>回答JSON → Hub</td>
+            <td class="wrapcell">
+              レコルの整理でも、ヨスガの観測日記でも<strong>同じ口から入る</strong>。
+              クリップボードに JSON があれば自動で入る
+            </td>
+          </tr>
+          <tr>
+            <td>レコルを開く</td>
+            <td class="wrapcell">レコル（カスタムGPT）をブラウザで開く。URL は設定で登録する</td>
+          </tr>
+          <tr>
+            <td>REVIEW</td>
+            <td class="wrapcell"><strong>承認待ちはここ。</strong>承認するまで何もデータに入らない</td>
+          </tr>
+          <tr>
+            <td>PROJECTS</td>
+            <td class="wrapcell">ゲームの進捗とタスク。「GitHubからすべて更新」もここ</td>
+          </tr>
+          <tr>
+            <td>RECORDS</td>
+            <td class="wrapcell">アイテム / 決定 / 観測 / 文書 / 関連。<strong>分類の確認もここ</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>1日の流れ</h2>
+    <p class="lede">朝に受け取り、日中に相談し、終わりに残す。</p>
+
+    <ol class="flow">
+      <li>
+        <div>
+          <h4>アプリを新しくする</h4>
+          <p>
+            <code>PROJECTS</code> →「GitHubからすべて更新」。
+            各ゲームの進捗が入り、<strong>成功するとサーバーへ自動で送られる</strong>。
+          </p>
+          <p>
+            <strong>順番が逆だと意味がない。</strong>
+            先にレコルへ聞くと、古いデータを読ませることになる。
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>レコルに Morning Brief を作らせる</h4>
+          <p>
+            <code>レコルを開く</code> →「Morning Brief」と言う。
+            昨日の成果・今日の予定・未完了タスク・決定事項・課題が Markdown で返る。
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>ヨスガに貼って1日を始める</h4>
+          <p>
+            Brief をコピーしてヨスガの会話に貼る。
+            これでヨスガは今日の状況を知った状態で会話に入れる。
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>制作しながら相談する</h4>
+          <p>
+            過去の設計判断を思い出したくなったら <code>ヨスガへ共有</code>。
+            現況に加えて、Obsidian のノートを選んで一緒に渡せる。
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <h4>終わりに残す</h4>
+          <p>
+            ヨスガに「セッションまとめをください」→ <code>会話 → Obsidian</code> で原文を保存。
+            レコルへ貼れば、タスクや決定事項として整理される。
+          </p>
+          <p>
+            「観測を書いて」と言えば観測日記の JSON が返る。
+            <code>回答JSON → Hub</code> へ。翌朝の Brief の「シロの状態」になる。
+          </p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>レコルの巡回</h2>
+    <p>
+      レコルは<strong>合図を待たない</strong>。会話を開いて何か一言（「おはよう」でもいい）
+      送れば、未整理の文書を全件分類して回答JSONを返す。
+    </p>
+    <p>
+      「Morning Brief」と言ったときだけは Brief を優先する。
+      同じ会話の2回目以降は巡回しない。
+    </p>
+    <div class="note">
+      <p>
+        <strong>「未整理の文書はありません」は正常。</strong>
+        巡回が見るのは <code>RECORDS</code> → 文書 に手で入れたものだけ。
+        ゲームの修正は Obsidian へ直行するので、ここには来ない。
+        何も無い日のほうが多い。
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>取り込みと承認</h2>
+    <p>
+      AI の出力は<strong>そのままデータにならない</strong>。必ず承認を挟む。
+    </p>
+
+    <pre><code>AI が JSON を出す
+   ↓  共有シート → Yosuga Hub  /  回答JSON → Hub に貼る
+承認待ちに入る
+   ↓  REVIEW で1件ずつ見る
+承認 → データに入る   棄却 → 履歴に残って消える</code></pre>
+
+    <h3>行き先</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>種類</th><th>承認すると</th></tr></thead>
+        <tbody>
+          <tr><td>items</td><td class="wrapcell">RECORDS のアイテムへ。<code>targetNote</code> があれば Obsidian のノートへ追記</td></tr>
+          <tr><td>diary</td><td class="wrapcell">RECORDS の「観測」へ</td></tr>
+          <tr><td>tasks</td><td class="wrapcell">PROJECTS のタスクへ</td></tr>
+          <tr><td>directives</td><td class="wrapcell">承認したものだけ各ゲームの Claude Code へ配信</td></tr>
+          <tr><td>classifications</td><td class="wrapcell"><strong>承認待ちを通らない。</strong>文書へ直接あたり「確認待ち」に。確定は RECORDS の「文書」で</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note warn">
+      <p>
+        <strong>Vault が未設定だと <code>targetNote</code> の追記は黙って飛ばされる。</strong>
+        Obsidian に入れるつもりなら、先に <code>SETTINGS</code> で Vault を選ぶ。
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>最初に設定するもの</h2>
+    <p class="lede">どれも <code>SETTINGS</code> の中。入れないと動かない機能がある。</p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>設定</th><th>入れないと</th></tr></thead>
+        <tbody>
+          <tr><td>Obsidian Vault</td><td class="wrapcell">ノートの保存も取り出しもできない。<strong>共有ストレージ上に置くこと</strong></td></tr>
+          <tr><td>GitHub トークン</td><td class="wrapcell">ゲームの進捗もノートも取得できない</td></tr>
+          <tr><td>サーバー同期</td><td class="wrapcell">レコルが Hub を読めない。Morning Brief が作れない</td></tr>
+          <tr><td>レコルのURL</td><td class="wrapcell"><code>レコルを開く</code> が出ない（それだけ）</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      プロジェクトは <code>PROJECTS</code> →「プロジェクトを追加」で作る。
+      <strong>ID は後から変えられない。</strong>
+      サーバー・レコル・分類履歴がこの ID を見ているため。
+    </p>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>うまくいかないとき</h2>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>症状</th><th>見るところ</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>ノートが0件</td>
+            <td class="wrapcell">
+              プロジェクトが登録されているか。<strong>リポジトリを上げただけでは Hub は見に行かない</strong>。
+              <code>.yosuga/notes/</code> が push されているかも確認する
+            </td>
+          </tr>
+          <tr>
+            <td>読み取れませんでした</td>
+            <td class="wrapcell">JSON が壊れている。説明文が混ざっていても JSON があれば通るはず</td>
+          </tr>
+          <tr>
+            <td>Brief が古い</td>
+            <td class="wrapcell">手順1の同期が届いていない。<code>SETTINGS</code> の「今すぐ同期」を押してみる</td>
+          </tr>
+          <tr>
+            <td>レコルが聞き返す</td>
+            <td class="wrapcell">Instructions が古い。<code>docs/recoru_prompt.md</code> を貼り直す</td>
+          </tr>
+          <tr>
+            <td>予定が0件</td>
+            <td class="wrapcell">端末に同期済みのカレンダーを読む方式。アカウントと <code>READ_CALENDAR</code> の許可が要る</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note stop">
+      <p>
+        <strong>消す操作の前に、何が消えるか確かめる。</strong>
+        以前、仮データの削除で実際に使っていたプロジェクトが消え、
+        全ゲームの取り込みが止まったことがある。
+      </p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section>
+    <h2>覚えておくと迷わないこと</h2>
+    <ul>
+      <li><strong>知識の正本は Obsidian。</strong>Hub は通り道であって保管庫ではない。</li>
+      <li><strong>Hub は判断しない。</strong>分類も要約も、情報を作った側が済ませておく。</li>
+      <li><strong>承認しないと入らない。</strong>AI が出しただけでは何も起きない。</li>
+      <li><strong>先にアプリ、あとで AI。</strong>順番を逆にすると古いデータを読ませる。</li>
+      <li><strong>観測日記はヨスガ、仕分けはレコル。</strong>逆はしない。</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span class="label">source</span>
+    設計 v5「Obsidian ブリッジ」/ 詳細は <code>docs/WORKLOG.md</code> の再開ポイント<br>
+    AI への指示文 — <code>docs/yosuga_prompt.md</code> ・ <code>docs/recoru_prompt.md</code> ・
+    <code>docs/claude_code_onboarding.md</code>
+  </footer>
+
+</div>

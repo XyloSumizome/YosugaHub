@@ -2,6 +2,7 @@ package com.shiro.yosugahub.data.obsidian
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 /** コンテキストJSONの1ノート分。Markdown 版の各セクションと同じ情報を持つ。 */
 @Serializable
@@ -29,6 +30,11 @@ data class ContextJsonFile(
     val vault: String,
     val selectedScope: ContextScopeJson,
     val fileCount: Int,
+    /**
+     * 現況(状況JSON)を丸ごと入れる(2026-07-25)。含めないときは null。
+     * 文字列ではなく**オブジェクトのまま**入れるので、読み手が二重に解析せずに済む。
+     */
+    val status: JsonElement? = null,
     val notes: List<ContextNoteJson> = emptyList(),
 ) {
     companion object {
@@ -55,6 +61,8 @@ object ContextJson {
         vaultName: String,
         generatedAt: String,
         scope: ContextScope = ContextScope.of(notes),
+        /** 現況(状況JSONの本文)。空なら入れない。 */
+        status: String = "",
     ): String {
         val file = ContextJsonFile(
             generatedAt = generatedAt,
@@ -65,6 +73,9 @@ object ContextJson {
                 folders = scope.folders,
             ),
             fileCount = notes.size,
+            // 解析できないものを黙って落とさず、その場合だけ入れないでおく。
+            status = status.takeIf { it.isNotBlank() }
+                ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() },
             notes = notes.map { note ->
                 ContextNoteJson(
                     path = note.relativePath,

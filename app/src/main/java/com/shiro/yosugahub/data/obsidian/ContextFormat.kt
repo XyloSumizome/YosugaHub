@@ -37,4 +37,10 @@ data class ContextData(
     val scope: ContextScope,
     /** 本文を読めなかったノートの相対パス。 */
     val skipped: List<String>,
+    /**
+     * 一緒に渡す現況(状況JSONの本文 / 2026-07-25)。空なら過去ログだけ。
+     * **形式に依存しない中間表現の一部**として持つので、
+     * Markdown ⇄ JSON を切り替えてもファイルを読み直さずに済む。
+     */
+    val status: String = "",
 )

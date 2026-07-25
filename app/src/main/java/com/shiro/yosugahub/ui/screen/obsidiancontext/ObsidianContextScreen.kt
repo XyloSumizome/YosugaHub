@@ -58,6 +58,7 @@ import com.shiro.yosugahub.ui.component.SubScreenAction
 import com.shiro.yosugahub.ui.component.SubScreenScaffold
 import com.shiro.yosugahub.ui.component.TacticalButton
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
+import com.shiro.yosugahub.ui.component.TerminalCheckbox
 import com.shiro.yosugahub.ui.component.TerminalChip
 import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.component.TerminalField
@@ -99,7 +100,7 @@ fun ObsidianContextScreen(
 
     // 戻り口・画面固有の操作とも、他のサブ画面と同じ上辺バーに載せる。
     SubScreenScaffold(
-        title = "BUILD CONTEXT",
+        title = "ヨスガへ共有",
         onBack = onBack,
         modifier = modifier,
         actions = {
@@ -112,23 +113,26 @@ fun ObsidianContextScreen(
         },
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
+            // 過去ログが読めなくても**現況は渡せる**。だから Vault の状態に関わらず
+            // 下辺の操作列(現況の切替 + まとめる)は常に出す。
             when (uiState.loadState) {
-                VaultLoadState.LOADING, VaultLoadState.IDLE -> CenterMessage {
+                VaultLoadState.LOADING, VaultLoadState.IDLE -> CenterMessage(Modifier.weight(1f)) {
                     CircularProgressIndicator()
                     Spacer(modifier = Modifier.height(12.dp))
                     Text("Vaultを読み込んでいます…")
                 }
 
-                VaultLoadState.NOT_CONFIGURED -> CenterMessage {
+                VaultLoadState.NOT_CONFIGURED -> CenterMessage(Modifier.weight(1f)) {
                     Text("Vaultフォルダが未選択です。", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "設定 → Obsidian Vault からフォルダを選んでください。",
+                        "設定 → Obsidian Vault からフォルダを選ぶと、過去ログも一緒に渡せます。\n" +
+                            "選ばなくても、下の「まとめる」で現況だけは渡せます。",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
 
-                VaultLoadState.FAILED -> CenterMessage {
+                VaultLoadState.FAILED -> CenterMessage(Modifier.weight(1f)) {
                     Text(
                         text = uiState.errorMessage.ifBlank { "Vaultの読み取りに失敗しました。" },
                         style = MaterialTheme.typography.bodyMedium,
@@ -139,7 +143,7 @@ fun ObsidianContextScreen(
                 }
 
                 VaultLoadState.LOADED -> if (uiState.notes.isEmpty()) {
-                    CenterMessage {
+                    CenterMessage(Modifier.weight(1f)) {
                         Text("Markdownが1件も見つかりませんでした。")
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -172,21 +176,24 @@ fun ObsidianContextScreen(
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    if (uiState.isBuilding || opLines.isNotEmpty()) {
-                        OpTerminal(
-                            title = "BUILD CONTEXT",
-                            lines = opLines,
-                            running = uiState.isBuilding,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        )
-                    }
-                    SelectionBar(
-                        uiState = uiState,
-                        onClear = viewModel::clearSelection,
-                        onBuild = viewModel::buildPreview,
-                    )
                 }
             }
+
+            // 端末ログと操作列は Vault の状態に依らず出す。
+            if (uiState.isBuilding || opLines.isNotEmpty()) {
+                OpTerminal(
+                    title = "ヨスガへ共有",
+                    lines = opLines,
+                    running = uiState.isBuilding,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                )
+            }
+            SelectionBar(
+                uiState = uiState,
+                onClear = viewModel::clearSelection,
+                onBuild = viewModel::buildPreview,
+                onToggleStatus = viewModel::setIncludeStatus,
+            )
         }
     }
 
@@ -455,16 +462,24 @@ private fun SelectionBar(
     uiState: ObsidianContextUiState,
     onClear: () -> Unit,
     onBuild: () -> Unit,
+    onToggleStatus: (Boolean) -> Unit,
 ) {
     Surface(tonalElevation = 3.dp) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
+            // 現況は既定で入る。過去ログ(ノート)は選んだときだけ足される。
+            TerminalCheckbox(
+                label = "現況を含める(Hub のいまの状態)",
+                checked = uiState.includeStatus,
+                onCheckedChange = onToggleStatus,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${uiState.selectedCount} / ${uiState.notes.size} 件",
+                    text = "過去ログ ${uiState.selectedCount} / ${uiState.notes.size} 件",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 // 絞り込みで見えていない選択があると件数が合わなく見えるため明示する。
@@ -478,6 +493,7 @@ private fun SelectionBar(
             DialogAction("選択解除", onClick = onClear, enabled = uiState.selectedCount > 0)
             TacticalButton(onClick = onBuild, enabled = uiState.canBuild) {
                 Text(if (uiState.isBuilding) "生成中…" else "まとめる")
+            }
             }
         }
     }

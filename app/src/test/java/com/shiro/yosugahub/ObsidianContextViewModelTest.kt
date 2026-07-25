@@ -100,7 +100,36 @@ class ObsidianContextViewModelTest {
 
         vm.toggle(lighting)
         assertTrue(vm.uiState.value.selected.isEmpty())
+        // 現況は既定で含まれるので、ノート未選択でも生成できる(2026-07-25)。
+        assertTrue(vm.uiState.value.canBuild)
+    }
+
+    /** 現況も過去ログも無ければ渡すものが無い。 */
+    @Test
+    fun cannot_build_when_nothing_to_share() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.setIncludeStatus(false)
         assertFalse(vm.uiState.value.canBuild)
+
+        vm.toggle(lighting)
+        assertTrue(vm.uiState.value.canBuild)
+    }
+
+    /** 現況の切り替えは作り直しになるので、作ってあったプレビューは捨てる。 */
+    @Test
+    fun toggling_status_clears_the_preview() = runTest(dispatcher) {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.toggle(lighting)
+        vm.buildPreview()
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.preview != null)
+
+        vm.setIncludeStatus(false)
+        assertEquals(null, vm.uiState.value.preview)
     }
 
     @Test

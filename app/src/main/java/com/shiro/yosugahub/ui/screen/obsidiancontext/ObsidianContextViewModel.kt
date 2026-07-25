@@ -18,6 +18,7 @@ import com.shiro.yosugahub.data.obsidian.VaultNoteFilters
 import com.shiro.yosugahub.data.repository.ContextBuildResult
 import com.shiro.yosugahub.data.repository.ContextHistoryEntry
 import com.shiro.yosugahub.data.repository.ContextHistoryRepository
+import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.VaultRepository
 import com.shiro.yosugahub.ui.component.LogLine
 import com.shiro.yosugahub.ui.component.LogTone
@@ -47,9 +48,17 @@ data class ObsidianContextUiState(
     val isBuilding: Boolean = false,
     /** 生成済みのコンテキスト。null ならプレビュー未生成。 */
     val preview: ContextBuildResult? = null,
+    /**
+     * 現況(Hub がいま持っている状態)を含めるか(2026-07-25)。
+     * **既定でオン**——ヨスガへ渡すとき、まず要るのは「いまどうなっているか」。
+     * 過去ログ(Obsidian のノート)は必要なときだけ足す。
+     */
+    val includeStatus: Boolean = true,
 ) {
     val selectedCount: Int get() = selected.size
-    val canBuild: Boolean get() = selected.isNotEmpty() && !isBuilding
+
+    /** 現況だけでも渡す価値があるので、ノート未選択でも生成できる。 */
+    val canBuild: Boolean get() = (includeStatus || selected.isNotEmpty()) && !isBuilding
 
     /** 絞り込みで隠れているだけの選択があるか(件数の食い違いを画面で説明するため)。 */
     val hiddenSelectedCount: Int
@@ -67,6 +76,8 @@ data class ObsidianContextUiState(
 class ObsidianContextViewModel(
     private val vaultRepository: VaultRepository,
     private val documentWriter: TextDocumentWriter,
+    /** 現況(状況JSON)の生成。渡さなければ現況なしで動く。 */
+    private val exportRepository: ExportRepository? = null,
     private val historyRepository: ContextHistoryRepository? = null,
     /** 「最近更新」の基準時刻。テストで固定できるようにする。 */
     private val nowMillis: () -> Long = System::currentTimeMillis,
@@ -192,18 +203,35 @@ class ObsidianContextViewModel(
     }
 
     /** 選択されたノートを 1 本のコンテキストにまとめる。 */
+    /** 現況を含めるかを切り替える。切り替えたら作り直しになるのでプレビューは消す。 */
+    fun setIncludeStatus(include: Boolean) {
+        _uiState.value = _uiState.value.copy(includeStatus = include, preview = null)
+    }
+
     fun buildPreview() {
         val state = _uiState.value
         if (!state.canBuild) return
         val targets = state.notes.filter { it.relativePath in state.selected }
+        val wantStatus = state.includeStatus
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isBuilding = true)
             val result = opLog.run { emit ->
-                emit.emit(LogLine("> BUILD CONTEXT", LogTone.ACCENT))
+                emit.emit(LogLine("> SHARE TO YOSUGA", LogTone.ACCENT))
+                if (wantStatus) emit.emit(LogLine("  STATUS 現況を取得 …", LogTone.INFO))
                 emit.emit(LogLine("  READ ${targets.size} note(s) …", LogTone.INFO))
                 val r = runCatching {
-                    val data = vaultRepository.loadContext(targets)
+                    // 現況の生成に失敗しても過去ログは渡せるので、ここで全体を止めない。
+                    val status = if (wantStatus) {
+                        runCatching { exportRepository?.createContextExport()?.json }
+                            .getOrNull().orEmpty()
+                    } else {
+                        ""
+                    }
+                    if (wantStatus && status.isBlank()) {
+                        emit.emit(LogLine("  WARN 現況を取得できませんでした", LogTone.WARN))
+                    }
+                    val data = vaultRepository.loadContext(targets, status = status)
                     vaultRepository.format(data, _uiState.value.format)
                 }
                 r.onSuccess {
@@ -303,6 +331,7 @@ class ObsidianContextViewModel(
                 ObsidianContextViewModel(
                     vaultRepository = app.container.vaultRepository,
                     documentWriter = app.container.documentWriter,
+                    exportRepository = app.container.exportRepository,
                     historyRepository = app.container.contextHistoryRepository,
                 )
             }

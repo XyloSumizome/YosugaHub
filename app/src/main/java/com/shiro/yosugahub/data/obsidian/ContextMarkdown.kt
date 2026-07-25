@@ -37,6 +37,8 @@ object ContextMarkdown {
         vaultName: String,
         generatedAt: String,
         scope: ContextScope = ContextScope.of(notes),
+        /** 現況(状況JSONの本文)。空なら節ごと出さない。 */
+        status: String = "",
     ): String = buildString {
         appendLine(SEPARATOR)
         appendLine("type: yosuga-context")
@@ -45,12 +47,29 @@ object ContextMarkdown {
         appendLine("vault: ${yamlScalar(vaultName)}")
         appendScope(scope)
         appendLine("file_count: ${notes.size}")
+        if (status.isNotBlank()) appendLine("includes_status: true")
         appendLine(SEPARATOR)
         appendLine()
         appendLine("# Yosuga Context")
         appendLine()
-        appendLine("以下はObsidianから抽出した、今回の会話に関連する情報です。")
+        appendLine("以下はYosuga Hubから渡した、今回の会話に関連する情報です。")
         appendLine("内容を前提として、相談または設計の続きを行ってください。")
+
+        // 現況は過去ログより先に置く。「いまどうなっているか」を読んでから
+        // 「過去に何を書いたか」に入るほうが、読み手が迷わない。
+        if (status.isNotBlank()) {
+            appendLine()
+            appendLine(SEPARATOR)
+            appendLine()
+            appendLine("## 現況")
+            appendLine()
+            appendLine("Hub がいま持っている状態です(プロジェクト・タスク・予定・決定事項)。")
+            appendLine("`generatedAt` より後のことは含まれていません。")
+            appendLine()
+            appendLine("```json")
+            appendLine(status.trim())
+            appendLine("```")
+        }
 
         notes.forEach { note ->
             appendLine()
