@@ -113,6 +113,80 @@
 
 ---
 
+## 2026-07-25: 近況報告に「前後2週間」を載せる(修正のログ + カレンダー)
+
+### やりたいこと(シロさんの言葉)
+
+> 近況報告用のjsonには最新のデータだけじゃなくて、実行する前後2週間分の
+> 修正のログやグーグルカレンダーの予定を入れるようにできる?
+
+「いまの状態」しか渡していなかったので、**何がどう変わったか**が分からなかった。
+
+### 分かったこと: Room のマイグレーションは要らなかった
+
+修正のログは `status.json` の **`recentChanges`**(`date` / `summary` / `commit`)。
+最初はキャッシュに列を足す(= Room v9)必要があると思ったが、
+`ProjectStatusCacheEntity` は **status.json の原文をそのまま持っていた**
+(`statusJson: String`。未知項目を失わないための設計)。
+
+つまり **`recentChanges` は最初から DB にあった**。捨てていたのは
+`ProjectStatus → ProjectStatusSnapshot` の変換1箇所だけ。
+**スキーマ変更ゼロ・マイグレーションテスト不要**で済んだ。
+
+### 直したもの
+
+**修正のログ**
+
+- `StatusChangeLine`(domain)を新設。`StatusLine` と分けたのは**日付で絞るため**。
+  `StatusLine` は title/detail に畳んでしまうので、期間で切れなくなる。
+- `toSnapshot` で `recentChanges` を落とさずに載せる。
+- `ProjectExport.recentChanges: List<ChangeExport>` を追加(date / summary / commit)。
+  **文字列に畳まない**。AIが期間で絞れるようにするため。
+- `statusMarkdown` にも `## Recent Changes` を追加(`2026-07-24 要約(abc1234)`)。
+- `ContextExporter.changesCutoff(generatedAt)` で **generatedAt の14日前**を求め、
+  それ以降だけを載せる。状況JSON(`EXPORT STATUS`)と AI向け projects.json の両方。
+
+**カレンダー**
+
+- `DeviceCalendarDataSource.loadEvents` の既定を **±7日 → ±14日**。
+- `ContextExporter.build` の `pastDays` / `futureDays` も 14 へ(定数で揃えた)。
+
+### 設計判断: 落とすより残す
+
+期間で絞るとき、**判断できないものは捨てない**方針にした。
+
+- **日付が空の修正ログは残す**。ゲーム側が書き忘れただけで、捨てると
+  「その期間に変更が無かった」と読めてしまう。
+- **generatedAt が解釈できないときは絞らない**(全部載せる)。
+  日付が読めないことを理由にログを消さない。
+
+どちらも「静かに減っている」より「多いが正直」を選んだ。
+
+### ゲーム側への依頼を追記
+
+`docs/claude_code_onboarding.md` に「**`recentChanges` の各件に `date` を必ず書く**」を追加。
+Hub が2週間で絞る以上、日付が無いと期間で切れない(=常に載り続ける)。
+併せて「**古い変更を消すのは Hub の仕事なので、あなたは積んでよい**」も明記した。
+
+### レコル側
+
+`docs/recoru_prompt.md`:
+- projects に `recentChanges[]` があることを明記
+- 「昨日の成果」は **Hub のタスク(人が片付けた)とゲーム側の修正(Claude Code が
+  やった)を別の成果として分けて書く**
+- カレンダーが前後2週間あるので、**過去の予定を成果に流用しない**(予定は成果ではない)
+
+### テスト
+
+`assembleDebug` + `testDebugUnitTest` 成功。**380件 通過**(376 → +4)。
+2週間で切れること / 日付が空でも残ること / generatedAt が壊れても捨てないこと /
+カレンダーの窓が ±14 であること。
+
+**実機未確認**。カレンダーの再同期(`CALENDAR` を開いて同期)をしないと
+±14日分にならない点に注意。
+
+---
+
 ## 2026-07-25: tasks.json に completedAt を出す(「昨日の成果」を事実にする)
 
 ### 見つかった穴

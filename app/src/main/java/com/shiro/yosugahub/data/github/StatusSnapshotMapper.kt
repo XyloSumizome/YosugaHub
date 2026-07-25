@@ -2,9 +2,11 @@ package com.shiro.yosugahub.data.github
 
 import com.shiro.yosugahub.data.github.model.ProjectStatus
 import com.shiro.yosugahub.data.github.model.StatusBlocker
+import com.shiro.yosugahub.data.github.model.StatusChange
 import com.shiro.yosugahub.data.github.model.StatusDecision
 import com.shiro.yosugahub.data.github.model.StatusTask
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusChangeLine
 import com.shiro.yosugahub.domain.model.StatusLine
 
 /**
@@ -23,6 +25,7 @@ fun ProjectStatus.toSnapshot(projectId: String, fetchedAt: String): ProjectStatu
         nextTasks = nextTasks.toLines(),
         blockers = blockers.toBlockerLines(),
         decisions = decisions.toDecisionLines(),
+        recentChanges = recentChanges.toChangeLines(),
         questionsForYosuga = questionsForYosuga.filter { it.isNotBlank() },
         generatedAt = generatedAt,
         sourceCommit = sourceCommit,
@@ -52,6 +55,19 @@ private fun List<StatusDecision>.toDecisionLines(): List<StatusLine> =
                 if (decision.date.isNotBlank()) add(decision.date)
                 if (decision.detail.isNotBlank()) add(decision.detail)
             }.joinToString(" / "),
+        )
+    }
+
+/**
+ * 修正のログ。日付は**畳まずに残す**(近況報告で「直近2週間」を絞るのに使うため)。
+ * summary が空の行は情報が無いので落とす。
+ */
+private fun List<StatusChange>.toChangeLines(): List<StatusChangeLine> =
+    filter { it.summary.isNotBlank() }.map { change ->
+        StatusChangeLine(
+            date = change.date,
+            summary = change.summary,
+            commit = change.commit,
         )
     }
 

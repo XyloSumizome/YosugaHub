@@ -66,6 +66,21 @@ data class ProjectExport(
     val questionsForYosuga: List<String> = emptyList(),
     /** ゲーム側で確定した設計判断。AIがこれに矛盾する提案をしないための材料。 */
     val decisions: List<String> = emptyList(),
+    /**
+     * ゲーム側が書いた修正のログ(status.json の recentChanges)を**直近2週間分**。
+     * 近況報告で「最新の状態」だけでなく「何がどう変わったか」を渡すための材料
+     * (2026-07-25 追加)。文字列に畳まず日付を残すのは、AIが期間で絞れるようにするため。
+     */
+    val recentChanges: List<ChangeExport> = emptyList(),
+)
+
+/** 修正のログ1件(status.json の recentChanges 由来)。 */
+@Serializable
+data class ChangeExport(
+    /** "yyyy-MM-dd"。ゲーム側が書かなければ空。 */
+    val date: String = "",
+    val summary: String,
+    val commit: String = "",
 )
 
 /** タスクの現状(v2)。AIがタスク化・優先順位の提案をする材料。 */

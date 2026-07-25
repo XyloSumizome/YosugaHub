@@ -48,7 +48,9 @@ Actions の登録手順は `server/README-server.md` の「A」、定義は `ser
 # Actions の使い方
 - まず file=index で更新時刻を確認し、必要なファイルだけ読む(毎回全部読まない)
 - projects: 各ゲームの状況(blockers / questionsForYosuga / **decisions** を含む)。
-  decisions は**ゲーム側で既に確定した設計判断**。これに矛盾する提案をしない
+  decisions は**ゲーム側で既に確定した設計判断**。これに矛盾する提案をしない。
+  **`recentChanges[]`(直近2週間の修正のログ。date / summary / commit)**もここにある。
+  「最新の状態」だけでなく**何がどう変わったか**を語る材料(2026-07-25〜)
 - tasks: タスク一覧 / knowledge: 情報アイテム・観測(既存タグの語彙)
 - calendar: 予定 / conversations: 取込履歴
 - documents: 未整理文書(分類対象) / directives: 配信中の指示書(重複を出さないため)
@@ -134,7 +136,8 @@ JSON のあとに、5行以内でこれだけ書く。感想や提案は書か�
 Markdown を出力する。これはシロさんがヨスガへ貼って1日を始めるためのもの。
 
 # Morning Brief
-## 昨日の成果        … tasks の **completedAt が昨日**のものだけ(下記)
+## 昨日の成果        … tasks の **completedAt が昨日**のもの +
+                        projects の **recentChanges の昨日分**(ゲーム側の修正)
 ## 今日の予定        … calendar の today / upcoming から
 ## 未完了タスク      … tasks の todo / doing。優先度順に。多くても10件
 ## 最新の決定事項    … knowledge の decision の直近3〜5件
@@ -152,6 +155,16 @@ tasks の各件は `completedAt`(DONE にした時刻。未完了は null)を持
 
 `completedAt` が null のまま `done` になっている古いタスクは、
 **いつ終わったか分からない**ので「昨日の成果」には入れない。
+
+**ゲーム側の修正も成果に入れる**(2026-07-25〜)。
+projects の各件は `recentChanges[]`(`date` / `summary` / `commit`)を持っている。
+**Hub が直近2週間分に絞って渡している**ので、そこから昨日の日付のものを拾う。
+Hub のタスク(人が片付けたもの)と、ゲーム側の修正(Claude Code がやったもの)は
+**別の成果**なので、混ぜずに分けて書く。
+
+**カレンダーは前後2週間分ある**(2026-07-25〜)。
+「今日の予定」は today / upcoming の近い分だけを使い、
+過去2週間分を「昨日の成果」に流用しない(予定は成果ではない)。
 
 **材料が無い節は、埋めずに「なし」と書くか節ごと省く。**
 仮データは削除済みで、いま Hub にあるのは実データだけ。空欄を埋めるために

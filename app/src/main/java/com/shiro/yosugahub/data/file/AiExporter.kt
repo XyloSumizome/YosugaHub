@@ -75,7 +75,14 @@ object AiExporter {
             json.encodeToString(
                 ProjectsFile(
                     generatedAt = generatedAt,
-                    projects = projects.map { ContextExporter.projectExportOf(it, statuses[it.id]) },
+                    projects = projects.map {
+                        ContextExporter.projectExportOf(
+                            it,
+                            statuses[it.id],
+                            // 近況報告で「直近2週間の修正」を渡す(2026-07-25)。
+                            ContextExporter.changesCutoff(generatedAt),
+                        )
+                    },
                 )
             ),
         ),

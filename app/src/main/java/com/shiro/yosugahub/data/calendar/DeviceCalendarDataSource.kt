@@ -42,8 +42,10 @@ class DeviceCalendarDataSource(
      */
     suspend fun loadEvents(
         today: LocalDate,
-        pastDays: Long = 7,
-        futureDays: Long = 7,
+        // 近況報告(Morning Brief 等)で「前後2週間」を見せるため ±14 日
+        // (2026-07-25 に ±7 から拡張)。
+        pastDays: Long = 14,
+        futureDays: Long = 14,
     ): Result<List<CalendarEventEntity>> = withContext(Dispatchers.IO) {
         if (!hasPermission()) {
             return@withContext Result.failure(SecurityException("READ_CALENDAR 権限がありません"))

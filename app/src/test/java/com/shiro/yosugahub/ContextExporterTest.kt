@@ -7,6 +7,7 @@ import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
+import com.shiro.yosugahub.domain.model.StatusChangeLine
 import com.shiro.yosugahub.domain.model.StatusLine
 import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
@@ -102,6 +103,90 @@ class ContextExporterTest {
             project.decisions,
         )
     }
+
+    /**
+     * 修正のログ(status.json の recentChanges)を**直近2週間分だけ**渡す(2026-07-25)。
+     * 「最新の状態」だけでは何がどう変わったかが分からないため。
+     */
+    @Test
+    fun recent_changes_are_carried_but_limited_to_two_weeks() {
+        val snapshot = statusSnapshot(
+            recentChanges = listOf(
+                StatusChangeLine("2026-07-24", "当たり判定を修正", "abc1234"),
+                StatusChangeLine("2026-07-12", "ちょうど2週間前", "def5678"),
+                StatusChangeLine("2026-07-01", "3週間前なので落ちる", "old0000"),
+            ),
+        )
+        val export = ContextExporter.build(
+            projects, events, "2026-07-26T09:00:00+09:00",
+            statuses = mapOf("anri" to snapshot),
+        )
+        val project = export.projects.single()
+
+        assertEquals(
+            listOf("当たり判定を修正", "ちょうど2週間前"),
+            project.recentChanges.map { it.summary },
+        )
+        // 日付を畳まず残す(AIが期間で絞れるように)。
+        assertEquals("2026-07-24", project.recentChanges.first().date)
+        assertEquals("abc1234", project.recentChanges.first().commit)
+        // Markdown 側にも出す。
+        assertTrue(project.statusMarkdown.contains("## Recent Changes"))
+        assertTrue(project.statusMarkdown.contains("2026-07-24 当たり判定を修正(abc1234)"))
+        assertTrue(!project.statusMarkdown.contains("3週間前なので落ちる"))
+    }
+
+    /** 日付が空の行は落とさない。落とすと「変更が無かった」と読めてしまう。 */
+    @Test
+    fun recent_changes_without_a_date_survive_the_window() {
+        val snapshot = statusSnapshot(
+            recentChanges = listOf(StatusChangeLine(date = "", summary = "日付を書き忘れた修正")),
+        )
+        val export = ContextExporter.build(
+            projects, events, "2026-07-26T09:00:00+09:00",
+            statuses = mapOf("anri" to snapshot),
+        )
+        assertEquals(listOf("日付を書き忘れた修正"), export.projects.single().recentChanges.map { it.summary })
+    }
+
+    /** generatedAt が壊れていても、ログを黙って捨てない。 */
+    @Test
+    fun unparseable_generated_at_keeps_every_change() {
+        val snapshot = statusSnapshot(
+            recentChanges = listOf(StatusChangeLine("2020-01-01", "ずっと前の修正")),
+        )
+        val export = ContextExporter.build(
+            projects, events, "いつだか分からない",
+            statuses = mapOf("anri" to snapshot),
+        )
+        assertEquals(1, export.projects.single().recentChanges.size)
+    }
+
+    /** カレンダーの窓は ±14 日(2026-07-25 に ±7 から拡張)。 */
+    @Test
+    fun calendar_window_is_two_weeks_each_way() {
+        val export = ContextExporter.build(projects, events, "2026-07-26T09:00:00+09:00")
+        assertEquals(14, export.calendar.pastDays)
+        assertEquals(14, export.calendar.futureDays)
+    }
+
+    private fun statusSnapshot(recentChanges: List<StatusChangeLine>) = ProjectStatusSnapshot(
+        projectId = "anri",
+        summary = "第2章を執筆中",
+        health = "attention",
+        phase = "prototype",
+        goalTitle = "プロトタイプ完成",
+        goalDetail = "",
+        inProgress = emptyList(),
+        nextTasks = emptyList(),
+        blockers = emptyList(),
+        decisions = emptyList(),
+        recentChanges = recentChanges,
+        questionsForYosuga = emptyList(),
+        generatedAt = "2026-07-26T08:00:00+09:00",
+        sourceCommit = "",
+        fetchedAt = "2026-07-26T09:00:00+09:00",
+    )
 
     @Test
     fun falls_back_to_local_fields_when_status_not_fetched() {
