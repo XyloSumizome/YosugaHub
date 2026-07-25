@@ -12,6 +12,7 @@ import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -151,8 +152,38 @@ class ContextExporterTest {
         assertEquals("doing", task.status)
         assertEquals("anri", task.projectId)
         assertEquals("2026-07-30", task.dueDate)
+        // 未完了は null のまま(「昨日の成果」に混ざらせない)。
+        assertNull(task.completedAt)
         val decision = export.recentDecisions.single()
         assertEquals("2026-07-23", decision.date)
         assertEquals("ビート表示を採用", decision.title)
+    }
+
+    /**
+     * 完了時刻を書き出す(2026-07-25)。これが無いと `status: "done"` しか見えず、
+     * Morning Brief の「昨日の成果」に**いつ終わったか**を書けない。
+     */
+    @Test
+    fun build_exports_completed_at_so_recency_is_knowable() {
+        val done = Task(
+            id = "task-2",
+            projectId = "anri",
+            title = "当たり判定の修正",
+            detail = "",
+            status = TaskStatus.DONE,
+            priority = "medium",
+            dueDate = null,
+            createdAt = "2026-07-20T09:00:00+09:00",
+            updatedAt = "2026-07-24T18:30:00+09:00",
+            completedAt = "2026-07-24T18:30:00+09:00",
+            source = "manual",
+        )
+        val export = ContextExporter.build(
+            projects, events, "2026-07-25T08:00:00+09:00",
+            tasks = listOf(done), decisions = emptyList(),
+        )
+        val task = export.tasks.single()
+        assertEquals("done", task.status)
+        assertEquals("2026-07-24T18:30:00+09:00", task.completedAt)
     }
 }

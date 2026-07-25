@@ -113,6 +113,54 @@
 
 ---
 
+## 2026-07-25: tasks.json に completedAt を出す(「昨日の成果」を事実にする)
+
+### 見つかった穴
+
+Morning Brief の「昨日の成果」は `tasks` の done から書くことになっていたが、
+**書き出す `TaskExport` に完了時刻が入っていなかった**。
+出ていたのは `projectId / title / detail / status / priority / dueDate` だけ。
+
+レコルに見えるのは `status: "done"` という事実のみ。
+つまり**半年前に終わったタスクと昨日終わったタスクを区別できない**。
+この状態で「昨日の成果」が埋まっていたなら、それらしく作っていた可能性がある。
+
+`Task`(domain)も `TaskEntity`(Room)も `completedAt` を持っており、
+`TaskRepository` が DONE で刻み・戻すとクリアしている。**データはあった。出していなかっただけ**。
+
+### 直したもの
+
+- `ContextExport.kt` の `TaskExport` に `completedAt: String? = null` を追加。
+- `ContextExporter.taskExportOf` で `task.completedAt` を渡す。
+- `docs/recoru_prompt.md`: 「昨日の成果」は **`completedAt` で選ぶ**と明記。
+  `status: "done"` だけで拾わない。`completedAt` が null の古い done は
+  **いつ終わったか分からないので入れない**。
+
+出力は `encodeDefaults = true` なので、未完了は `"completedAt": null` として明示的に出る。
+既定値付きの追加なので、既存の取り込み側・状況JSON側は壊れない。
+
+### もうひとつの穴(こちらは運用で塞がる)
+
+同期が走るのは3か所だけ:
+「今すぐ同期」/ 回答JSON取り込み成功時(`AppContainer.kt:246`)/
+GitHub取得成功時(`AppContainer.kt:226`)。
+**タスクを完了にしても同期は走らない。**
+
+これはシロさんの判断で**そのまま**。
+「GitHubから更新」が成功すると自動同期が走り、そのとき tasks.json も一緒に
+押し出されるので、**Morning Brief の手順1を踏む限り塞がる**。
+
+⚠ 混同注意: ゲーム側の `.yosuga/status.json` は **Hub の tasks を done にしない**。
+あれは projects(進捗)の材料。Hub のタスクを完了にするのはアプリの `[x]` だけで、
+それが同期のついでに運ばれる、という形。
+
+### テスト
+
+`assembleDebug` + `testDebugUnitTest` 成功。**376件 通過**(375 → +1)。
+`ContextExporterTest` に完了時刻の書き出しと、未完了が null のままであることを追加。
+
+---
+
 ## 2026-07-25: 巡回の合図をなくす(開いて一言で走らせる)
 
 ### 質問

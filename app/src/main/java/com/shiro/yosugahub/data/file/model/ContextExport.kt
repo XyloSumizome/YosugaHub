@@ -77,6 +77,14 @@ data class TaskExport(
     val status: String,     // todo / doing / done
     val priority: String,   // high / medium / low
     val dueDate: String? = null,
+    /**
+     * DONE にした時刻(ISO 8601)。未完了は null。
+     *
+     * これが無いと `status: "done"` しか見えず、**半年前に終わったタスクと
+     * 昨日終わったタスクを区別できない**。Morning Brief の「昨日の成果」を
+     * 事実として書くために要る(2026-07-25 追加)。
+     */
+    val completedAt: String? = null,
 )
 
 /** 最近の決定事項(v2)。AIが過去の決定と矛盾しない提案をする材料。 */

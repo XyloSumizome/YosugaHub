@@ -66,6 +66,7 @@ object ContextExporter {
         status = task.status.dbValue,
         priority = task.priority,
         dueDate = task.dueDate,
+        completedAt = task.completedAt,
     )
 
     private fun Task.toExport(): TaskExport = taskExportOf(this)
