@@ -144,4 +144,53 @@ class ResponseImporterTest {
         assertTrue(result is ParseResult.SuccessV2)
         assertTrue((result as ParseResult.SuccessV2).response.proposals.classifications.isEmpty())
     }
+
+    // ── 封筒(schemaVersion / proposals)が無い形の救済(2026-07-25)──
+
+    /** ヨスガが実際に返した形。これが弾かれて日記を取り込めなかった。 */
+    @Test
+    fun accepts_bare_diary_without_envelope() {
+        val text = """{"diary":[{"date":"2026-07-20","body":"本文"}]}"""
+        val result = ResponseImporter.parse(text)
+        assertTrue(result is ResponseImporter.ParseResult.SuccessV2)
+        val v2 = result as ResponseImporter.ParseResult.SuccessV2
+        assertEquals(1, v2.response.proposals.diary.size)
+        assertEquals("2026-07-20", v2.response.proposals.diary.first().date)
+        assertEquals(2, v2.response.schemaVersion)
+    }
+
+    /** 封筒だけ落ちた形(proposals はある)。 */
+    @Test
+    fun accepts_proposals_without_schema_version() {
+        val text = """{"summary":"要約","proposals":{"items":[{"kind":"memo","title":"T"}]}}"""
+        val result = ResponseImporter.parse(text)
+        assertTrue(result is ResponseImporter.ParseResult.SuccessV2)
+        val v2 = result as ResponseImporter.ParseResult.SuccessV2
+        assertEquals("要約", v2.response.summary)
+        assertEquals(1, v2.response.proposals.items.size)
+    }
+
+    /** 提案のキーが1つも無ければ従来どおり弾く(何でも受け取らない)。 */
+    @Test
+    fun still_rejects_json_without_any_proposal_key() {
+        val result = ResponseImporter.parse("""{"foo":1,"bar":"baz"}""")
+        assertTrue(result is ResponseImporter.ParseResult.InvalidJson)
+        assertEquals(
+            "schemaVersion がありません",
+            (result as ResponseImporter.ParseResult.InvalidJson).message,
+        )
+    }
+
+    /** 配列やスカラーは対象外。 */
+    @Test
+    fun still_rejects_non_object_json() {
+        assertTrue(ResponseImporter.parse("""[1,2,3]""") is ResponseImporter.ParseResult.InvalidJson)
+    }
+
+    /** schemaVersion があるときの挙動は変わらない(未対応版は今までどおり弾く)。 */
+    @Test
+    fun envelope_still_wins_when_present() {
+        val result = ResponseImporter.parse("""{"schemaVersion":99,"diary":[]}""")
+        assertTrue(result is ResponseImporter.ParseResult.UnsupportedSchema)
+    }
 }
