@@ -166,18 +166,13 @@ fun ConsoleScreen(
         }
 
         // ── オペレーション ──
-        Command(
-            "IMPORT NOTES",
-            "GitHubからノートを取得しObsidianへ保存",
-            enabled = !importing,
-            onClick = viewModel::importNotes,
-        )
+        Command("GitHub → Obsidian", enabled = !importing, onClick = viewModel::importNotes)
         AsciiDivider()
-        Command("SAVE SESSION", "ヨスガとの会話をObsidianへ保存") { showSaveSession = true }
+        Command("会話 → Obsidian") { showSaveSession = true }
         AsciiDivider()
-        Command("BUILD CONTEXT", "Obsidianから情報をまとめヨスガへ貼るMarkdownを生成", onClick = onOpenContext)
+        Command("Obsidian → ヨスガ", onClick = onOpenContext)
         AsciiDivider()
-        Command("EXPORT STATUS", "状況JSONを生成して共有") {
+        Command("状況JSON → 共有") {
             viewModel.createExport { result ->
                 result.onSuccess {
                     Toast.makeText(context, "EXPORT: ${it.fileName}", Toast.LENGTH_SHORT).show()
@@ -189,7 +184,7 @@ fun ConsoleScreen(
         }
         AsciiDivider()
         // レコル(整理)とヨスガ(観測日記)の両方が同じ口から入る。
-        Command("IMPORT RESPONSE", "AIの回答JSONを取り込む(レコル / ヨスガ)") {
+        Command("回答JSON → Hub") {
             // クリップボードに回答JSONらしきものがあれば入れておく。
             // 関係ない文字列は入れない(消す手間のほうが増えるため)。
             responsePrefill = ClipboardPrefill.of(clipboard.getText()?.text)
@@ -199,7 +194,7 @@ fun ConsoleScreen(
 
         // URL 未設定なら出さない(押せて何も起きない口を作らない)。
         ExternalLink.sanitize(uiState.recoruUrl)?.let { url ->
-            Command("OPEN RECORU", "レコル(カスタムGPT)を開く") {
+            Command("レコルを開く") {
                 val opened = openExternalLink(context, url)
                 if (!opened) {
                     Toast.makeText(context, "開けるアプリがありません。", Toast.LENGTH_SHORT).show()
@@ -209,20 +204,20 @@ fun ConsoleScreen(
         }
 
         val reviewSuffix = if (uiState.pendingCount > 0) " (${uiState.pendingCount})" else ""
-        Command("REVIEW$reviewSuffix", "承認待ちの提案を確認する", token = ">", onClick = onOpenReview)
+        Command("REVIEW$reviewSuffix", token = ">", onClick = onOpenReview)
         AsciiDivider()
 
         Spacer(Modifier.height(10.dp))
         Text("DATA", style = MaterialTheme.typography.labelMedium, color = TermTextDim)
         Spacer(Modifier.height(6.dp))
         AsciiDivider()
-        Command("PROJECTS (${uiState.projectCount})", "ゲームの進捗・タスク", onClick = onOpenProjects)
+        Command("PROJECTS (${uiState.projectCount})", onClick = onOpenProjects)
         AsciiDivider()
-        Command("RECORDS", "知識・決定・観測・文書・指示", onClick = onOpenRecords)
+        Command("RECORDS", onClick = onOpenRecords)
         AsciiDivider()
-        Command("CALENDAR", "端末カレンダーの予定", onClick = onOpenCalendar)
+        Command("CALENDAR", onClick = onOpenCalendar)
         AsciiDivider()
-        Command("SETTINGS", "Vault / GitHub / 同期 / サンプルデータ", onClick = onOpenSettings)
+        Command("SETTINGS", onClick = onOpenSettings)
         AsciiDivider()
         Spacer(Modifier.height(24.dp))
     }
@@ -291,37 +286,32 @@ private fun Readout(key: String, value: String, valueColor: androidx.compose.ui.
     }
 }
 
-/** `> COMMAND` + 説明 の実行行。丸みも塗りも無い。 */
+/**
+ * `> やること` の実行行。丸みも塗りも無い。
+ *
+ * **1行だけ**にする(2026-07-25)。以前は英字の見出し + 日本語の説明の2行だったが、
+ * 見出しは説明の言い換えでしかなく、目で追う量が倍になっていた。
+ * オペレーションは `GitHub → Obsidian` のように**やることそのもの**を書く。
+ * 画面へ移る行(REVIEW / RECORDS 等)は名前を残す
+ * ——取り込み後の案内(`ImportMessage`)がその名前で行き先を指しているため。
+ */
 @Composable
 private fun Command(
-    name: String,
-    description: String,
+    label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     token: String = ">",
     onClick: () -> Unit,
 ) {
     val alpha = if (enabled) 1f else 0.4f
-    Column(
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier)
-            .padding(vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(token, color = TermGreen.copy(alpha = alpha), style = MaterialTheme.typography.titleSmall)
-            Text(
-                name,
-                color = TermGreen.copy(alpha = alpha),
-                style = MaterialTheme.typography.titleSmall,
-            )
-        }
-        Text(
-            description,
-            color = TermTextDim.copy(alpha = alpha),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(start = 18.dp),
-        )
+        Text(token, color = TermGreen.copy(alpha = alpha), style = MaterialTheme.typography.titleSmall)
+        Text(label, color = TermGreen.copy(alpha = alpha), style = MaterialTheme.typography.titleSmall)
     }
 }
