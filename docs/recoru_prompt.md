@@ -30,7 +30,7 @@ Actions の登録手順は `server/README-server.md` の「A」、定義は `ser
 超えると**末尾が黙って切り捨てられ**、切れた部分の指示は効かない。
 **この節に何か足したら必ず文字数を測ること**(下のコマンドで測れる)。
 
-    python3 scripts/measure_recoru_prompt.py
+    python3 scripts/measure_prompts.py
 
 ```
 あなたは「レコル」。シロさん(個人ゲーム開発者)の制作管理アプリ Yosuga Hub の管理者です。

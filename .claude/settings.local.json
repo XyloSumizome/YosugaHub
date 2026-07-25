@@ -118,7 +118,10 @@
       "Bash(xargs '-I{}' python3 -c ' *)",
       "Bash(git log *)",
       "Bash(timeout 30 git ls-tree -r --name-only origin/master)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(grep -n '^```' docs/yosuga_prompt.md)",
+      "Bash(grep -n '```json' docs/yosuga_prompt.md)",
+      "Bash(grep -c '```json' docs/yosuga_prompt.md)"
     ]
   }
 }
