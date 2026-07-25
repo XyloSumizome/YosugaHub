@@ -20,6 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -29,6 +32,7 @@ import com.shiro.yosugahub.ui.component.StatusTag
 import com.shiro.yosugahub.ui.component.TacticalOutlinedButton
 import com.shiro.yosugahub.ui.component.healthLabel
 import com.shiro.yosugahub.ui.component.inProgressLine
+import com.shiro.yosugahub.ui.screen.projectdetail.ProjectEditDialog
 import com.shiro.yosugahub.ui.share.statusRefreshSummary
 
 @Composable
@@ -39,12 +43,49 @@ fun ProjectsScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    if (showAddDialog) {
+        ProjectEditDialog(
+            original = null,
+            existingIds = uiState.projects.map { it.id }.toSet(),
+            onDismiss = { showAddDialog = false },
+            onSave = { id, name, currentGoal, health, repoOwner, repoName, repoBranch ->
+                viewModel.createProject(
+                    Project(
+                        id = id,
+                        name = name,
+                        currentGoal = currentGoal,
+                        // 作業中・次はタスクから導出するので、ここでは持たせない。
+                        inProgress = "",
+                        nextTask = "",
+                        // lastUpdated は Repository が刻む。
+                        lastUpdated = "",
+                        health = health,
+                        repoOwner = repoOwner,
+                        repoName = repoName,
+                        repoBranch = repoBranch,
+                    )
+                )
+                showAddDialog = false
+                Toast.makeText(context, "追加しました: $id", Toast.LENGTH_SHORT).show()
+            },
+        )
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        item {
+            TacticalOutlinedButton(
+                onClick = { showAddDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("プロジェクトを追加")
+            }
+        }
         if (uiState.hasAnyRepository) {
             item {
                 TacticalOutlinedButton(

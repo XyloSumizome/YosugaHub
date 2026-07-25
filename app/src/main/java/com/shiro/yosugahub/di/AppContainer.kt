@@ -11,7 +11,6 @@ import com.shiro.yosugahub.data.local.db.MIGRATION_4_5
 import com.shiro.yosugahub.data.local.db.MIGRATION_5_6
 import com.shiro.yosugahub.data.local.db.MIGRATION_6_7
 import com.shiro.yosugahub.data.local.db.MIGRATION_7_8
-import com.shiro.yosugahub.data.local.db.SampleSeed
 import com.shiro.yosugahub.data.local.db.YosugaDatabase
 import com.shiro.yosugahub.data.file.DocumentWriter
 import com.shiro.yosugahub.data.obsidian.KnowledgeStore
@@ -39,7 +38,6 @@ import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
 import com.shiro.yosugahub.data.repository.RepoNoteRepository
-import com.shiro.yosugahub.data.repository.SampleDataRepository
 import com.shiro.yosugahub.data.repository.ServerSyncRepository
 import com.shiro.yosugahub.data.repository.SyncSettingsRepository
 import com.shiro.yosugahub.data.repository.TaskRepository
@@ -77,14 +75,13 @@ interface AppContainer {
     val serverSyncRepository: ServerSyncRepository
     val vaultRepository: VaultRepository
     val documentWriter: DocumentWriter
-    val sampleDataRepository: SampleDataRepository
     val contextHistoryRepository: ContextHistoryRepository
     val repoNoteRepository: RepoNoteRepository
     val noteImportRepository: NoteImportRepository
     val conversationImportRepository: ConversationImportRepository
 }
 
-/** Room + DataStore を用いる既定の実装。初回起動時に仮データ(SampleSeed)を投入する。 */
+/** Room + DataStore を用いる既定の実装。 */
 class DefaultAppContainer(
     context: Context,
     private val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
@@ -131,20 +128,6 @@ class DefaultAppContainer(
     /** 長文知識の書き出し先(初期実装は Obsidian Vault / SAF)。 */
     private val knowledgeStore: KnowledgeStore by lazy {
         ObsidianVaultStore(context.applicationContext, userPreferencesRepository)
-    }
-
-    /** 仮データ(SampleSeed)の後片付け(v5 / 選択A)。 */
-    override val sampleDataRepository: SampleDataRepository by lazy {
-        SampleDataRepository(
-            projectDao = database.projectDao(),
-            taskDao = database.taskDao(),
-            knowledgeDao = database.knowledgeDao(),
-            diaryDao = database.diaryDao(),
-            recommendationDao = database.recommendationDao(),
-            calendarEventDao = database.calendarEventDao(),
-            projectStatusDao = database.projectStatusDao(),
-            userPreferencesRepository = userPreferencesRepository,
-        )
     }
 
     /** Vault への書き込み口(v5 Phase 3-b / 3-d で共用)。 */
@@ -284,49 +267,4 @@ class DefaultAppContainer(
         )
     }
 
-    init {
-        seedIfEmpty()
-    }
-
-    /**
-     * テーブルが空のときだけ仮データを投入する(再起動後の実データを壊さない)。
-     * 実際に投入したら最終同期時刻を記録する。Phase 3/4 で本物の同期処理に置き換わる暫定処理。
-     */
-    private fun seedIfEmpty() {
-        applicationScope.launch {
-            // 一度「サンプルデータを削除」したら、空になっても二度と投入しない(v5 / 選択A)。
-            if (userPreferencesRepository.isSeedingDisabled()) return@launch
-
-            var seededAnything = false
-            if (database.projectDao().count() == 0) {
-                database.projectDao().insertAll(SampleSeed.projects)
-                seededAnything = true
-            }
-            // カレンダーは端末から同期する実データに置き換わったためシードしない
-            // (SampleSeed.events はテスト用に残している)。
-            if (database.recommendationDao().count() == 0) {
-                database.recommendationDao().insertAll(SampleSeed.recommendations)
-                seededAnything = true
-            }
-            if (database.taskDao().count() == 0) {
-                database.taskDao().insertAll(SampleSeed.tasks)
-                seededAnything = true
-            }
-            if (database.knowledgeDao().countItems() == 0) {
-                SampleSeed.knowledgeItems.forEach { database.knowledgeDao().upsertItem(it) }
-                SampleSeed.tags.forEach { database.knowledgeDao().insertTag(it) }
-                SampleSeed.entities.forEach { database.knowledgeDao().insertEntity(it) }
-                SampleSeed.itemTags.forEach { database.knowledgeDao().insertItemTag(it) }
-                SampleSeed.itemEntities.forEach { database.knowledgeDao().insertItemEntity(it) }
-                seededAnything = true
-            }
-            if (database.diaryDao().count() == 0) {
-                database.diaryDao().insertAll(SampleSeed.diaryEntries)
-                seededAnything = true
-            }
-            if (seededAnything) {
-                userPreferencesRepository.setLastSyncedAt(formatSyncTime(LocalDateTime.now()))
-            }
-        }
-    }
 }

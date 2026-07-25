@@ -108,7 +108,12 @@
       "Bash(grep -n '^```' docs/recoru_prompt.md)",
       "Bash(grep -rn 'text/\\\\*\\\\|```' app/src/main/java/com/shiro/yosugahub/data/file/PastedJson.kt app/src/main/java/com/shiro/yosugahub/ui/screen/console/ConsoleScreen.kt)",
       "Bash(cmd.exe /c \"C:\\\\Users\\\\note_\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe -list-avds\")",
-      "Bash(cmd.exe /c \"start /b C:\\\\Users\\\\note_\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect\")"
+      "Bash(cmd.exe /c \"start /b C:\\\\Users\\\\note_\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect\")",
+      "Bash(git symbolic-ref *)",
+      "Bash(timeout 30 git ls-remote --heads origin)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(timeout 25 git ls-remote --heads https://github.com/XyloSumizome/YosugaHub.git)",
+      "Bash(git mv *)"
     ]
   }
 }

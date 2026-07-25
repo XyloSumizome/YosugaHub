@@ -24,15 +24,20 @@ import com.shiro.yosugahub.ui.component.TerminalField
 import com.shiro.yosugahub.ui.component.healthLabel
 
 /**
- * プロジェクト編集ダイアログ(1-d + GitHub連携)。
+ * プロジェクトの新規作成・編集ダイアログ(1-d + GitHub連携 / 2026-07-25 に新規作成へ対応)。
  * 編集対象は name / currentGoal / health と GitHub リポジトリ情報。
  * inProgress / nextTask はタスクからの導出へ置き換える予定のため編集させない。
+ *
+ * [original] が null なら**新規作成**。このときだけ **ID を入力させる**。
+ * ID はサーバー・レコル・分類履歴が参照する正本なので、
+ * 作成後は変えられない(編集時は表示のみ)。
  */
 @Composable
 fun ProjectEditDialog(
-    original: Project,
+    original: Project?,
     onDismiss: () -> Unit,
     onSave: (
+        id: String,
         name: String,
         currentGoal: String,
         health: String,
@@ -40,16 +45,24 @@ fun ProjectEditDialog(
         repoName: String?,
         repoBranch: String?,
     ) -> Unit,
+    /** 既に使われている ID。新規作成で衝突させないために渡す。 */
+    existingIds: Set<String> = emptySet(),
 ) {
-    var name by remember(original) { mutableStateOf(original.name) }
-    var currentGoal by remember(original) { mutableStateOf(original.currentGoal) }
-    var health by remember(original) { mutableStateOf(original.health) }
-    var repoOwner by remember(original) { mutableStateOf(original.repoOwner.orEmpty()) }
-    var repoName by remember(original) { mutableStateOf(original.repoName.orEmpty()) }
-    var repoBranch by remember(original) { mutableStateOf(original.repoBranch.orEmpty()) }
+    val creating = original == null
+    var id by remember(original) { mutableStateOf(original?.id.orEmpty()) }
+    var name by remember(original) { mutableStateOf(original?.name.orEmpty()) }
+    var currentGoal by remember(original) { mutableStateOf(original?.currentGoal.orEmpty()) }
+    var health by remember(original) { mutableStateOf(original?.health ?: HEALTH_OPTIONS.first()) }
+    var repoOwner by remember(original) { mutableStateOf(original?.repoOwner.orEmpty()) }
+    var repoName by remember(original) { mutableStateOf(original?.repoName.orEmpty()) }
+    var repoBranch by remember(original) { mutableStateOf(original?.repoBranch.orEmpty()) }
+
+    val trimmedId = id.trim()
+    val idTaken = creating && trimmedId in existingIds
+    val idValid = trimmedId.isNotEmpty() && trimmedId.matches(ID_PATTERN) && !idTaken
 
     TerminalDialog(
-        title = "プロジェクトを編集",
+        title = if (creating) "プロジェクトを追加" else "プロジェクトを編集",
         onDismissRequest = onDismiss,
         content = {
             // 項目が増えたためダイアログ内をスクロール可能にする
@@ -57,6 +70,30 @@ fun ProjectEditDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState()),
             ) {
+                if (creating) {
+                    TerminalField(
+                        value = id,
+                        onValueChange = { id = it },
+                        label = "ID(英小文字・数字・ハイフン。あとから変更できない)",
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        text = when {
+                            idTaken -> "その ID は既に使われています。"
+                            trimmedId.isNotEmpty() && !trimmedId.matches(ID_PATTERN) ->
+                                "使えるのは英小文字・数字・ハイフンだけです。"
+                            else -> "サーバー・レコル・分類履歴がこの ID を参照します。" +
+                                "作り直すときは以前と同じ ID にしてください(例: anri)。"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                } else {
+                    Text(
+                        text = "ID: ${original?.id.orEmpty()}(変更できません)",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
                 TerminalField(
                     value = name,
                     onValueChange = { name = it },
@@ -109,9 +146,10 @@ fun ProjectEditDialog(
         },
         confirmButton = {
             DialogAction(
-                "保存",
+                if (creating) "作成" else "保存",
                 onClick = {
                     onSave(
+                        if (creating) trimmedId else original?.id.orEmpty(),
                         name.trim(),
                         currentGoal.trim(),
                         health,
@@ -120,7 +158,7 @@ fun ProjectEditDialog(
                         repoBranch.trim().ifEmpty { null },
                     )
                 },
-                enabled = name.isNotBlank(),
+                enabled = name.isNotBlank() && (!creating || idValid),
             )
         },
         dismissButton = {
@@ -131,3 +169,9 @@ fun ProjectEditDialog(
 
 /** 手動編集で選べる状態(設計書v2の語彙)。AI分析由来の自由な値は表示のみで受け入れる。 */
 private val HEALTH_OPTIONS = listOf("on_track", "attention", "blocked", "paused")
+
+/**
+ * ID に使える文字。サーバーの `api.php` がファイル名検証に使う語彙へ寄せ、
+ * URL やファイル名で困らない範囲に絞る(ハイフンは既存の paper-armor-frog のため許す)。
+ */
+private val ID_PATTERN = Regex("^[a-z0-9-]+$")

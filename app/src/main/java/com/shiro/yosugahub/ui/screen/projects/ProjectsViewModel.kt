@@ -33,6 +33,20 @@ class ProjectsViewModel(
 
     private val refreshing = MutableStateFlow(false)
 
+    /**
+     * プロジェクトを新規作成する(2026-07-25)。
+     *
+     * これまで**プロジェクトを作る手段が仮データしか無かった**ため、
+     * 仮データを消すと二度と作れなくなっていた。ID は呼び出し側が決める
+     * (サーバー・レコル・分類履歴が参照する正本なので自動採番にしない)。
+     */
+    fun createProject(project: Project, onDone: () -> Unit = {}) {
+        viewModelScope.launch {
+            projectRepository.upsert(project)
+            onDone()
+        }
+    }
+
     /** リポジトリ設定済みの全プロジェクトを GitHub から更新する(1件でも取れたら自動同期)。 */
     fun refreshAll(onResult: (StatusRefreshAllResult) -> Unit) {
         val projects = uiState.value.projects

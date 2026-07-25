@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shiro.yosugahub.data.repository.SampleDataStatus
 import com.shiro.yosugahub.ui.component.DialogAction
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.TacticalButton
@@ -56,11 +55,6 @@ fun SettingsScreen(
     val importHistory by viewModel.importHistory.collectAsState()
     val vaultChecking by viewModel.vaultChecking.collectAsState()
     val vaultCheck by viewModel.vaultCheck.collectAsState()
-    val sampleData by viewModel.sampleData.collectAsState()
-    val sampleDataMessage by viewModel.sampleDataMessage.collectAsState()
-    var showSampleDataDialog by remember { mutableStateOf(false) }
-    // 仮データの件数は Flow ではないので、画面を開いたときに数え直す。
-    LaunchedEffect(Unit) { viewModel.refreshSampleData() }
     // ファイル一覧は Flow ではないので、画面を開いたときに読み直す。
     LaunchedEffect(Unit) { viewModel.refreshImportHistory() }
     var openedHistory by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -138,57 +132,13 @@ fun SettingsScreen(
             }
         }
         item {
-            SectionCard(title = "サンプルデータ") {
-                if (!sampleData.hasAny) {
-                    Text(
-                        text = if (sampleData.seedingDisabled) {
-                            "残っていません。再投入も停止済みです。"
-                        } else {
-                            "残っていません。"
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                } else {
-                    Text(
-                        text = "初回起動時に入る仮データが残っています。" +
-                            "AIがこれを実データとして扱ってしまうため、実運用の前に削除してください。",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = listOfNotNull(
-                            "プロジェクト${sampleData.projects}件".takeIf { sampleData.projects > 0 },
-                            "タスク${sampleData.tasks}件".takeIf { sampleData.tasks > 0 },
-                            "アイテム${sampleData.items}件".takeIf { sampleData.items > 0 },
-                            "日記${sampleData.diaries}件".takeIf { sampleData.diaries > 0 },
-                            "予定${sampleData.events}件".takeIf { sampleData.events > 0 },
-                            "中身が仮のプロジェクト${sampleData.projectsWithSeedText}件"
-                                .takeIf { sampleData.projectsWithSeedText > 0 },
-                        ).joinToString(" / "),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TacticalOutlinedButton(
-                        onClick = { showSampleDataDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text("サンプルデータを削除")
-                    }
-                }
-                if (sampleDataMessage.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(sampleDataMessage, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        }
-        item {
             SectionCard(title = "Googleアカウント") {
                 Text("未接続(Phase 4 で実装予定)", style = MaterialTheme.typography.bodyMedium)
             }
         }
         item {
             SectionCard(title = "カレンダー") {
-                Text("取得期間: 過去7日〜未来7日", style = MaterialTheme.typography.bodyMedium)
+                Text("取得期間: 過去14日〜未来14日", style = MaterialTheme.typography.bodyMedium)
             }
         }
         item {
@@ -382,17 +332,6 @@ fun SettingsScreen(
         }
     }
 
-    if (showSampleDataDialog) {
-        SampleDataDeleteDialog(
-            status = sampleData,
-            onDismiss = { showSampleDataDialog = false },
-            onConfirm = { includeProjects ->
-                showSampleDataDialog = false
-                viewModel.deleteSampleData(includeProjects)
-            },
-        )
-    }
-
     openedHistory?.let { (fileName, content) ->
         TerminalDialog(
             title = fileName,
@@ -411,65 +350,6 @@ fun SettingsScreen(
     }
 }
 
-/**
- * 削除前の確認。プロジェクトは既定で残す(名前が実在するゲームの可能性があり、
- * 消すと GitHub 設定などもやり直しになるため)。
- */
-@Composable
-private fun SampleDataDeleteDialog(
-    status: SampleDataStatus,
-    onDismiss: () -> Unit,
-    onConfirm: (includeProjects: Boolean) -> Unit,
-) {
-    var includeProjects by remember { mutableStateOf(false) }
-
-    TerminalDialog(
-        title = "サンプルデータを削除",
-        onDismissRequest = onDismiss,
-        // 破壊的操作なので見出しのLEDも赤にする。
-        ledColor = MaterialTheme.colorScheme.error,
-        content = {
-            Column {
-                Text(
-                    "ID を指定して消すため、あなたが作ったデータや取り込んだデータは残ります。" +
-                        "削除後は再投入されなくなります。",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "削除: " + listOfNotNull(
-                        "タスク${status.tasks}件".takeIf { status.tasks > 0 },
-                        "アイテム${status.items}件".takeIf { status.items > 0 },
-                        "日記${status.diaries}件".takeIf { status.diaries > 0 },
-                        "予定${status.events}件".takeIf { status.events > 0 },
-                        "プロジェクト${status.projectsWithSeedText}件の仮の中身"
-                            .takeIf { status.projectsWithSeedText > 0 && status.projects > 0 },
-                    ).joinToString(" / ").ifEmpty { "なし" },
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                if (status.projects > 0) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    TerminalCheckbox(
-                        label = "プロジェクト${status.projects}件も削除する",
-                        checked = includeProjects,
-                        onCheckedChange = { includeProjects = it },
-                    )
-                    Text(
-                        "実在するゲームなら、チェックを外したまま残してください。" +
-                            "その場合も「目標 / 作業中 / 次」の仮の文言は空にします。",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            DialogAction("削除する", onClick = { onConfirm(includeProjects) }, danger = true)
-        },
-        dismissButton = {
-            DialogAction("やめる", onClick = onDismiss)
-        },
-    )
-}
 
 /** ツリーURIから表示用のフォルダ名を取り出す(例: primary:Obsidian/Vault → Obsidian/Vault)。 */
 private fun vaultDisplayName(uriString: String): String {

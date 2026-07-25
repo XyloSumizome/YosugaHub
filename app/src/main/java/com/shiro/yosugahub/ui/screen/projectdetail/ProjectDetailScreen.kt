@@ -235,7 +235,8 @@ fun ProjectDetailScreen(
             ProjectEditDialog(
                 original = project,
                 onDismiss = { showProjectEditDialog = false },
-                onSave = { name, currentGoal, health, repoOwner, repoName, repoBranch ->
+                onSave = { _, name, currentGoal, health, repoOwner, repoName, repoBranch ->
+                    // 編集では ID を変えない(第1引数は既存 ID がそのまま返る)。
                     viewModel.updateProject(
                         project.copy(
                             name = name,
