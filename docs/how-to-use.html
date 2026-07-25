@@ -380,7 +380,9 @@ DATA
             <td>GitHub → Obsidian</td>
             <td class="wrapcell">
               各ゲームの <code>.yosuga/notes/</code> を取得し、種別ごとに
-              <code>Games/&lt;ゲーム&gt;/</code> へ振り分けて保存。取得済みは飛ばす
+              <code>Games/&lt;ゲーム&gt;/</code> へ振り分けて保存。
+              <strong>更新されたノートは同じ場所へ上書き</strong>される。
+              取得済みは飛ばし、元が消えたノートは報告だけして残す
             </td>
           </tr>
           <tr>
@@ -527,7 +529,7 @@ DATA
         <thead><tr><th>種類</th><th>承認すると</th></tr></thead>
         <tbody>
           <tr><td>items</td><td class="wrapcell">RECORDS のアイテムへ。<code>targetNote</code> があれば Obsidian のノートへ追記</td></tr>
-          <tr><td>diary</td><td class="wrapcell">RECORDS の「観測」へ</td></tr>
+          <tr><td>diary</td><td class="wrapcell">RECORDS の「観測」へ。<strong>同じ日付は上書き</strong>(一日につき1件)</td></tr>
           <tr><td>tasks</td><td class="wrapcell">PROJECTS のタスクへ</td></tr>
           <tr><td>directives</td><td class="wrapcell">承認したものだけ各ゲームの Claude Code へ配信</td></tr>
           <tr><td>classifications</td><td class="wrapcell"><strong>承認待ちを通らない。</strong>文書へ直接あたり「確認待ち」に。確定は RECORDS の「文書」で</td></tr>

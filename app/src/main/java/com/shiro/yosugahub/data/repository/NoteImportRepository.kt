@@ -19,6 +19,10 @@ data class ProjectImportOutcome(
     val imported: Int = 0,
     /** そのうち Inbox へ入れた件数。 */
     val toInbox: Int = 0,
+    /** 既存ノートの新しい版で**上書きした**件数(2026-07-25)。 */
+    val updated: Int = 0,
+    /** 取り込み記録にあるのにリポジトリの一覧から消えたノート(Vault 側は残したまま)。 */
+    val missing: List<String> = emptyList(),
     /** 取得済みで飛ばした件数。 */
     val skipped: Int = 0,
     /** 取得または書き込みに失敗したもの。 */
@@ -35,8 +39,10 @@ data class NoteImportSummary(
 ) {
     val imported: Int get() = outcomes.sumOf { it.imported }
     val toInbox: Int get() = outcomes.sumOf { it.toInbox }
+    val updated: Int get() = outcomes.sumOf { it.updated }
     val skipped: Int get() = outcomes.sumOf { it.skipped }
     val failed: Int get() = outcomes.sumOf { it.failed.size }
+    val missing: Int get() = outcomes.sumOf { it.missing.size }
 }
 
 /**
@@ -79,8 +85,10 @@ class NoteImportRepository(
             ImportEvent.Done(
                 imported = summary.imported,
                 toInbox = summary.toInbox,
+                updated = summary.updated,
                 skipped = summary.skipped,
                 failed = summary.failed,
+                missing = summary.missing,
             )
         )
         return summary
@@ -122,11 +130,42 @@ class NoteImportRepository(
     ): ProjectImportOutcome {
         var imported = 0
         var toInbox = 0
+        var updated = 0
         val failed = fetched.failed.toMutableList()
         var message = ""
 
         for (note in fetched.fetched) {
             onEvent(ImportEvent.Fetch(note.note.name))
+
+            // 同じ元ファイルの記録があれば「更新」。sha は変わっていても
+            // sourcePath で同一と判る。ノートは Claude Code だけが書くので、
+            // Vault 側の同じ場所を**新しい版で上書き**する(枝番で増やさない)。
+            val previous = dao.findBySource(project.id, note.note.path)
+            if (previous != null) {
+                onEvent(ImportEvent.Update(note.note.name, previous.vaultPath))
+                when (val written = vaultWriter.overwrite(previous.vaultPath, note.content)) {
+                    is VaultWriteResult.Written -> {
+                        updated++
+                        // 記録は新しい sha へ置き換える(場所は据え置き)。
+                        dao.deleteBySha(previous.sha)
+                        dao.insert(previous.copy(sha = note.note.sha, importedAt = now()))
+                        onEvent(ImportEvent.Written(written.path))
+                    }
+
+                    VaultWriteResult.NotConfigured -> {
+                        message = VAULT_NOT_CONFIGURED
+                        onEvent(ImportEvent.Note(VAULT_NOT_CONFIGURED))
+                        break
+                    }
+
+                    is VaultWriteResult.Failed -> {
+                        failed += note.note.path
+                        onEvent(ImportEvent.Fail(note.note.path))
+                    }
+                }
+                continue
+            }
+
             val parsed = Frontmatter.parse(note.content)
             val destination = NoteRouter.route(
                 parsed = parsed,
@@ -180,13 +219,22 @@ class NoteImportRepository(
         if (fetched.skipped > 0) onEvent(ImportEvent.Skip(fetched.skipped))
         fetched.failed.forEach { onEvent(ImportEvent.Fail(it)) }
 
+        // 記録にあるのに一覧から消えたノート。**Vault 側は消さない**(報告だけ)。
+        // Vault はシロさんと Obsidian の領分なので、消すかどうかは人が決める。
+        val missing = dao.notesForProject(project.id)
+            .filter { it.sourcePath !in fetched.listedPaths }
+            .map { it.vaultPath }
+        missing.forEach { onEvent(ImportEvent.Missing(it)) }
+
         return ProjectImportOutcome(
             projectId = project.id,
             projectName = project.name,
             imported = imported,
             toInbox = toInbox,
+            updated = updated,
             skipped = fetched.skipped,
             failed = failed,
+            missing = missing,
             message = message,
         )
     }

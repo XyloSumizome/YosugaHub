@@ -32,6 +32,12 @@ object ImportLog {
             LogLine("  ROUTE ${event.fileName} → ${event.destination}", LogTone.INFO)
         }
 
+        is ImportEvent.Update ->
+            LogLine("  UPDATE ${event.fileName} → ${event.vaultPath}", LogTone.INFO)
+
+        is ImportEvent.Missing ->
+            LogLine("  GONE ${event.vaultPath} (元が消えた。Vault側は残す)", LogTone.WARN)
+
         is ImportEvent.Written ->
             LogLine("  WRITE ${event.path} … OK", LogTone.OK)
 
@@ -42,8 +48,12 @@ object ImportLog {
             LogLine("  FAIL ${event.path}", LogTone.ERROR)
 
         is ImportEvent.Done -> LogLine(
-            "> DONE. ${event.imported} imported / ${event.toInbox} inbox / " +
-                "${event.skipped} skipped / ${event.failed} failed",
+            buildString {
+                append("> DONE. ${event.imported} imported / ${event.updated} updated / ")
+                append("${event.skipped} skipped / ${event.failed} failed")
+                if (event.toInbox > 0) append(" / ${event.toInbox} inbox")
+                if (event.missing > 0) append(" / ${event.missing} gone")
+            },
             if (event.failed > 0) LogTone.ERROR else LogTone.ACCENT,
         )
     }

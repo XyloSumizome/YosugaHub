@@ -16,6 +16,10 @@ interface DiaryDao {
     @Query("SELECT COUNT(*) FROM diary_entries")
     suspend fun count(): Int
 
+    /** 同じ日の既存日記(2026-07-25)。観察日記は一日につき1件なので、上書きの判定に使う。 */
+    @Query("SELECT * FROM diary_entries WHERE date = :date LIMIT 1")
+    suspend fun findByDate(date: String): DiaryEntryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: DiaryEntryEntity)
 

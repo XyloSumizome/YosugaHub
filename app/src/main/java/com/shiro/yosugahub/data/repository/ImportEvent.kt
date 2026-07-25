@@ -26,6 +26,12 @@ sealed interface ImportEvent {
     /** 振り分け先が決まった。 */
     data class Route(val fileName: String, val destination: String, val isInbox: Boolean) : ImportEvent
 
+    /** 既存ノートの新しい版が来た。記録済みの場所を上書きする(2026-07-25)。 */
+    data class Update(val fileName: String, val vaultPath: String) : ImportEvent
+
+    /** 記録にあるのにリポジトリから消えたノート。Vault 側は残す(報告だけ)。 */
+    data class Missing(val vaultPath: String) : ImportEvent
+
     /** Vault へ書けた。 */
     data class Written(val path: String) : ImportEvent
 
@@ -36,5 +42,12 @@ sealed interface ImportEvent {
     data class Fail(val path: String) : ImportEvent
 
     /** 全体の完了。 */
-    data class Done(val imported: Int, val toInbox: Int, val skipped: Int, val failed: Int) : ImportEvent
+    data class Done(
+        val imported: Int,
+        val toInbox: Int,
+        val updated: Int,
+        val skipped: Int,
+        val failed: Int,
+        val missing: Int,
+    ) : ImportEvent
 }

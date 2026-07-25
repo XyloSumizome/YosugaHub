@@ -108,6 +108,8 @@ class ProposalRepositoryTest {
         val stored = mutableListOf<DiaryEntryEntity>()
         override fun observeAll(): Flow<List<DiaryEntryEntity>> = flowOf(stored.toList())
         override suspend fun count(): Int = stored.size
+        override suspend fun findByDate(date: String): DiaryEntryEntity? =
+            stored.firstOrNull { it.date == date }
         override suspend fun insert(entry: DiaryEntryEntity) {
             stored += entry
         }

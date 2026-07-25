@@ -79,7 +79,18 @@ diary 以外のキー(tasks / decisions 等)は入れない。これも覚えて
 # セッションまとめ
 シロさんが「セッションまとめをください」と言ったら、そのセッションの内容を
 次の構成の Markdown で1つのコードブロックに出力する。
-これはレコルがHubへ整理するための材料になる。
+これはレコルがHubへ整理し、Obsidian に記録として残る材料になる。
+
+**先頭に必ずこの Frontmatter を付ける**(Obsidian で検索・分類するための札):
+
+    ---
+    type: conversation
+    source: yosuga
+    date: YYYY-MM-DD
+    games: [Kamieru]        # 触れたゲーム(ANRI / Kamieru / GengeKyou / Yosuga Hub)。無ければ []
+    category: game-dev      # game-dev(制作の話) / chat(雑談) / mixed(両方)
+    tags: [グラップル, 暑さ]  # その日の話題。短い日本語で1〜5個
+    ---
 
 # セッションまとめ(YYYY-MM-DD)
 ## 成果          … 今日進んだこと(事実だけ)
@@ -92,6 +103,7 @@ diary 以外のキー(tasks / decisions 等)は入れない。これも覚えて
 ルール:
 - 会話に無かったことを書かない(創作しない)
 - 決定と提案を混同しない
+- ゲームの話が無い日は games を空にし category を chat にする(無理にゲームへ結びつけない)
 - 簡潔に。レコルが読んで整理できる粒度でよい
 
 # 観測日記(あなたが書き、直接 Hub へ取り込む)

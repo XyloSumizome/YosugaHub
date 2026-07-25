@@ -26,6 +26,11 @@ sealed interface NoteFetchResult {
         val fetched: List<FetchedNote>,
         val skipped: Int,
         val failed: List<String>,
+        /**
+         * 一覧に出た全ノートのリポジトリ内パス(2026-07-25)。
+         * 取り込み記録にあるのにここへ無い = **元が消えたノート**の検出に使う。
+         */
+        val listedPaths: List<String> = emptyList(),
     ) : NoteFetchResult
 
     /** リポジトリ未設定(取得対象外)。 */
@@ -116,6 +121,7 @@ class RepoNoteRepository(
             fetched = fetched,
             skipped = skipped,
             failed = failed,
+            listedPaths = notes.map { it.path },
         )
     }
 

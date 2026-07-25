@@ -17,6 +17,21 @@ interface ImportedNoteDao {
     @Query("SELECT sha FROM imported_notes WHERE projectId = :projectId")
     suspend fun shasForProject(projectId: String): List<String>
 
+    /**
+     * 同じ元ファイルの取り込み記録(2026-07-25)。
+     * sha が変わっていても sourcePath が同じなら「更新されたノート」と判る。
+     */
+    @Query("SELECT * FROM imported_notes WHERE projectId = :projectId AND sourcePath = :sourcePath")
+    suspend fun findBySource(projectId: String, sourcePath: String): ImportedNoteEntity?
+
+    /** 更新で置き換わった古い版の記録を消す(Vault 側は上書き済み)。 */
+    @Query("DELETE FROM imported_notes WHERE sha = :sha")
+    suspend fun deleteBySha(sha: String)
+
+    /** リポジトリから消えたノートの検出用(記録にあるが一覧に無い = 元が消えた)。 */
+    @Query("SELECT * FROM imported_notes WHERE projectId = :projectId")
+    suspend fun notesForProject(projectId: String): List<ImportedNoteEntity>
+
     @Query("SELECT COUNT(*) FROM imported_notes")
     suspend fun count(): Int
 

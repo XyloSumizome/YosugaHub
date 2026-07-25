@@ -47,7 +47,7 @@ class ImportLogTest {
     @Test
     fun done_summarises_the_counts() {
         val line = ImportLog.format(
-            ImportEvent.Done(imported = 3, toInbox = 1, skipped = 2, failed = 0),
+            ImportEvent.Done(imported = 3, toInbox = 1, updated = 0, skipped = 2, failed = 0, missing = 0),
         )
         assertTrue(line.text.contains("3 imported"))
         assertTrue(line.text.contains("1 inbox"))
@@ -59,7 +59,7 @@ class ImportLogTest {
     @Test
     fun done_turns_red_when_something_failed() {
         val line = ImportLog.format(
-            ImportEvent.Done(imported = 0, toInbox = 0, skipped = 0, failed = 2),
+            ImportEvent.Done(imported = 0, toInbox = 0, updated = 0, skipped = 0, failed = 2, missing = 0),
         )
         assertEquals(LogTone.ERROR, line.tone)
     }

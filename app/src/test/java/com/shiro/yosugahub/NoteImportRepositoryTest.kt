@@ -74,6 +74,15 @@ class NoteImportRepositoryTest {
         }
 
         override suspend fun recent(limit: Int): List<ImportedNoteEntity> = rows.take(limit)
+        override suspend fun findBySource(projectId: String, sourcePath: String): ImportedNoteEntity? =
+            rows.firstOrNull { it.projectId == projectId && it.sourcePath == sourcePath }
+
+        override suspend fun deleteBySha(sha: String) {
+            rows.removeAll { it.sha == sha }
+        }
+
+        override suspend fun notesForProject(projectId: String): List<ImportedNoteEntity> =
+            rows.filter { it.projectId == projectId }
     }
 
     private class RecordingWriter(
@@ -82,6 +91,7 @@ class NoteImportRepositoryTest {
         },
     ) : VaultWriter {
         val writes = mutableListOf<Pair<String, String>>()
+        val overwrites = mutableListOf<String>()
         override suspend fun write(
             directory: String,
             fileName: String,
@@ -89,6 +99,11 @@ class NoteImportRepositoryTest {
         ): VaultWriteResult {
             writes += directory to fileName
             return result(directory, fileName)
+        }
+
+        override suspend fun overwrite(vaultPath: String, content: String): VaultWriteResult {
+            overwrites += vaultPath
+            return VaultWriteResult.Written(vaultPath)
         }
     }
 
@@ -160,6 +175,74 @@ class NoteImportRepositoryTest {
         val second = build().importAll()
         assertEquals(0, second.imported)
         assertEquals(1, second.skipped)
+    }
+
+    /**
+     * 更新されたノート(同じ元ファイル・新しい sha)は、枝番で増やさず
+     * **記録済みの場所を上書き**する(2026-07-25 / シロさんの運用確認:
+     * ノートは Claude Code だけが書き、人が Obsidian 側で直すことはない)。
+     */
+    @Test
+    fun a_modified_note_overwrites_its_recorded_vault_path() = runBlocking {
+        val dao = FakeImportedNoteDao()
+        fun build(body: String, sha: String) = NoteImportRepository(
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
+            repoNoteRepository = repoNotes(
+                """{"name":"2026-07-24-a.md","path":".yosuga/notes/2026-07-24-a.md","sha":"$sha","size":10,"type":"file"}""" to body,
+            ),
+            vaultWriter = RecordingWriter(),
+            dao = dao,
+            now = { "2026-07-24T10:00:00+09:00" },
+        )
+
+        build(frontmatter("design", "初版"), "sha-1").importAll()
+        assertEquals("sha-1", dao.rows.single().sha)
+
+        val writer = RecordingWriter()
+        val second = NoteImportRepository(
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
+            repoNoteRepository = repoNotes(
+                """{"name":"2026-07-24-a.md","path":".yosuga/notes/2026-07-24-a.md","sha":"sha-2","size":10,"type":"file"}""" to frontmatter("design", "改訂版"),
+            ),
+            vaultWriter = writer,
+            dao = dao,
+            now = { "2026-07-25T10:00:00+09:00" },
+        ).importAll()
+
+        assertEquals(0, second.imported)
+        assertEquals(1, second.updated)
+        // 新規作成(write)ではなく、記録済みの場所への上書き。
+        assertTrue(writer.writes.isEmpty())
+        assertEquals(listOf("Games/ANRI/Design/2026-07-24-a.md"), writer.overwrites)
+        // 記録は新しい sha に置き換わり、場所は据え置き。
+        assertEquals("sha-2", dao.rows.single().sha)
+        assertEquals("Games/ANRI/Design/2026-07-24-a.md", dao.rows.single().vaultPath)
+    }
+
+    /** リポジトリから消えたノートは**報告だけ**して Vault 側は残す。 */
+    @Test
+    fun a_note_deleted_upstream_is_reported_but_kept_in_the_vault() = runBlocking {
+        val dao = FakeImportedNoteDao()
+        NoteImportRepository(
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
+            repoNoteRepository = repoNotes(note("2026-07-24-a.md", frontmatter("design"))),
+            vaultWriter = RecordingWriter(),
+            dao = dao,
+            now = { "2026-07-24T10:00:00+09:00" },
+        ).importAll()
+
+        // 2回目の一覧にはもうこのノートが無い(別のノートだけがある)。
+        val second = NoteImportRepository(
+            projectRepository = ProjectRepository(FakeProjectDao(listOf(anri)), EmptyTaskDao()),
+            repoNoteRepository = repoNotes(note("2026-07-25-b.md", frontmatter("design"))),
+            vaultWriter = RecordingWriter(),
+            dao = dao,
+            now = { "2026-07-25T10:00:00+09:00" },
+        ).importAll()
+
+        assertEquals(listOf("Games/ANRI/Design/2026-07-24-a.md"), second.outcomes.single().missing)
+        // 記録は消さない(次回も報告される。Vault 側で消されたら人の判断)。
+        assertEquals(2, dao.rows.size)
     }
 
     @Test

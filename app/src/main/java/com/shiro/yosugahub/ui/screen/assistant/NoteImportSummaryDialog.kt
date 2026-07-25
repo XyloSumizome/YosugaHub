@@ -37,7 +37,7 @@ fun NoteImportSummaryDialog(
                     )
                 } else {
                     Text(
-                        text = "取り込み ${summary.imported}件 / 取得済み ${summary.skipped}件",
+                        text = "取り込み ${summary.imported}件 / 更新 ${summary.updated}件 / 取得済み ${summary.skipped}件",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     if (summary.toInbox > 0) {
@@ -78,6 +78,7 @@ private fun ProjectOutcomeRow(outcome: ProjectImportOutcome) {
             } else {
                 buildString {
                     append("取り込み ${outcome.imported}件")
+                    if (outcome.updated > 0) append(" / 更新 ${outcome.updated}件")
                     if (outcome.toInbox > 0) append(" (Inbox ${outcome.toInbox}件)")
                     if (outcome.skipped > 0) append(" / 取得済み ${outcome.skipped}件")
                     if (outcome.failed.isNotEmpty()) append(" / 失敗 ${outcome.failed.size}件")
@@ -91,6 +92,21 @@ private fun ProjectOutcomeRow(outcome: ProjectImportOutcome) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
             )
+        }
+        // 元が消えたノート。Vault 側は消さないので、消すかどうかは人が Obsidian で決める。
+        if (outcome.missing.isNotEmpty()) {
+            Text(
+                text = "リポジトリから消えたノート(Vault側は残しています):",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            outcome.missing.forEach { path ->
+                Text(
+                    text = "・$path",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
