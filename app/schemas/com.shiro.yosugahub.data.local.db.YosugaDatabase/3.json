@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 3,
-    "identityHash": "7656f9f966cb15d5b487d0255f44861d",
+    "identityHash": "6f48d57c8af822c95d67668e48044fcc",
     "entities": [
       {
         "tableName": "projects",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `currentGoal` TEXT NOT NULL, `inProgress` TEXT NOT NULL, `nextTask` TEXT NOT NULL, `lastUpdated` TEXT NOT NULL, `health` TEXT NOT NULL, `repoOwner` TEXT, `repoName` TEXT, `repoBranch` TEXT, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `currentGoal` TEXT NOT NULL, `inProgress` TEXT NOT NULL, `nextTask` TEXT NOT NULL, `lastUpdated` TEXT NOT NULL, `health` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -49,24 +49,6 @@
             "columnName": "health",
             "affinity": "TEXT",
             "notNull": true
-          },
-          {
-            "fieldPath": "repoOwner",
-            "columnName": "repoOwner",
-            "affinity": "TEXT",
-            "notNull": false
-          },
-          {
-            "fieldPath": "repoName",
-            "columnName": "repoName",
-            "affinity": "TEXT",
-            "notNull": false
-          },
-          {
-            "fieldPath": "repoBranch",
-            "columnName": "repoBranch",
-            "affinity": "TEXT",
-            "notNull": false
           }
         ],
         "primaryKey": {
@@ -573,7 +555,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '7656f9f966cb15d5b487d0255f44861d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6f48d57c8af822c95d67668e48044fcc')"
     ]
   }
 }

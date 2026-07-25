@@ -96,9 +96,19 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v5 Phase 2 完了・実機確認済み**: 絞り込み(パス検索 / 最近更新1・7・30日)、JSON出力
   (`ContextData` を挟み**形式切替でファイルを読み直さない**)、出力履歴
   (**外へ出した時だけ**記録・最新20件)、タグ絞り込み(`TagIndex` を明示的に作る・複数タグは OR)。
-- **仮データ(SampleSeed)問題 解決(選択A)**: `SampleDataRepository` が **ID 指定で**削除し
-  (実データを巻き込まない)、DataStore `seeding_disabled` で再シードを止める。
-  プロジェクトの個別削除UIも追加。**「消しても復活する」問題は実機で解消を確認済み**。
+- **仮データ(SampleSeed)は 2026-07-25 に機能ごと廃止**。設定の削除ボタン・
+  `SampleDataRepository`・初回起動時のシード・`seeding_disabled` をすべて撤去した。
+  `SampleSeed.kt` は **test へ移動**(3つの Repository テストのフィクスチャ。製品には載らない)。
+  **経緯**: 仮データの ID(`anri` 等)を実プロジェクトとして使っていたため、
+  「サンプルデータを削除」が実運用中の行を消し、全ゲームの取り込みが壊れた。
+- **プロジェクト追加UI**(2026-07-25 / `ProjectsScreen` の先頭)。
+  それまで**プロジェクトは仮データからしか生まれず、作る手段が無かった**。
+  `ProjectEditDialog` は `original = null` で新規作成になり、**新規のときだけ ID を入力**させる
+  (ID はサーバー・レコル・分類履歴が参照する正本なので**自動採番にしない**。編集時は変更不可)。
+- **プロジェクトの呼称は英字名**(2026-07-25): `ANRI` / `Kamieru` / `GengeKyou`。
+  ID(`anri` / `paper-armor-frog` / `gengenkyo`)は**変更禁止**。
+  ⚠ **表示名は Obsidian の `Games/<表示名>/` フォルダ名になる**(`NoteRouter`)ので、
+  変えると書き込み先が変わる。
 - **⚠ エミュレータの黒画面**: ハードウェア描画だと画面が黒くなり `system_server` が ANR する
   (アプリの問題ではない)。`emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect`
   で復旧。恒久対処は Device Manager → Edit → Graphics →「Software - GLES 2.0」。
@@ -140,3 +150,39 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 ```
 
 WSL側にJDK/Android SDKがない場合、ビルドはWindows側のAndroid Studioで行う。
+
+# Yosuga Hub Data Provider Rules
+
+このプロジェクトは**自分自身を Yosuga Hub のプロジェクトとして扱う**(2026-07-25)。
+各ゲームに課しているのと同じ規約を、Hub 自身にも適用する。
+仕様の本体は `docs/claude_code_onboarding.md`。
+
+## Required files
+`.yosuga/project.json` / `.yosuga/status.json` / `.yosuga/status.md` /
+`.yosuga/schema-version.txt` を維持する。`projectId` は `yosuga-hub`(変更禁止)。
+
+## Update responsibility
+意味のある作業単位を完了したとき、**コミット前または作業終了前に**
+`.yosuga/status.json` と `.yosuga/status.md` を更新する。
+小さな変更ごとに毎回は不要。目安は WORKLOG に1項目書くのと同じ粒度。
+
+## Accuracy rules
+- 実装済み・作業中・未実装を明確に区別する(Project Rules の「未実装部分を、
+  実装済みのように扱わない」と同じ)。
+- 実際のコード・テスト結果・Git履歴に基づいて記録する。推測を事実として書かない。
+- 未解決の問題を隠さない。`blockers` / `risks` に残す。
+- 判断が必要な事項は `questionsForYosuga` に記録する。
+
+## recentChanges
+各件に `date`(`"yyyy-MM-dd"`)を**必ず**書く。Hub は近況報告に**直近2週間分だけ**を
+載せるため、日付が無いと期間で絞れず載り続ける。**古い分を消すのは Hub の仕事**なので
+こちらは積んでよい。`commit` は可能なら短縮SHA。
+
+## Validation
+更新後に JSON の構文と必須フィールドを検証する。失敗した状態でコミットしない。
+
+## Git rules
+- 秘密情報・アクセストークン・APIキー・個人情報・ローカル絶対パスを `.yosuga/` に含めない。
+- ⚠ **このリポジトリは GitHub へ未 push(公開リポジトリ・空)**。
+  push すると内容が公開される。push するかはシロさんの判断。
+  push しない限り Hub は自分自身の `status.json` を取得できない。

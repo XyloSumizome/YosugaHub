@@ -113,7 +113,10 @@
       "Bash(timeout 30 git ls-remote --heads origin)",
       "Bash(echo \"exit=$?\")",
       "Bash(timeout 25 git ls-remote --heads https://github.com/XyloSumizome/YosugaHub.git)",
-      "Bash(git mv *)"
+      "Bash(git mv *)",
+      "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat connectedDebugAndroidTest --console=plain\")",
+      "Bash(xargs '-I{}' python3 -c ' *)",
+      "Bash(git log *)"
     ]
   }
 }

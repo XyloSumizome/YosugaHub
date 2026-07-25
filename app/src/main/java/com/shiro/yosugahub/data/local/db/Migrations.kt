@@ -79,14 +79,32 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
-/** v3 → v4: projects に GitHub リポジトリ情報を追加(v3-Step 3 / GitHub連携)。 */
+/**
+ * v3 → v4: projects に GitHub リポジトリ情報を追加(v3-Step 3 / GitHub連携)。
+ *
+ * **既にある列は足さない**(2026-07-25)。
+ * この3列を入れた当時、スキーマ書き出しが v3 の `3.json` まで書き換えてしまい、
+ * 「repo 列を持つ v3 の DB」が作られ得る状態だった。
+ * そこへ素の `ADD COLUMN` を流すと `duplicate column name` で落ちて起動できなくなる。
+ * どちらの形の v3 から来ても通るように、存在を見てから足す。
+ */
 val MIGRATION_3_4 = object : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
-        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoOwner` TEXT")
-        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoName` TEXT")
-        db.execSQL("ALTER TABLE `projects` ADD COLUMN `repoBranch` TEXT")
+        val existing = db.columnNamesOf("projects")
+        listOf("repoOwner", "repoName", "repoBranch")
+            .filterNot { it in existing }
+            .forEach { column -> db.execSQL("ALTER TABLE `projects` ADD COLUMN `$column` TEXT") }
     }
 }
+
+/** そのテーブルにいまある列名。マイグレーションを何度流しても壊れないようにするために使う。 */
+private fun SupportSQLiteDatabase.columnNamesOf(table: String): Set<String> =
+    query("PRAGMA table_info(`$table`)").use { cursor ->
+        val nameIndex = cursor.getColumnIndex("name")
+        buildSet {
+            while (cursor.moveToNext()) add(cursor.getString(nameIndex))
+        }
+    }
 
 /** v2 → v3: 知識ベース関連の7テーブルを追加(v3-Step 2)。既存テーブルは変更しない。 */
 val MIGRATION_2_3 = object : Migration(2, 3) {
