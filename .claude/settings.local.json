@@ -106,7 +106,9 @@
       "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat assembleDebug testDebugUnitTest --console=plain\")",
       "Bash(grep -c '^```' docs/recoru_prompt.md)",
       "Bash(grep -n '^```' docs/recoru_prompt.md)",
-      "Bash(grep -rn 'text/\\\\*\\\\|```' app/src/main/java/com/shiro/yosugahub/data/file/PastedJson.kt app/src/main/java/com/shiro/yosugahub/ui/screen/console/ConsoleScreen.kt)"
+      "Bash(grep -rn 'text/\\\\*\\\\|```' app/src/main/java/com/shiro/yosugahub/data/file/PastedJson.kt app/src/main/java/com/shiro/yosugahub/ui/screen/console/ConsoleScreen.kt)",
+      "Bash(cmd.exe /c \"C:\\\\Users\\\\note_\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe -list-avds\")",
+      "Bash(cmd.exe /c \"start /b C:\\\\Users\\\\note_\\\\AppData\\\\Local\\\\Android\\\\Sdk\\\\emulator\\\\emulator.exe -avd Pixel_10 -no-snapshot-load -gpu swiftshader_indirect\")"
     ]
   }
 }
