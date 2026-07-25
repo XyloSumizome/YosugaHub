@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,8 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
+import com.shiro.yosugahub.ui.component.DialogAction
 import com.shiro.yosugahub.ui.component.OpTerminal
 import com.shiro.yosugahub.ui.component.PasteImportDialog
+import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.screen.assistant.AssistantViewModel
 import com.shiro.yosugahub.ui.screen.assistant.NoteImportSummaryDialog
 import com.shiro.yosugahub.ui.share.importResultMessage
@@ -51,6 +54,9 @@ fun ConsoleScreen(
     onOpenContext: () -> Unit,
     onOpenReview: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 「共有 → Yosuga Hub」で届いた本文。届いていれば確認ダイアログを出す。 */
+    sharedText: String? = null,
+    onSharedTextHandled: () -> Unit = {},
     viewModel: AssistantViewModel = viewModel(factory = AssistantViewModel.Factory),
 ) {
     val context = LocalContext.current
@@ -64,6 +70,20 @@ fun ConsoleScreen(
 
     summary?.let {
         NoteImportSummaryDialog(summary = it, onDismiss = viewModel::dismissNoteImportSummary)
+    }
+    // 共有で届いた本文。**中身の検査はせず**に確認だけ取り、判定は取り込み側へ任せる
+    // (レコルの回答でなければ「JSONの形式が正しくありません」として弾かれる)。
+    sharedText?.let { text ->
+        SharedImportDialog(
+            text = text,
+            onDismiss = onSharedTextHandled,
+            onImport = {
+                onSharedTextHandled()
+                viewModel.importResponseText(text) { result ->
+                    Toast.makeText(context, importResultMessage(result), Toast.LENGTH_LONG).show()
+                }
+            },
+        )
     }
     if (showSaveSession) {
         PasteImportDialog(
@@ -179,6 +199,55 @@ fun ConsoleScreen(
         Spacer(Modifier.height(24.dp))
     }
 }
+
+/**
+ * 「共有 → Yosuga Hub」で届いた本文の確認(v5 / 2026-07-25)。
+ *
+ * 共有を選んだ時点で意思表示はあるが、**取り込みは後戻りしにくい**ので
+ * 一度だけ内容を見せる。中身の判定はここでせず、取り込み側の結果メッセージに任せる。
+ */
+@Composable
+private fun SharedImportDialog(
+    text: String,
+    onDismiss: () -> Unit,
+    onImport: () -> Unit,
+) {
+    val preview = if (text.length > PREVIEW_LIMIT) text.take(PREVIEW_LIMIT) + "\n…" else text
+
+    TerminalDialog(
+        title = "SHARED",
+        onDismissRequest = onDismiss,
+        content = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "共有された内容を回答JSONとして取り込みます。" +
+                        "説明文が前後に付いていても、JSONの部分だけを取り出します。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TermTextDim,
+                )
+                Text(
+                    text = "${text.length} 文字",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TermTextDim,
+                )
+                Text(
+                    text = preview,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TermGreen,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 240.dp)
+                        .verticalScroll(rememberScrollState()),
+                )
+            }
+        },
+        confirmButton = { DialogAction("IMPORT", onClick = onImport) },
+        dismissButton = { DialogAction("CANCEL", onClick = onDismiss) },
+    )
+}
+
+/** 確認ダイアログで見せる本文の長さ。全文は要らず、頭が見えれば取り違えに気づける。 */
+private const val PREVIEW_LIMIT = 600
 
 /** `KEY  : VALUE` の状態表示行。 */
 @Composable

@@ -19,10 +19,23 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.YosugaHub">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!--
+                ChatGPT 等から「共有 → Yosuga Hub」でレコルの回答を受け取る。
+                貼り付けの代わりの入口(クリップボード監視は Android 12+ で
+                毎回システムのトーストが出るため採らない)。
+                singleTop にしているのは、起動済みのときに新しい画面を積まず
+                onNewIntent で受けるため。
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
     </application>

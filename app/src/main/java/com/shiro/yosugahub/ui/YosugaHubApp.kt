@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,10 +26,25 @@ import com.shiro.yosugahub.ui.screen.settings.SettingsScreen
 /**
  * ルートは**下部ナビの無いコンソール**(v5 UI)。画面を移動して回るのではなく、
  * コンソールからコマンドを実行 / サブ画面を開く。サブ画面は上辺の [ < BACK ] で戻る。
+ *
+ * [sharedText] は「共有 → Yosuga Hub」で届いた本文。届いたら**コンソールへ戻して**
+ * 確認ダイアログを出す(サブ画面を開いたまま共有されると気づけないため)。
  */
 @Composable
-fun YosugaHubApp() {
+fun YosugaHubApp(
+    sharedText: String? = null,
+    onSharedTextHandled: () -> Unit = {},
+) {
     val navController = rememberNavController()
+
+    LaunchedEffect(sharedText) {
+        if (sharedText != null) {
+            navController.navigate(YosugaDestination.Console.route) {
+                popUpTo(YosugaDestination.Console.route) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         // 下部ナビ(Scaffold)を廃したので、ステータスバー等のインセットはここで確保する。
@@ -45,6 +61,8 @@ fun YosugaHubApp() {
                     onOpenSettings = { navController.navigate(YosugaDestination.Settings.route) },
                     onOpenContext = { navController.navigate(ObsidianContextRoute.PATTERN) },
                     onOpenReview = { navController.navigate(YosugaDestination.Review.route) },
+                    sharedText = sharedText,
+                    onSharedTextHandled = onSharedTextHandled,
                 )
             }
 
