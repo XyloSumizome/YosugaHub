@@ -81,7 +81,22 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.SYNC_TOKEN_ENCRYPTED] = value }
     }
 
+    /**
+     * レコル(カスタムGPT)のURL。コンソールから一発で開くために持つ(2026-07-25)。
+     * 秘密情報ではないため平文。開く前に `ExternalLink` で http/https のみに絞る。
+     */
+    val recoruUrl: Flow<String> = dataStore.data
+        .catch { error ->
+            if (error is IOException) emit(emptyPreferences()) else throw error
+        }
+        .map { preferences -> preferences[Keys.RECORU_URL].orEmpty() }
+
+    suspend fun setRecoruUrl(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.RECORU_URL] = value }
+    }
+
     private object Keys {
+        val RECORU_URL = stringPreferencesKey("recoru_url")
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
         val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")

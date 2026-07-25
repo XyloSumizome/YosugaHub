@@ -42,6 +42,8 @@ data class AssistantUiState(
     /** コンソール上部の状態表示用。 */
     val projectCount: Int = 0,
     val lastSync: String = "",
+    /** レコル(カスタムGPT)のURL。空なら OPEN RECORU を出さない(2026-07-25)。 */
+    val recoruUrl: String = "",
 ) {
     val pendingCount: Int get() = proposals.size
 }
@@ -60,6 +62,7 @@ class AssistantViewModel(
     private val projectCount = projectRepository.projects()
         .map { it.size }
     private val lastSync = userPreferencesRepository.lastSyncedAt
+    private val recoruUrl = userPreferencesRepository.recoruUrl
 
     /** 端末ログ(v5 UI)。取り込み・保存・生成などの操作すべてで共用する。 */
     val opLog = OpLogState()
@@ -164,12 +167,14 @@ class AssistantViewModel(
         assistantRepository.recommendations(),
         projectCount,
         lastSync,
-    ) { pending, recommendations, projects, sync ->
+        recoruUrl,
+    ) { pending, recommendations, projects, sync, recoru ->
         AssistantUiState(
             proposals = pending.map { it.toCardUi() },
             recommendations = recommendations,
             projectCount = projects,
             lastSync = sync,
+            recoruUrl = recoru,
         )
     }.stateIn(
         scope = viewModelScope,

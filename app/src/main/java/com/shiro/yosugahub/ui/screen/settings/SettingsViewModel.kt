@@ -111,6 +111,20 @@ class SettingsViewModel(
         viewModelScope.launch { onResult(importRepository.readHistory(fileName)) }
     }
 
+    /**
+     * レコル(カスタムGPT)のURL(2026-07-25)。
+     * uiState の combine は5フロー上限なので独立させる。
+     */
+    val recoruUrl: StateFlow<String> = userPreferencesRepository.recoruUrl.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = "",
+    )
+
+    fun saveRecoruUrl(url: String) {
+        viewModelScope.launch { userPreferencesRepository.setRecoruUrl(url.trim()) }
+    }
+
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.obsidianVaultUri,
         gitHubSettingsRepository.hasToken,

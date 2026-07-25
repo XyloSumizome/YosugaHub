@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.file.ExternalLink
 import com.shiro.yosugahub.ui.component.DialogAction
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.TacticalButton
@@ -63,6 +64,8 @@ fun SettingsScreen(
     var syncTokenInput by remember { mutableStateOf("") }
     // 保存済みURLを初期値にする(uiState 反映後に一度だけ取り込む)。
     var syncUrlInput by remember(uiState.syncBaseUrl) { mutableStateOf(uiState.syncBaseUrl) }
+    val recoruUrl by viewModel.recoruUrl.collectAsState()
+    var recoruUrlInput by remember(recoruUrl) { mutableStateOf(recoruUrl) }
 
     // Vault フォルダ選択。選択されたら読み書き権限を永続化して URI を保存する。
     val vaultPicker = rememberLauncherForActivityResult(
@@ -128,6 +131,46 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
+            }
+        }
+        item {
+            SectionCard(title = "レコル(カスタムGPT)") {
+                Text(
+                    text = "URLを入れると、コンソールの `> OPEN RECORU` から一発で開けます。" +
+                        "ブラウザのアドレス欄や共有からコピーしてください。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                TerminalField(
+                    value = recoruUrlInput,
+                    onValueChange = { recoruUrlInput = it },
+                    label = "レコルのURL(https://…)",
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (recoruUrlInput.isNotBlank() && !ExternalLink.isValid(recoruUrlInput)) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "http:// か https:// で始まるURLだけを開けます(空白を含むものは不可)。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                TacticalOutlinedButton(
+                    onClick = {
+                        viewModel.saveRecoruUrl(recoruUrlInput)
+                        Toast.makeText(
+                            context,
+                            if (recoruUrlInput.isBlank()) "URLを消しました。" else "保存しました。",
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                    },
+                    enabled = recoruUrlInput.isBlank() || ExternalLink.isValid(recoruUrlInput),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("保存")
                 }
             }
         }

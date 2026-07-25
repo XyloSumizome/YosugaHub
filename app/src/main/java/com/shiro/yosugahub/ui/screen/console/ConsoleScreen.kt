@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.file.ExternalLink
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
 import com.shiro.yosugahub.ui.component.DialogAction
@@ -34,6 +35,7 @@ import com.shiro.yosugahub.ui.component.TerminalDialog
 import com.shiro.yosugahub.ui.screen.assistant.AssistantViewModel
 import com.shiro.yosugahub.ui.screen.assistant.NoteImportSummaryDialog
 import com.shiro.yosugahub.ui.share.importResultMessage
+import com.shiro.yosugahub.ui.share.openExternalLink
 import com.shiro.yosugahub.ui.share.shareJsonText
 import com.shiro.yosugahub.ui.theme.TermAmber
 import com.shiro.yosugahub.ui.theme.TermGreen
@@ -179,6 +181,17 @@ fun ConsoleScreen(
         AsciiDivider()
         Command("IMPORT RESPONSE", "レコルの回答JSONを取り込む") { showImportResponse = true }
         AsciiDivider()
+
+        // URL 未設定なら出さない(押せて何も起きない口を作らない)。
+        ExternalLink.sanitize(uiState.recoruUrl)?.let { url ->
+            Command("OPEN RECORU", "レコル(カスタムGPT)を開く") {
+                val opened = openExternalLink(context, url)
+                if (!opened) {
+                    Toast.makeText(context, "開けるアプリがありません。", Toast.LENGTH_SHORT).show()
+                }
+            }
+            AsciiDivider()
+        }
 
         val reviewSuffix = if (uiState.pendingCount > 0) " (${uiState.pendingCount})" else ""
         Command("REVIEW$reviewSuffix", "承認待ちの提案を確認する", token = ">", onClick = onOpenReview)
