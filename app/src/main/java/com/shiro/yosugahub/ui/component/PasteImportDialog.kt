@@ -19,8 +19,9 @@ import com.shiro.yosugahub.ui.component.TerminalField
 
 /**
  * テキストを貼り付けて取り込む共用ダイアログ。
- * 既定は回答JSON(v4.3 運用: レコルの回答をコピーして貼る。コードブロックの囲いは
- * 取り込み側で外れる)。文言を差し替えれば会話ログの保存にも使える(v5 Phase 3-d)。
+ * 既定は回答JSON(レコルの整理でも、ヨスガの観測日記でも同じ口から入る。
+ * コードブロックの囲いは取り込み側で外れる)。
+ * 文言を差し替えれば会話ログの保存にも使える(v5 Phase 3-d)。
  */
 @Composable
 fun PasteImportDialog(
@@ -31,8 +32,14 @@ fun PasteImportDialog(
         "コードブロックの囲い(```)ごとでも構いません。",
     label: String = "回答JSON",
     confirmLabel: String = "取り込む",
+    /**
+     * 開いたときに入れておく文字列(2026-07-25)。
+     * クリップボードを読むかどうかは**呼び出し側の判断**にして、
+     * このダイアログは端末の状態に触れない(テストしやすさを保つ)。
+     */
+    prefill: String = "",
 ) {
-    var text by remember { mutableStateOf("") }
+    var text by remember(prefill) { mutableStateOf(prefill) }
 
     TerminalDialog(
         title = title,

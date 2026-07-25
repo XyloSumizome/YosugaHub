@@ -22,9 +22,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.file.ClipboardPrefill
 import com.shiro.yosugahub.data.file.ExternalLink
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
@@ -69,6 +71,11 @@ fun ConsoleScreen(
 
     var showSaveSession by remember { mutableStateOf(false) }
     var showImportResponse by remember { mutableStateOf(false) }
+    // 取り込みを始めたときに読んだクリップボード。
+    // **押した瞬間にだけ読む**——起動のたびに読むと Android 12 以降は毎回
+    // システムのトーストが出るうえ、無関係な文字列まで覗くことになる。
+    var responsePrefill by remember { mutableStateOf("") }
+    val clipboard = LocalClipboardManager.current
 
     summary?.let {
         NoteImportSummaryDialog(summary = it, onDismiss = viewModel::dismissNoteImportSummary)
@@ -110,6 +117,7 @@ fun ConsoleScreen(
     }
     if (showImportResponse) {
         PasteImportDialog(
+            prefill = responsePrefill,
             onDismiss = { showImportResponse = false },
             onImport = { text ->
                 showImportResponse = false
@@ -181,7 +189,12 @@ fun ConsoleScreen(
         }
         AsciiDivider()
         // レコル(整理)とヨスガ(観測日記)の両方が同じ口から入る。
-        Command("IMPORT RESPONSE", "AIの回答JSONを取り込む(レコル / ヨスガ)") { showImportResponse = true }
+        Command("IMPORT RESPONSE", "AIの回答JSONを取り込む(レコル / ヨスガ)") {
+            // クリップボードに回答JSONらしきものがあれば入れておく。
+            // 関係ない文字列は入れない(消す手間のほうが増えるため)。
+            responsePrefill = ClipboardPrefill.of(clipboard.getText()?.text)
+            showImportResponse = true
+        }
         AsciiDivider()
 
         // URL 未設定なら出さない(押せて何も起きない口を作らない)。
