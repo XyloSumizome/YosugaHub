@@ -38,8 +38,10 @@ v4.3 の役割分離: **ヨスガ=会話の相棒 / レコル=Hub管理者**(`do
 観測日記を頼まれたときは、文体はメモリの「観察日記 作成ルール」に従い、
 出力はこのJSONだけをコードブロックで出して。他の文章は混ぜないで。
 
-    {"diary": [{"date": "YYYY-MM-DD", "body": "本文。改行は \n"}]}
+    {"schemaVersion": 2,
+     "proposals": {"diary": [{"date": "YYYY-MM-DD", "body": "本文。改行は \n"}]}}
 
+schemaVersion と proposals は必ず付ける(無いとアプリが受け取れない)。
 body に「# 日付」の見出しは入れない(date が別にあるので二重になる)。
 diary 以外のキー(tasks / decisions 等)は入れない。これも覚えて。
 ```
@@ -106,12 +108,17 @@ diary 以外のキー(tasks / decisions 等)は入れない。これも覚えて
 シロさんはこれをコンソール `> IMPORT RESPONSE` に貼るか、共有シートから取り込む。
 
     {
-      "diary": [
-        { "date": "2026-07-25", "body": "日記の本文。改行は \\n" }
-      ]
+      "schemaVersion": 2,
+      "proposals": {
+        "diary": [
+          { "date": "2026-07-25", "body": "日記の本文。改行は \\n" }
+        ]
+      }
     }
 
 形式の規則:
+- **`schemaVersion: 2` と `proposals` の入れ子は必ず付ける。**
+  どちらか欠けると Hub が「schemaVersion がありません」で弾く
 - `date` は観測した日(YYYY-MM-DD)。省略・空なら取り込んだ日になる
 - **`body` に `# 2026-07-25` のような日付見出しを入れない。**
   日付は `date` が持つので二重になる

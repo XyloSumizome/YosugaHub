@@ -118,7 +118,8 @@ fun ConsoleScreen(
                 }
             },
             title = "IMPORT RESPONSE",
-            description = "レコルの回答JSONを貼り付けて取り込む。",
+            description = "回答JSONを貼り付けて取り込む。" +
+                "レコルの整理でも、ヨスガの観測日記でも同じ口から入る。",
             label = "response json",
             confirmLabel = "IMPORT",
         )
@@ -179,7 +180,8 @@ fun ConsoleScreen(
             }
         }
         AsciiDivider()
-        Command("IMPORT RESPONSE", "レコルの回答JSONを取り込む") { showImportResponse = true }
+        // レコル(整理)とヨスガ(観測日記)の両方が同じ口から入る。
+        Command("IMPORT RESPONSE", "AIの回答JSONを取り込む(レコル / ヨスガ)") { showImportResponse = true }
         AsciiDivider()
 
         // URL 未設定なら出さない(押せて何も起きない口を作らない)。
