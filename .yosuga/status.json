@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-25T12:17:54+09:00",
-  "sourceCommit": "976c689",
+  "generatedAt": "2026-07-25T12:40:00+09:00",
+  "sourceCommit": "064711e",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。v5 Phase 1〜3 は実装済み。2026-07-25 に 3ゲームすべてが Hub とつながり、GitHub への初回 push も完了した。単体テスト 362 件・マイグレーションテスト 5 件が通り、Room は v8。",
   "phase": "development",
   "health": "on_track",
@@ -60,6 +60,11 @@
       "id": "task-010",
       "title": "GitHub へ初回 push(108コミット。バックアップ不在を解消)",
       "completedAt": "2026-07-25T12:15:00+09:00"
+    },
+    {
+      "id": "task-011",
+      "title": "Hub 自身の知識ノート(.yosuga/notes/)を4本書く",
+      "completedAt": "2026-07-25T12:40:00+09:00"
     }
   ],
   "inProgress": [
@@ -100,15 +105,20 @@
       "dependencies": []
     },
     {
-      "id": "task-034",
-      "title": "Hub 自身の .yosuga/notes/ を書くか決める",
-      "detail": "v5 は知識ノートの出力も求めている。Hub をプロジェクトとして登録するかの判断と対になる。",
-      "priority": "low",
+      "id": "task-035",
+      "title": "Yosuga Hub を Hub のプロジェクトとして登録するか決める",
+      "detail": "登録しないと .yosuga/notes/ は取り込んでも Inbox 行きになる(NoteRouter は登録済みプロジェクトの表示名でフォルダを決めるため)。登録すると Morning Brief にゲーム制作以外のタスクが混ざる。",
+      "priority": "medium",
       "dependencies": []
     }
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-25",
+      "summary": "Hub 自身の知識ノートを4本書く(v5 の知識ノート出力へ対応)",
+      "commit": "064711e"
+    },
     {
       "date": "2026-07-25",
       "summary": "v3 のスキーマ書き出し事故を直しマイグレーションを冪等にする",

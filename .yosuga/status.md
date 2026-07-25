@@ -1,6 +1,6 @@
 # Project Status
 
-Yosuga Hub / 生成: 2026-07-25T12:17:54+09:00 / commit: 976c689
+Yosuga Hub / 生成: 2026-07-25T12:40:00+09:00 / commit: 064711e
 
 ## Summary
 
@@ -28,6 +28,7 @@ Obsidian の Markdown。v5 Phase 1〜3 は実装済み。
 - **3ゲーム(ANRI / Kamieru / GengeKyou)の登録を復元し、ノート取り込みまで確認**
 - **v3 のスキーマ書き出し事故を修正し `MIGRATION_3_4` を冪等化**(実バグ)
 - **GitHub へ初回 push**(108コミット。バックアップ不在を解消)
+- **Hub 自身の知識ノート(`.yosuga/notes/`)を4本書く**
 
 ## In Progress
 
@@ -44,7 +45,9 @@ Obsidian の Markdown。v5 Phase 1〜3 は実装済み。
 3. **Obsidian の Vault フォルダ名を `Kamieru` へリネームする**(medium)
    呼称を英字名に統一したため、紙エルの過去2件だけ旧フォルダに残っている。
 4. **実機で確認する**(medium)— カレンダー / 共有シート / Obsidian + Remotely Save。
-5. **Hub 自身の `.yosuga/notes/` を書くか決める**(low)
+5. **Yosuga Hub をプロジェクトとして登録するか決める**(medium)
+   登録しないと `.yosuga/notes/` は取り込んでも Inbox 行きになる
+   (`NoteRouter` は登録済みプロジェクトの表示名でフォルダを決めるため)。
 
 ## Blockers
 
@@ -52,6 +55,7 @@ Obsidian の Markdown。v5 Phase 1〜3 は実装済み。
 
 ## Recent Changes
 
+- 2026-07-25 Hub 自身の知識ノートを4本書く(064711e)
 - 2026-07-25 v3 のスキーマ書き出し事故を直しマイグレーションを冪等にする(976c689)
 - 2026-07-25 呼称を英字名(ANRI / Kamieru / GengeKyou)に統一(baa2ce4)
 - 2026-07-25 サンプルデータを廃止し、プロジェクト追加UIを作る(927c412)
