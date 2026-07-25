@@ -32,8 +32,8 @@
 
 - 起動 = **コンソール**。`Yosuga` + 状態表示(PROJECT/PENDING/SYNC/STATUS) +
   `> COMMAND` の実行行。
-  - オペレーション: IMPORT NOTES / SAVE SESSION / BUILD CONTEXT / EXPORT STATUS /
-    IMPORT RESPONSE / REVIEW
+  - オペレーション(2026-07-25 に1行表記へ): `GitHub → Obsidian` / `会話 → Obsidian` /
+    `Obsidian → ヨスガ` / `状況JSON → 共有` / `回答JSON → Hub` / `レコルを開く` / REVIEW
   - DATA: PROJECTS / RECORDS / CALENDAR / SETTINGS
 - サブ画面は上辺 `<BACK`(緑の反転ブロック)で戻る。
 
@@ -272,10 +272,26 @@ GitHub取得成功時(`AppContainer.kt:226`)。
 
 説明行が消えた分、**コンソール全体が1画面に収まった**(実機ダンプで確認)。
 
+### AI向けドキュメントの旧名も直した
+
+コマンド名を変えたので、**AI に渡す3ファイル**(`yosuga_prompt.md` /
+`recoru_prompt.md` / `claude_code_onboarding.md`)の中の旧名を現行名へ。
+`> IMPORT RESPONSE` → `> 回答JSON → Hub`、`> EXPORT STATUS` → `> 状況JSON → 共有` など。
+併せて「ヨスガ画面 →『会話ログを保存』」のような**存在しない画面名**も潰した。
+
+**WORKLOG の過去ログは履歴なので触らない。** 直すのは
+「いま AI や人に読ませて、そのとおり操作させる」文書だけ。
+
 ### テスト
 
 `assembleDebug` + `testDebugUnitTest` 成功。**379件 通過**。
 エミュレータで全11行の表示を確認済み。
+
+### 積み残し
+
+UI の名前を変えるたびに、それを指す文書と案内メッセージがずれる。
+**今日だけで3回起きた**(ヨスガ画面 / IMPORT RESPONSE の説明 / コマンド名)。
+機械的に検出する仕組みがあるとよいが、いまは無い。
 
 ---
 
