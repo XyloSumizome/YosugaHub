@@ -1,6 +1,6 @@
 # 各ゲームの Claude Code への導入指示(Yosuga Hub 連携)
 
-各ゲームプロジェクト(ANRI / 紙装甲主人公と不死身のカエル / げんげきょう)の Claude Code に、
+各ゲームプロジェクト(ANRI / Kamieru / GengeKyou)の Claude Code に、
 **このファイルの「導入指示」以下をそのまま貼り付けて渡す**。
 仕様はこのファイル内で自己完結している(Yosuga Hub 側の設計書を読ませる必要はない)。
 
@@ -277,7 +277,7 @@ commit:
 |---|---|---|
 | `type` | ✅ | `development-log` / `design` / `decision` / `reference` のいずれか。**Hub の保存先はこれで決まる** |
 | `project_id` | ✅ | `anri` / `paper-armor-frog` / `gengenkyo`。**変更禁止の安定キー**。Hub はこれで振り分ける |
-| `game` | ✅ | 表示名(`ANRI` / `紙装甲主人公と不死身のカエル` / `げんげきょう`)。人が読む用 |
+| `game` | ✅ | 表示名(`ANRI` / `Kamieru` / `GengeKyou`)。Obsidian のフォルダ名にもなる |
 | `category` | ✅ | 自由。ただし**そのゲーム内で表記を揺らさない**(`lighting` と `Lighting` を混ぜない) |
 | `created_at` / `updated_at` | ✅ | ISO 8601 + タイムゾーン(`+09:00`) |
 | `source` | ✅ | 固定で `claude-code` |

@@ -1,11 +1,11 @@
-# 指示書: げんげきょう の Yosuga Hub 連携をはじめる(2026-07-25)
+# 指示書: GengeKyou(げんげきょう)の Yosuga Hub 連携をはじめる(2026-07-25)
 
-宛先: **げんげきょう** の Claude Code
+宛先: **GengeKyou(げんげきょう)** の Claude Code
 種別: 導入(初回のみ)。以後は各セッションで自動的に更新される
 
 ## 渡し方(シロさんの手順)
 
-げんげきょうの Claude Code に、**次の2つをこの順で貼る**。
+GengeKyou の Claude Code に、**次の2つをこの順で貼る**。
 
 1. **この指示書の「## 目的」以降**
 2. **`docs/claude_code_onboarding.md` の「導入指示(ここから下を各ゲームの Claude Code へ貼る)」
@@ -13,15 +13,15 @@
 
 2 を貼り忘れると仕様が分からず、推測でファイルを作られてしまう。**必ず両方貼る。**
 
-貼ったあとは、げんげきょう側で **コミットして GitHub へ push** されるまで Hub には見えない。
+貼ったあとは、GengeKyou 側で **コミットして GitHub へ push** されるまで Hub には見えない。
 push を確認してから、Hub の `PROJECTS` →「GitHubから更新」を押す。
 
 ---
 
 ## 目的
 
-このプロジェクト(げんげきょう)を、Androidアプリ **Yosuga Hub** から進捗確認できるようにする。
-ANRI と「紙装甲主人公と不死身のカエル」は導入済みで、げんげきょうだけが未対応。
+このプロジェクト(GengeKyou / げんげきょう)を、Androidアプリ **Yosuga Hub** から進捗確認できるようにする。
+ANRI と Kamieru は導入済みで、GengeKyou だけが未対応。
 
 Hub は GitHub 上の `.yosuga/status.json` を読んで、進捗・ブロッカー・修正のログを表示する。
 **Hub は判断も要約もしない。** 意味付けは情報を作る側、つまりあなたが行う。

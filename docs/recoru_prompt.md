@@ -315,11 +315,13 @@ file=documents の pendingClassification[] が分類対象。読んで classific
 
 ## 現在のプロジェクトID
 
-- `anri` — ANRI
-- `paper-armor-frog` — 紙装甲主人公と不死身のカエル
-- `gengenkyo` — げんげきょう
+- `anri` — **ANRI**
+- `paper-armor-frog` — **Kamieru**(紙装甲主人公と不死身のカエル)
+- `gengenkyo` — **GengeKyou**(げんげきょう)
 
-※ 増減したら projects が正。
+**呼称は太字の英字名を使う**(2026-07-25 確定)。Hub の表示名であり、
+**Obsidian の `Games/<名前>/` フォルダ名**でもある。日本語名は人が読むための別名。
+※ ID が正本。増減したら projects が正。
 
 ## Morning Brief の回し方(実データでの手順)
 
