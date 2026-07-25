@@ -5,7 +5,7 @@ import android.content.Intent
 /**
  * 「共有 → Yosuga Hub」で届いた本文を取り出す。
  *
- * 受けるのは `ACTION_SEND` の `text/*` だけ。ランチャーからの起動や、
+ * 受けるのは `ACTION_SEND` の text 系 MIME だけ。ランチャーからの起動や、
  * 本文の無い共有では null を返す。**中身の検査はここではしない**
  * (レコルの回答かどうかは取り込み時に `ResponseImporter` が判定する)。
  *

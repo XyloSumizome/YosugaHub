@@ -105,7 +105,8 @@
       "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat compileDebugKotlin --console=plain\")",
       "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat assembleDebug testDebugUnitTest --console=plain\")",
       "Bash(grep -c '^```' docs/recoru_prompt.md)",
-      "Bash(grep -n '^```' docs/recoru_prompt.md)"
+      "Bash(grep -n '^```' docs/recoru_prompt.md)",
+      "Bash(grep -rn 'text/\\\\*\\\\|```' app/src/main/java/com/shiro/yosugahub/data/file/PastedJson.kt app/src/main/java/com/shiro/yosugahub/ui/screen/console/ConsoleScreen.kt)"
     ]
   }
 }
