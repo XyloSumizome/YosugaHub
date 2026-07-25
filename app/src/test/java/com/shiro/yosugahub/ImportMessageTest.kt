@@ -29,7 +29,8 @@ class ImportMessageTest {
         )
         assertFalse(message.contains("提案を"))
         assertTrue(message.contains("文書 2 件の分類"))
-        assertTrue(message.contains("記録タブ"))
+        // 案内する画面名は実在するものであること(v5 で「記録タブ」は RECORDS になった)。
+        assertTrue(message.contains("RECORDS"))
     }
 
     @Test
