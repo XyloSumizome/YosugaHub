@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-25T10:44:53+09:00",
-  "sourceCommit": "711c546",
-  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。v5 Phase 1〜3 は実装済みで実機の通しも成功している。UI はオペレーションコンソールへ全面刷新済み。単体テスト 380 件が通り、Room は v8。",
+  "generatedAt": "2026-07-25T12:17:54+09:00",
+  "sourceCommit": "976c689",
+  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。v5 Phase 1〜3 は実装済み。2026-07-25 に 3ゲームすべてが Hub とつながり、GitHub への初回 push も完了した。単体テスト 362 件・マイグレーションテスト 5 件が通り、Room は v8。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
@@ -11,61 +11,246 @@
     "detail": "レコル(カスタムGPT)が Hub を読んで Morning Brief を生成し、ヨスガへ渡すまでを実データで通す。材料側(completedAt / recentChanges / カレンダー±14日)は 2026-07-25 に揃えた。残るのは実レコルでの検証。"
   },
   "completed": [
-    { "id": "task-001", "title": "v5 Phase 1〜3(Obsidian 読み書き / GitHub からノート取得 / 会話ログ保存)", "completedAt": "2026-07-24T00:00:00+09:00" },
-    { "id": "task-002", "title": "UI をオペレーションコンソール化し Material の素の部品を全廃", "completedAt": "2026-07-24T00:00:00+09:00" },
-    { "id": "task-003", "title": "[x] チェックの当たり判定を 48dp へ拡大(エミュレータで実測・タップ確認済み)", "completedAt": "2026-07-25T09:00:00+09:00" },
-    { "id": "task-004", "title": "共有シートでレコルの回答JSONを受け取る(共有インテントで取り込みまで確認済み)", "completedAt": "2026-07-25T10:00:00+09:00" },
-    { "id": "task-005", "title": "tasks.json に completedAt を出す(Morning Brief の「昨日の成果」の材料)", "completedAt": "2026-07-25T10:00:00+09:00" },
-    { "id": "task-006", "title": "近況報告に直近2週間の修正ログとカレンダー±14日を載せる", "completedAt": "2026-07-25T10:30:00+09:00" }
+    {
+      "id": "task-001",
+      "title": "v5 Phase 1〜3(Obsidian 読み書き / GitHub からノート取得 / 会話ログ保存)",
+      "completedAt": "2026-07-24T00:00:00+09:00"
+    },
+    {
+      "id": "task-002",
+      "title": "UI をオペレーションコンソール化し Material の素の部品を全廃",
+      "completedAt": "2026-07-24T00:00:00+09:00"
+    },
+    {
+      "id": "task-003",
+      "title": "[x] チェックの当たり判定を 48dp へ拡大(エミュレータで実測・タップ確認済み)",
+      "completedAt": "2026-07-25T09:00:00+09:00"
+    },
+    {
+      "id": "task-004",
+      "title": "共有シートでレコルの回答JSONを受け取る(共有インテントで取り込みまで確認済み)",
+      "completedAt": "2026-07-25T10:00:00+09:00"
+    },
+    {
+      "id": "task-005",
+      "title": "tasks.json に completedAt を出す(Morning Brief の「昨日の成果」の材料)",
+      "completedAt": "2026-07-25T10:00:00+09:00"
+    },
+    {
+      "id": "task-006",
+      "title": "近況報告に直近2週間の修正ログとカレンダー±14日を載せる",
+      "completedAt": "2026-07-25T10:30:00+09:00"
+    },
+    {
+      "id": "task-007",
+      "title": "サンプルデータを機能ごと廃止し、プロジェクト追加UIを新設",
+      "completedAt": "2026-07-25T11:00:00+09:00"
+    },
+    {
+      "id": "task-008",
+      "title": "3ゲーム(ANRI / Kamieru / GengeKyou)の登録を復元し、ノート取り込みまで確認",
+      "completedAt": "2026-07-25T11:30:00+09:00"
+    },
+    {
+      "id": "task-009",
+      "title": "v3 のスキーマ書き出し事故を修正し MIGRATION_3_4 を冪等化(実バグ)",
+      "completedAt": "2026-07-25T12:00:00+09:00"
+    },
+    {
+      "id": "task-010",
+      "title": "GitHub へ初回 push(108コミット。バックアップ不在を解消)",
+      "completedAt": "2026-07-25T12:15:00+09:00"
+    }
   ],
   "inProgress": [
-    { "id": "task-010", "title": "レコルの自動化(巡回)", "detail": "合図なしで読取→全件分類→items 整形→回答JSON まで走らせるプロンプトを実装済み。実レコルでの検証が未了。", "progressPercent": 50 },
-    { "id": "task-011", "title": "げんげきょうの Yosuga Hub 連携", "detail": "指示書 docs/directive_gengenkyo_setup.md を用意した。ゲーム側へ渡すのはこれから。", "progressPercent": 20 }
+    {
+      "id": "task-020",
+      "title": "レコルの自動化(巡回)",
+      "detail": "合図なしで読取→全件分類→整形→回答JSON まで走らせるプロンプトは実装済み。実レコルでの検証が未了。",
+      "progressPercent": 50
+    }
   ],
   "nextTasks": [
-    { "id": "task-020", "title": "Morning Brief を実データで一周する", "detail": "手順は docs/recoru_prompt.md の「Morning Brief の回し方」。アプリを新しくしてからレコルに聞く順序が要点。", "priority": "high", "dependencies": [] },
-    { "id": "task-021", "title": "巡回と共有取り込みを実レコルで通す", "detail": "Instructions を貼り直し、会話のきっかけに「巡回」を登録し、Actions を常に許可にしてから開いて一言。", "priority": "high", "dependencies": [] },
-    { "id": "task-022", "title": "げんげきょうへ導入指示書を渡す", "detail": "docs/directive_gengenkyo_setup.md と claude_code_onboarding.md の導入指示ブロックを順に貼る。", "priority": "medium", "dependencies": [] },
-    { "id": "task-023", "title": "実機で確認する(カレンダー / 共有シート / Obsidian + Remotely Save)", "detail": "カレンダーはエミュレータに Google アカウントが無く 0 件のため実機へ回した。Vault は共有ストレージ上に置く必要がある。", "priority": "medium", "dependencies": [] },
-    { "id": "task-024", "title": "Room マイグレーションテストを実行する", "detail": "connectedDebugAndroidTest。エミュレータが必要で、長く未検証のまま残っている。", "priority": "medium", "dependencies": [] }
+    {
+      "id": "task-030",
+      "title": "Morning Brief を実データで一周する",
+      "detail": "今日揃えた completedAt と recentChanges が「昨日の成果」に効くかは、レコルに書かせないと確かめられない。手順は docs/recoru_prompt.md。",
+      "priority": "high",
+      "dependencies": []
+    },
+    {
+      "id": "task-031",
+      "title": "巡回を実レコルで通す",
+      "detail": "Instructions を貼り直し、会話のきっかけに「巡回」を登録し、Actions を常に許可にしてから開いて一言。",
+      "priority": "high",
+      "dependencies": []
+    },
+    {
+      "id": "task-032",
+      "title": "Obsidian の Vault フォルダ名を Kamieru へリネームする",
+      "detail": "呼称を英字名に統一したため、紙エルの過去2件だけ旧フォルダに残っている。",
+      "priority": "medium",
+      "dependencies": []
+    },
+    {
+      "id": "task-033",
+      "title": "実機で確認する(カレンダー / 共有シート / Obsidian + Remotely Save)",
+      "detail": "カレンダーはエミュレータに Google アカウントが無く 0 件。共有シートは経路自体をエミュレータで確認済みで、残るは ChatGPT の共有シートに出るかどうか。",
+      "priority": "medium",
+      "dependencies": []
+    },
+    {
+      "id": "task-034",
+      "title": "Hub 自身の .yosuga/notes/ を書くか決める",
+      "detail": "v5 は知識ノートの出力も求めている。Hub をプロジェクトとして登録するかの判断と対になる。",
+      "priority": "low",
+      "dependencies": []
+    }
   ],
-  "blockers": [
-    { "id": "blocker-001", "title": "このリポジトリが GitHub へ一度も push されていない", "detail": "git ls-remote がブランチを返さない(空リポジトリ)。108 コミットがローカルにしか無く、バックアップが無い。また Hub は GitHub 経由で status.json を読むため、push するまで Hub は自分自身の近況を取り込めない。", "severity": "high" }
-  ],
+  "blockers": [],
   "recentChanges": [
-    { "date": "2026-07-25", "summary": "げんげきょう向けの導入指示書を追加", "commit": "711c546" },
-    { "date": "2026-07-25", "summary": "近況報告に前後2週間の修正ログとカレンダーを載せる", "commit": "10e85c4" },
-    { "date": "2026-07-25", "summary": "tasks.json に completedAt を出す", "commit": "052ac94" },
-    { "date": "2026-07-25", "summary": "巡回の合図をなくす(会話が始まったら自動で走らせる)", "commit": "b82227e" },
-    { "date": "2026-07-25", "summary": "共有シートでレコルの回答JSONを受け取る", "commit": "b4e2625" },
-    { "date": "2026-07-25", "summary": "レコルに「巡回」を追加(合図ひとつで分類まで済ませる)", "commit": "8098e98" },
-    { "date": "2026-07-25", "summary": "[x] チェックの当たり判定を 48dp へ", "commit": "f07ebb3" },
-    { "date": "2026-07-24", "summary": "レコルの役割を v5 へ更新 + Morning Brief の手順", "commit": "5b9ed51" },
-    { "date": "2026-07-24", "summary": "フォームの部品を端末化(入力欄・チップ・チェック)", "commit": "83d1e21" },
-    { "date": "2026-07-24", "summary": "戻り口とダイアログをコンソールUIへ統一", "commit": "3c37ced" },
-    { "date": "2026-07-24", "summary": "GitHub取得のあとに自動でサーバー同期する", "commit": "eebfe10" },
-    { "date": "2026-07-24", "summary": "status.json の questionsForYosuga の型ゆれを吸収", "commit": "29bd930" }
+    {
+      "date": "2026-07-25",
+      "summary": "v3 のスキーマ書き出し事故を直しマイグレーションを冪等にする",
+      "commit": "976c689"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "呼称を英字名(ANRI / Kamieru / GengeKyou)に統一",
+      "commit": "baa2ce4"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "サンプルデータを廃止し、プロジェクト追加UIを作る",
+      "commit": "927c412"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "げんげきょう向けの導入指示書を追加",
+      "commit": "711c546"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "近況報告に前後2週間の修正ログとカレンダーを載せる",
+      "commit": "10e85c4"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "tasks.json に completedAt を出す",
+      "commit": "052ac94"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "巡回の合図をなくす(会話が始まったら自動で走らせる)",
+      "commit": "b82227e"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "共有シートでレコルの回答JSONを受け取る",
+      "commit": "b4e2625"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "レコルに「巡回」を追加(合図ひとつで分類まで済ませる)",
+      "commit": "8098e98"
+    },
+    {
+      "date": "2026-07-25",
+      "summary": "[x] チェックの当たり判定を 48dp へ",
+      "commit": "f07ebb3"
+    },
+    {
+      "date": "2026-07-24",
+      "summary": "レコルの役割を v5 へ更新 + Morning Brief の手順",
+      "commit": "5b9ed51"
+    },
+    {
+      "date": "2026-07-24",
+      "summary": "フォームの部品を端末化(入力欄・チップ・チェック)",
+      "commit": "83d1e21"
+    },
+    {
+      "date": "2026-07-24",
+      "summary": "戻り口とダイアログをコンソールUIへ統一",
+      "commit": "3c37ced"
+    },
+    {
+      "date": "2026-07-24",
+      "summary": "GitHub取得のあとに自動でサーバー同期する",
+      "commit": "eebfe10"
+    },
+    {
+      "date": "2026-07-24",
+      "summary": "status.json の questionsForYosuga の型ゆれを吸収",
+      "commit": "29bd930"
+    }
   ],
   "risks": [
-    { "id": "risk-001", "title": "エミュレータからサーバーへ意図せず同期した", "detail": "2026-07-25 の検証中、回答JSONの取り込みに成功すると自動同期が走る仕様により、エミュレータの内容(プロジェクト2件)がロリポップへ push された。げんげきょうが未登録のため、サーバー側の projects.json が2件になっている可能性がある。正しいデータを持つ端末から一度同期すれば復旧する。", "severity": "medium" },
-    { "id": "risk-002", "title": "修正ログの2週間絞り込みが実データで未検証", "detail": "キャッシュ内の recentChanges が全て2週間以内だったため、古いものが落ちる挙動は単体テストでしか確認できていない。", "severity": "low" }
+    {
+      "id": "risk-001",
+      "title": "エミュレータからサーバーへ意図せず同期した",
+      "detail": "2026-07-25 の検証中、回答JSONの取り込み成功で自動同期が走る仕様により、エミュレータの内容がロリポップへ push された。その後 3ゲームを登録し直したので、次に同期すれば正しい状態になる。",
+      "severity": "low"
+    },
+    {
+      "id": "risk-002",
+      "title": "修正ログの2週間絞り込みが実データで未検証",
+      "detail": "キャッシュ内の recentChanges が全て2週間以内だったため、古いものが落ちる挙動は単体テストでしか確認できていない。",
+      "severity": "low"
+    },
+    {
+      "id": "risk-003",
+      "title": "承認待ちにテスト用の提案が1件残っている",
+      "detail": "共有シートの検証で投入した「共有経路の動作確認」。REVIEW で棄却すること。",
+      "severity": "low"
+    }
   ],
   "decisions": [
-    { "date": "2026-07-24", "title": "設計を v5「Obsidian ブリッジ」へ転換", "detail": "知識の正本を Room DB ではなく Obsidian の Markdown にする。Hub に AI は載せない。意味付けは生成元の Claude Code が出力時点で行う。" },
-    { "date": "2026-07-25", "title": "クリップボードの自動読み取りは採らない", "detail": "Android 12 以降は読むたびにシステムのトーストが出て抑制できず、判定のために無関係な文字列も読むことになるため。代わりに共有シートで受ける。" },
-    { "date": "2026-07-25", "title": "期間で絞るとき、判断できないものは捨てない", "detail": "日付が空の修正ログは残し、generatedAt が解釈できないときは絞らない。静かに減るより多くて正直を選ぶ。" },
-    { "date": "2026-07-25", "title": "タスク完了では同期しない", "detail": "同期のきっかけは「今すぐ同期」/ 回答JSON取り込み / GitHub取得の3つのまま。GitHub取得の自動同期が tasks.json も押し出すため、Morning Brief の手順を踏む限り塞がる。" }
+    {
+      "date": "2026-07-24",
+      "title": "設計を v5「Obsidian ブリッジ」へ転換",
+      "detail": "知識の正本を Room DB ではなく Obsidian の Markdown にする。Hub に AI は載せない。意味付けは生成元の Claude Code が出力時点で行う。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "クリップボードの自動読み取りは採らない",
+      "detail": "Android 12 以降は読むたびにシステムのトーストが出て抑制できず、判定のために無関係な文字列も読むことになるため。代わりに共有シートで受ける。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "期間で絞るとき、判断できないものは捨てない",
+      "detail": "日付が空の修正ログは残し、generatedAt が解釈できないときは絞らない。静かに減るより多くて正直を選ぶ。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "タスク完了では同期しない",
+      "detail": "同期のきっかけは「今すぐ同期」/ 回答JSON取り込み / GitHub取得の3つのまま。GitHub取得の自動同期が tasks.json も押し出すため、Morning Brief の手順を踏む限り塞がる。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "サンプルデータを機能ごと廃止する",
+      "detail": "仮データの ID を実プロジェクトとして使っていたため、ID 指定の削除が実運用中の行を消して全ゲームの取り込みを壊した。追加UIを先に作ってから撤去した。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "プロジェクト ID は自動採番しない",
+      "detail": "サーバー・レコル・分類履歴が参照する正本なので、新規作成時に人が決める。作成後は変更不可。"
+    },
+    {
+      "date": "2026-07-25",
+      "title": "プロジェクトの呼称は英字名にする",
+      "detail": "ANRI / Kamieru / GengeKyou。ID は変更禁止。表示名は Obsidian の Games/<名前>/ フォルダ名にもなる。"
+    }
   ],
   "questionsForYosuga": [
-    "このリポジトリを GitHub へ push するか。公開リポジトリなら push した時点でコードが公開される。push しない限りバックアップが無く、Hub は自分自身の近況を取り込めない。",
     "Yosuga Hub 自身を Hub のプロジェクトとして登録するか。登録すると Morning Brief の「今日やること」にゲーム制作以外のタスクが混ざる。"
   ],
   "dataQuality": {
     "validated": true,
     "missingFields": [],
     "warnings": [
-      "completed の completedAt は日付までは正確だが、時刻は概算(WORKLOG とコミット日から起こしたもの)。",
-      "recentChanges は 2026-07-24 以降のみを載せている。それ以前の履歴は git log にある。"
+      "completed の completedAt は日付までは正確だが、時刻は概算(WORKLOG とコミットから起こしたもの)。",
+      "recentChanges は 2026-07-24 以降のみを載せている。それ以前は git log にある。"
     ]
   }
 }
