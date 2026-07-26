@@ -212,9 +212,13 @@ fun ConsoleScreen(
 
         // URL 未設定なら出さない(押せて何も起きない口を作らない)。
         // レコルの残った仕事は、記録タブに手打ちした未整理メモの仕分けだけ。
+        // **その文書が無い日は出さない**(2026-07-26)。朝の近況がレコルを通らなく
+        // なったので、毎日並べても押す理由が思い出せない扉になる。
         // 入力欄に「巡回」を入れて開く(送信はアプリの仕様で手動)。
-        RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.PATROL)?.let { url ->
-            Command("レコルを開く") {
+        RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.PATROL)
+            ?.takeIf { uiState.unsortedDocumentCount > 0 }
+            ?.let { url ->
+            Command("レコルを開く (${uiState.unsortedDocumentCount})") {
                 val opened = openExternalLink(context, url)
                 if (!opened) {
                     Toast.makeText(context, "開けるアプリがありません。", Toast.LENGTH_SHORT).show()

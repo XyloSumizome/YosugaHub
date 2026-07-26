@@ -13,6 +13,7 @@ import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.ConversationImportRepository
 import com.shiro.yosugahub.data.repository.ConversationImportResult
+import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
@@ -23,6 +24,7 @@ import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
+import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.Recommendation
 import com.shiro.yosugahub.ui.component.LogLine
@@ -44,8 +46,16 @@ data class AssistantUiState(
     /** コンソール上部の状態表示用。 */
     val projectCount: Int = 0,
     val lastSync: String = "",
-    /** レコル(カスタムGPT)のURL。空なら OPEN RECORU を出さない(2026-07-25)。 */
+    /** レコル(カスタムGPT)のURL。空なら「レコルを開く」を出さない(2026-07-25)。 */
     val recoruUrl: String = "",
+    /**
+     * まだ仕分けていない文書の数(`UNCLASSIFIED` / `CLASSIFICATION_PENDING`)。
+     *
+     * **0 なら「レコルを開く」を出さない**(2026-07-26)。朝の近況がレコルを
+     * 通らなくなり、レコルに残る仕事はこの文書の仕分けだけになった。
+     * 用のない扉を毎日並べても、押す理由が思い出せないだけ。
+     */
+    val unsortedDocumentCount: Int = 0,
 ) {
     val pendingCount: Int get() = proposals.size
 }
@@ -59,6 +69,7 @@ class AssistantViewModel(
     private val morningRoutineRepository: MorningRoutineRepository,
     private val conversationImportRepository: ConversationImportRepository,
     private val projectRepository: ProjectRepository,
+    documentRepository: DocumentRepository,
     userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
@@ -66,6 +77,14 @@ class AssistantViewModel(
         .map { it.size }
     private val lastSync = userPreferencesRepository.lastSyncedAt
     private val recoruUrl = userPreferencesRepository.recoruUrl
+
+    /** レコルの出番がある文書だけを数える。分類が済んだものは対象外。 */
+    private val unsortedDocuments = documentRepository.documents().map { docs ->
+        docs.count {
+            it.status == DocumentStatus.UNCLASSIFIED ||
+                it.status == DocumentStatus.CLASSIFICATION_PENDING
+        }
+    }
 
     /** 端末ログ(v5 UI)。取り込み・保存・生成などの操作すべてで共用する。 */
     val opLog = OpLogState()
@@ -89,9 +108,9 @@ class AssistantViewModel(
 
     /**
      * 朝の準備(2026-07-26)。カレンダー → GitHub の status → ノート → サーバー同期。
-     * 済んだら [onDone] を呼ぶ(呼び出し側でレコルを開く)。
+     * 済んだら [onDone] に結果と**現況JSON**を渡す(呼び出し側でヨスガへ送る)。
      *
-     * **転んでも onDone は呼ぶ。** 同期が失敗した朝でも、レコルを開いて
+     * **転んでも onDone は呼ぶ。** 同期が失敗した朝でも、現況を渡して
      * 手で確かめられるほうがよい。何が転んだかは端末ログに残る。
      */
     fun morningRoutine(onDone: (MorningRoutineResult, String) -> Unit) {
@@ -199,14 +218,15 @@ class AssistantViewModel(
         assistantRepository.recommendations(),
         projectCount,
         lastSync,
-        recoruUrl,
+        combine(recoruUrl, unsortedDocuments) { url, count -> url to count },
     ) { pending, recommendations, projects, sync, recoru ->
         AssistantUiState(
             proposals = pending.map { it.toCardUi() },
             recommendations = recommendations,
             projectCount = projects,
             lastSync = sync,
-            recoruUrl = recoru,
+            recoruUrl = recoru.first,
+            unsortedDocumentCount = recoru.second,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -229,6 +249,7 @@ class AssistantViewModel(
                     morningRoutineRepository = app.container.morningRoutineRepository,
                     conversationImportRepository = app.container.conversationImportRepository,
                     projectRepository = app.container.projectRepository,
+                    documentRepository = app.container.documentRepository,
                     userPreferencesRepository = app.container.userPreferencesRepository,
                 )
             }
