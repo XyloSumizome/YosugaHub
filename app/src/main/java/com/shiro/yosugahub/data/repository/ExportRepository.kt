@@ -55,6 +55,9 @@ class ExportRepository(
             tasks = tasks,
             decisions = decisions,
             statuses = statuses,
+            // 既存の語彙を渡す(2026-07-26)。これが無いと受け手が毎回新しいタグを作る。
+            tagNames = knowledgeRepository.tagNames().first(),
+            entityNames = knowledgeRepository.entities().first().map { it.name },
         )
         val json = ContextExporter.toJson(export)
 

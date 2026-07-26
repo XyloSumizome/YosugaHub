@@ -9,6 +9,7 @@ import com.shiro.yosugahub.data.file.model.EventExport
 import com.shiro.yosugahub.data.file.model.ProjectExport
 import com.shiro.yosugahub.data.file.model.TaskExport
 import com.shiro.yosugahub.data.file.model.UserContext
+import com.shiro.yosugahub.data.file.model.VocabularyExport
 import com.shiro.yosugahub.domain.model.CalendarEvent
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
@@ -45,6 +46,10 @@ object ContextExporter {
         tasks: List<Task> = emptyList(),
         decisions: List<KnowledgeItem> = emptyList(),
         statuses: Map<String, ProjectStatusSnapshot> = emptyMap(),
+        /** 既存のタグ名。受け手が新しいタグを乱造しないための語彙(2026-07-26)。 */
+        tagNames: List<String> = emptyList(),
+        /** 既存のエンティティ名。表記ゆれを防ぐための語彙(2026-07-26)。 */
+        entityNames: List<String> = emptyList(),
         // DeviceCalendarDataSource の読み取り窓と合わせる(±14日 / 2026-07-25)。
         pastDays: Int = CALENDAR_PAST_DAYS,
         futureDays: Int = CALENDAR_FUTURE_DAYS,
@@ -60,6 +65,7 @@ object ContextExporter {
         projects = projects.map { projectExportOf(it, statuses[it.id], changesCutoff(generatedAt)) },
         tasks = tasks.map { it.toExport() },
         recentDecisions = decisions.map { it.toDecisionExport() },
+        vocabulary = VocabularyExport(tags = tagNames, entities = entityNames),
     )
 
     fun toJson(export: ContextExport): String = json.encodeToString(export)

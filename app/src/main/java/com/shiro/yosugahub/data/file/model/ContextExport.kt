@@ -19,6 +19,15 @@ data class ContextExport(
     val tasks: List<TaskExport> = emptyList(),
     val recentDecisions: List<DecisionExport> = emptyList(),
     val recentAssistantExchange: String? = null,
+    /**
+     * すでに Hub にある語彙(2026-07-26)。
+     *
+     * **これが無いと、受け取った AI は毎回新しいタグを作ってしまう。**
+     * レコルが優位だった唯一の点が「`knowledge` を読んで既存タグを再利用できる」
+     * ことだった。語彙をここに載せれば、ヨスガも仕分け済みで出せる。
+     * 名前だけなので軽い(本文は載せない)。
+     */
+    val vocabulary: VocabularyExport = VocabularyExport(),
 ) {
     companion object {
         /** このアプリが出力する状況JSONのスキーマ版。 */
@@ -123,4 +132,16 @@ data class DecisionExport(
     val date: String,       // "yyyy-MM-dd"
     val title: String,
     val body: String = "",
+)
+
+/**
+ * すでに使われている語彙。**名前だけ**を渡す(件数を抑え、乱造を防ぐのが目的)。
+ * 空なら「まだ何も無い」であって「渡し忘れ」ではない。
+ */
+@Serializable
+data class VocabularyExport(
+    /** 既存のタグ名。新しいタグを作る前に、ここから選べないか見ること。 */
+    val tags: List<String> = emptyList(),
+    /** 既存のエンティティ名(人・技術・機材など)。表記ゆれを防ぐため。 */
+    val entities: List<String> = emptyList(),
 )

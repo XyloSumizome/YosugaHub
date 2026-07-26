@@ -119,6 +119,37 @@ class ContextExporterTest {
     }
 
     /**
+     * 既存の語彙を渡す(2026-07-26)。**これが無いと受け手が毎回新しいタグを作る。**
+     * レコルが優位だった唯一の点がこれだったので、ヨスガへ直接渡すために足した。
+     */
+    @Test
+    fun existing_vocabulary_is_carried_so_the_reader_can_reuse_it() {
+        val export = ContextExporter.build(
+            projects = emptyList(),
+            events = emptyList(),
+            generatedAt = "2026-07-26T09:00:00+09:00",
+            tagNames = listOf("Yosuga Hub", "UI"),
+            entityNames = listOf("Ultraleap"),
+        )
+
+        assertEquals(listOf("Yosuga Hub", "UI"), export.vocabulary.tags)
+        assertEquals(listOf("Ultraleap"), export.vocabulary.entities)
+    }
+
+    /** 語彙が無い日もある。空は「渡し忘れ」ではなく「まだ何も無い」。 */
+    @Test
+    fun an_empty_vocabulary_is_valid() {
+        val export = ContextExporter.build(
+            projects = emptyList(),
+            events = emptyList(),
+            generatedAt = "2026-07-26T09:00:00+09:00",
+        )
+
+        assertTrue(export.vocabulary.tags.isEmpty())
+        assertTrue(export.vocabulary.entities.isEmpty())
+    }
+
+    /**
      * 修正のログ(status.json の recentChanges)を**直近2週間分だけ**渡す(2026-07-25)。
      * 「最新の状態」だけでは何がどう変わったかが分からないため。
      */

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-26T14:10:00+09:00",
+  "generatedAt": "2026-07-26T14:45:00+09:00",
   "sourceCommit": "6f22a27",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。同日、**朝の経路からレコルを外した**——現況JSONが Morning Brief の材料をすべて持っており、間に要約を挟む必要が無かった。レコルに残るのは手打ち文書の分類だけ。単体テスト 407 件、Room は v8。",
   "phase": "development",
@@ -200,6 +200,11 @@
       "id": "task-038",
       "title": "「レコルを開く」を未仕分け文書があるときだけ出す",
       "completedAt": "2026-07-26T14:20:00+09:00"
+    },
+    {
+      "id": "task-039",
+      "title": "現況JSONに既存の語彙(タグ・エンティティ)を載せ、ヨスガが仕分け済みで出せるようにする",
+      "completedAt": "2026-07-26T14:40:00+09:00"
     }
   ],
   "inProgress": [],
@@ -223,6 +228,11 @@
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "現況JSONに既存の語彙を載せる(ヨスガが仕分け済みで出せる)",
+      "commit": ""
+    },
     {
       "date": "2026-07-26",
       "summary": "朝の準備から ChatGPT へ現況を直接渡す",
@@ -464,6 +474,11 @@
       "date": "2026-07-26",
       "title": "用のない扉は毎日並べない",
       "detail": "朝の近況がレコルを通らなくなり、レコルに残る仕事は手打ち文書の仕分けだけになった。「レコルを開く」は未仕分け文書(UNCLASSIFIED / CLASSIFICATION_PENDING)が1件以上あるときだけ出し、件数を添える。REVIEW (n) と同じ形。消すのではなく、要るときに現れるようにした。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "仕分けはヨスガが出力時点で済ませる",
+      "detail": "レコルが優位だった唯一の点は knowledge を読んで既存タグを再利用できることだった。現況JSONに vocabulary(タグ名・エンティティ名)を載せたので、ヨスガが仕分け済みで tasks / items を直接出せる。ゲームの知識は Claude Code が Frontmatter で、会話の知識はヨスガが JSON で。どちらも生成元が出力時点で意味を付ける。"
     }
   ],
   "questionsForYosuga": [
