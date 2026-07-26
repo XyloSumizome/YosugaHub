@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shiro.yosugahub.data.file.ClipboardPrefill
 import com.shiro.yosugahub.data.file.ExternalLink
+import com.shiro.yosugahub.data.file.RecoruLink
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
 import com.shiro.yosugahub.ui.component.DialogAction
@@ -173,7 +174,8 @@ fun ConsoleScreen(
         Command("朝の準備", enabled = !importing) {
             viewModel.morningRoutine {
                 // 同期が転んでいても開く。手で確かめられるほうがよい。
-                ExternalLink.sanitize(uiState.recoruUrl)?.let { url ->
+                // `?q=` で入力欄まで埋まる(送信はアプリの仕様で手動。実機で確認済み)。
+                RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.MORNING_BRIEF)?.let { url ->
                     openExternalLink(context, url)
                 }
             }
