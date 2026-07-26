@@ -165,7 +165,19 @@ object ContextExporter {
     private fun List<StatusChangeLine>.recentOnly(since: String?): List<StatusChangeLine> =
         if (since == null) this else filter { it.date.isBlank() || it.date >= since }
 
-    /** status.json のスナップショットを status.md 相当の Markdown へ(設計書19.3の見出し構成)。 */
+    /**
+     * status.json のスナップショットを Markdown へ。
+     *
+     * **構造化して別に渡している節は、ここへ書かない**(2026-07-26)。
+     * `blockers` / `decisions` / `recentChanges` / `questionsForYosuga` は
+     * [ProjectExport] のフィールドとしても出しており、両方載せると同じ内容が
+     * 散文と構造の二重で流れる。実データで projects.json の **36%** がこの重複だった
+     * (49,400 → 31,519 bytes)。レコルは毎朝これを全部読むので、素直に効く。
+     *
+     * ここに残すのは**構造化されていないものだけ**——
+     * Summary / Current Goal / In Progress / Next Tasks / Source Commit。
+     * これらを構造化するのはゲーム側の status.json の読み取り仕様に関わるので別の話。
+     */
     private fun ProjectStatusSnapshot.toStatusMarkdown(changesSince: String? = null): String = buildString {
         if (summary.isNotBlank()) {
             append("## Summary\n").append(summary).append("\n\n")
@@ -177,10 +189,8 @@ object ContextExporter {
         }
         appendLines("In Progress", inProgress.map { it.toMarkdownLine() })
         appendLines("Next Tasks", nextTasks.map { it.toMarkdownLine() })
-        appendLines("Blockers", blockers.map { it.toMarkdownLine() })
-        appendLines("Decisions", decisions.map { it.toMarkdownLine() })
-        appendLines("Recent Changes", recentChanges.recentOnly(changesSince).map { it.toMarkdownLine() })
-        appendLines("Questions for Yosuga", questionsForYosuga)
+        // Blockers / Decisions / Recent Changes / Questions for Yosuga は
+        // ProjectExport の構造化フィールドで渡す。ここには書かない(上の KDoc 参照)。
         if (sourceCommit.isNotBlank()) {
             append("## Source Commit\n").append(sourceCommit).append("\n")
         }

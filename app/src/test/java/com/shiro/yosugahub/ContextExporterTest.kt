@@ -14,6 +14,7 @@ import com.shiro.yosugahub.domain.model.Task
 import com.shiro.yosugahub.domain.model.TaskStatus
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -91,12 +92,19 @@ class ContextExporterTest {
         assertEquals("github", project.source)
         assertEquals("attention", project.health)          // status 側の health を優先
         assertEquals("2026-07-23T21:00:00+09:00", project.lastUpdated)  // generatedAt を優先
+        // 構造化されていないものだけ Markdown に残す。
         assertTrue(project.statusMarkdown.contains("## Summary"))
         assertTrue(project.statusMarkdown.contains("第2章を執筆中"))
-        assertTrue(project.statusMarkdown.contains("## Blockers"))
-        assertTrue(project.statusMarkdown.contains("素材待ち(2026-07-18〜 / 深刻度: high / 発注済み)"))
-        assertTrue(project.statusMarkdown.contains("## Questions for Yosuga"))
         assertTrue(project.statusMarkdown.contains("abc123"))
+
+        // 構造化して渡す4節は Markdown に**書かない**(2026-07-26)。
+        // 両方載せると同じ内容が散文と構造の二重で流れ、レコルが毎朝それを全部読む。
+        assertFalse(project.statusMarkdown.contains("## Blockers"))
+        assertFalse(project.statusMarkdown.contains("## Decisions"))
+        assertFalse(project.statusMarkdown.contains("## Recent Changes"))
+        assertFalse(project.statusMarkdown.contains("## Questions for Yosuga"))
+
+        // 外した分は構造化フィールドに残っている(落としたのではない)。
         // ブロッカーは「いつから」を保つ(2026-07-25)。文字列に畳まない。
         val blocker = project.blockers.single()
         assertEquals("素材待ち", blocker.title)
@@ -104,7 +112,6 @@ class ContextExporterTest {
         assertEquals("high", blocker.severity)
         assertEquals(listOf("難易度はどうすべきか"), project.questionsForYosuga)
         // ゲーム側の確定事項もAIへ渡す(これに矛盾する提案をさせないため)
-        assertTrue(project.statusMarkdown.contains("## Decisions"))
         assertEquals(
             listOf("リズム判定は3段階にする(2026-07-20 / 操作を単純に保つため)"),
             project.decisions,
@@ -137,10 +144,10 @@ class ContextExporterTest {
         // 日付を畳まず残す(AIが期間で絞れるように)。
         assertEquals("2026-07-24", project.recentChanges.first().date)
         assertEquals("abc1234", project.recentChanges.first().commit)
-        // Markdown 側にも出す。
-        assertTrue(project.statusMarkdown.contains("## Recent Changes"))
-        assertTrue(project.statusMarkdown.contains("2026-07-24 当たり判定を修正(abc1234)"))
-        assertTrue(!project.statusMarkdown.contains("3週間前なので落ちる"))
+        // Markdown 側には出さない(構造化して渡しているものを二重に流さない / 2026-07-26)。
+        assertFalse(project.statusMarkdown.contains("## Recent Changes"))
+        // 2週間の絞り込みは構造化フィールド側で効いている。
+        assertFalse(project.recentChanges.any { it.summary == "3週間前なので落ちる" })
     }
 
     /** 日付が空の行は落とさない。落とすと「変更が無かった」と読めてしまう。 */
