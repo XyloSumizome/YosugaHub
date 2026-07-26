@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-26T15:10:00+09:00",
-  "sourceCommit": "6f22a27",
-  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。同日、**朝の経路からレコルを外した**——現況JSONが Morning Brief の材料をすべて持っており、間に要約を挟む必要が無かった。レコルに残るのは手打ち文書の分類だけ。単体テスト 407 件、Room は v8。",
+  "generatedAt": "2026-07-26T17:00:00+09:00",
+  "sourceCommit": "82553bf",
+  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。同日、朝の経路からレコルを外し、**朝が『> 朝の準備』の1タップ**になった(同期 → ChatGPT が開いて現況が入る)。仕分けは生成元(各ゲームの Claude Code / ヨスガ)が出力時点で行う。単体テスト 410 件、Room は v8。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
-    "title": "実運用の残り半分(制作 → 観測日記 → 取り込み)を通す",
-    "detail": "朝の経路は実機で端から端まで通った。現況31KBは欠けずに届き、ヨスガが今日の予定と昨日の成果を言えた。残るは夜の側。"
+    "title": "AI 側の指示を貼り直し、実運用の夜の側を通す",
+    "detail": "朝の経路を変えたので、ヨスガ(メモリ)とレコル(Instructions)を貼り直さないと明日ズレる。そのうえで 制作 → 観測日記 → 取り込み を一周させる。朝の側は 2026-07-26 に通った。"
   },
   "completed": [
     {
@@ -210,6 +210,11 @@
       "id": "task-040b",
       "title": "現況JSONに直近の観測日記を載せる(ヨスガは自分が書いた日記を覚えているとは限らない)",
       "completedAt": "2026-07-26T15:05:00+09:00"
+    },
+    {
+      "id": "task-041b",
+      "title": "アプリアイコンを実際の絵に差し替える(仮アイコンを廃止)",
+      "completedAt": "2026-07-26T16:50:00+09:00"
     }
   ],
   "inProgress": [],
@@ -217,22 +222,39 @@
     {
       "id": "task-047",
       "title": "AI 側の指示を貼り直す",
-      "detail": "ヨスガ(メモリ / 「朝の近況」の節が新しい)とレコル(Instructions / Morning Brief の節を削除・会話のきっかけからも外す)。朝の経路を変えたので貼り直さないと動かない。",
+      "detail": "ヨスガ: docs/yosuga_prompt.md の70行目以降をメモリへ(4128字)。レコル: docs/recoru_prompt.md の41行目以降で Instructions を丸ごと差し替え(6339字/8000)。あわせてレコルの会話のきっかけから Morning Brief を削除する。",
       "priority": "high",
       "dependencies": []
     },
     {
       "id": "task-046",
-      "title": "実運用を1日通す",
-      "detail": "朝の側は通った(> 朝の準備 → ChatGPT → ヨスガが今日の予定と昨日の成果を言えた)。残りは制作 → 観測日記 → 取り込みの半分。",
+      "title": "実運用の夜の側を通す",
+      "detail": "制作 → 観測日記 → 回答JSON → Hub → 承認。朝の側は通った。",
       "priority": "medium",
       "dependencies": [
         "task-047"
       ]
+    },
+    {
+      "id": "task-049",
+      "title": "アイコンが実機で更新されたか確認する",
+      "detail": "ランチャーはアイコンをキャッシュするので、古いまま見えることがある。",
+      "priority": "low",
+      "dependencies": []
     }
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "アプリアイコンをドット絵アイコンにする",
+      "commit": "82553bf"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "現況JSONに直近の観測日記を載せる",
+      "commit": "65ecea2"
+    },
     {
       "date": "2026-07-26",
       "summary": "現況JSONに直近の観測日記を載せる",
@@ -292,76 +314,6 @@
       "date": "2026-07-26",
       "summary": "生成したサーバートークンをコピーできるようにし、レコルへウェブ検索の禁止を足す",
       "commit": "f4c42f9"
-    },
-    {
-      "date": "2026-07-26",
-      "summary": "スキーマ事故のノートへ実機でのマイグレーション確認を追記(上書き反映の検証を兼ねる)",
-      "commit": "b988b98"
-    },
-    {
-      "date": "2026-07-26",
-      "summary": "サーバートークンを Git 管理外にし、ひな形 config.example.php を追加",
-      "commit": "b8ceaab"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "Vault を整理されて更新されていく形にする",
-      "commit": "86b2589"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "ヨスガへ渡す口を1つに統べ、使い方のHTMLを書く",
-      "commit": "120a770"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "状況JSON の全項目に「いつ」を持たせる",
-      "commit": "2e720a7"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "コンソールのコマンドを1行にする",
-      "commit": "2319f1e"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "回答JSON → Hub でクリップボードを自動で入れる",
-      "commit": "f71600f"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "封筒の無い回答JSONを受け取れるようにする",
-      "commit": "dc1b414"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "レコル用プロンプトを8000字上限に収める",
-      "commit": "108a617"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "v3 のスキーマ書き出し事故を直しマイグレーションを冪等にする",
-      "commit": "976c689"
-    },
-    {
-      "date": "2026-07-25",
-      "summary": "サンプルデータを廃止し、プロジェクト追加UIを作る",
-      "commit": "927c412"
-    },
-    {
-      "date": "2026-07-24",
-      "summary": "レコルの役割を v5 へ更新 + Morning Brief の手順",
-      "commit": "5b9ed51"
-    },
-    {
-      "date": "2026-07-24",
-      "summary": "フォームの部品を端末化(入力欄・チップ・チェック)",
-      "commit": "83d1e21"
-    },
-    {
-      "date": "2026-07-24",
-      "summary": "戻り口とダイアログをコンソールUIへ統一",
-      "commit": "3c37ced"
     }
   ],
   "risks": [
@@ -381,6 +333,12 @@
       "id": "risk-014",
       "title": "Vault 内に Dropbox の認証情報が置かれている",
       "detail": "`.obsidian/plugins/remotely-save/data.json` は Remotely Save 自身が「機密情報を含むので共有するな」と明記している。Hub は `.` 始まりを除外するので一覧には出ないが、**Vault を直接覗く作業(adb・AIへの貼り付け・スクリーンショット)では開かないこと**。",
+      "severity": "medium"
+    },
+    {
+      "id": "risk-016",
+      "title": "増分コンパイルがテストの結果を偽る",
+      "detail": "ConversationNoteTest が 2026-07-25 から実はコンパイルできていなかったのに、増分ビルドが古い .class を使い回して『通っている』ように見えていた。**テスト通過を報告する前に clean を挟むこと。**",
       "severity": "medium"
     }
   ],
