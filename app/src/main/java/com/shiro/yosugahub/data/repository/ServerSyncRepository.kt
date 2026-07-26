@@ -12,6 +12,16 @@ sealed interface SyncResult {
     object Unauthorized : SyncResult
     data class HttpError(val statusCode: Int) : SyncResult
     object NetworkError : SyncResult
+
+    /**
+     * 同期先が `http://`(2026-07-26)。
+     *
+     * targetSdk 28 以降、平文HTTPは Android が既定でブロックする。
+     * そのまま送ると通信層で弾かれ「通信できませんでした」としか出ず、
+     * サーバーやトークンを疑って回り道することになる(実際にした)。
+     * **トークンが平文で流れるので、通っては困る**。理由を言って止める。
+     */
+    object InsecureUrl : SyncResult
 }
 
 /**
@@ -33,6 +43,8 @@ class ServerSyncRepository(
     suspend fun sync(): SyncResult {
         val url = urlProvider().trim()
         if (url.isEmpty()) return SyncResult.UrlNotConfigured
+        // 送る前に止める。通信層まで行かせると原因が分からないエラーになる。
+        if (!url.startsWith("https://", ignoreCase = true)) return SyncResult.InsecureUrl
         val token = tokenProvider() ?: return SyncResult.TokenMissing
 
         // 生成に失敗した場合は例外を伝播させず NetworkError 相当にしない(生成はローカル処理)。

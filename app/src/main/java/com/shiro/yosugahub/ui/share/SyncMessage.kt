@@ -16,6 +16,9 @@ fun syncResultMessage(result: SyncResult): String = when (result) {
         "同期に失敗しました(HTTP ${result.statusCode})。サーバーの設置を確認してください。"
     SyncResult.NetworkError ->
         "通信できませんでした。接続とURLを確認してもう一度お試しください。"
+    SyncResult.InsecureUrl ->
+        "同期先が http:// です。トークンが平文で流れるうえ Android がブロックします。" +
+            "https:// に直してください。"
 }
 
 /**

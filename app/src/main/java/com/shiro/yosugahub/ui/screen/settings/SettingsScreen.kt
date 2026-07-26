@@ -213,7 +213,8 @@ fun SettingsScreen(
                 TerminalField(
                     value = syncUrlInput,
                     onValueChange = { syncUrlInput = it },
-                    label = "同期先URL(例: https://example.com/yosuga)",
+                    // http:// だと Android が通信ごと弾き、原因の分からない失敗になる。
+                    label = "同期先URL(https:// で始めること)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )

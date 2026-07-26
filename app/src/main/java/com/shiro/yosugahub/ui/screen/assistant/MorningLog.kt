@@ -64,5 +64,7 @@ object MorningLog {
             LogLine("  SYNC FAIL HTTP ${result.statusCode}", LogTone.ERROR)
         SyncResult.NetworkError ->
             LogLine("  SYNC FAIL 通信できず", LogTone.ERROR)
+        SyncResult.InsecureUrl ->
+            LogLine("  SYNC 同期先が http:// (https:// に直す)", LogTone.ERROR)
     }
 }

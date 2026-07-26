@@ -28,6 +28,37 @@ class ServerSyncRepositoryTest {
     })
 
     @Test
+    fun `http は送る前に止める`() = runBlocking {
+        var built = false
+        val repository = ServerSyncRepository(
+            buildFiles = { built = true; files },
+            api = okApi(),
+            urlProvider = { "http://example.com/yosuga" },
+            tokenProvider = { "secret-token" },
+        )
+
+        val result = repository.sync()
+
+        // 平文HTTPは Android が通信層で弾き「通信できませんでした」としか出ない。
+        // 原因が分かる形で、送る前に止める(トークンが平文で流れるので通っても困る)。
+        assertEquals(SyncResult.InsecureUrl, result)
+        assertFalse(built)
+    }
+
+    @Test
+    fun `未設定は http 判定より先に出す`() = runBlocking {
+        val repository = ServerSyncRepository(
+            buildFiles = { files },
+            api = okApi(),
+            urlProvider = { "  " },
+            tokenProvider = { "secret-token" },
+        )
+
+        // 空欄の人に「https にしろ」と言っても意味が通らない。
+        assertEquals(SyncResult.UrlNotConfigured, repository.sync())
+    }
+
+    @Test
     fun success_records_sync_time_and_marks_documents_uploaded() = runBlocking {
         var synced = false
         var documentsUploaded = false
