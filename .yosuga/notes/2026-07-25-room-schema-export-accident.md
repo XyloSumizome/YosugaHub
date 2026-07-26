@@ -4,7 +4,7 @@ project_id: yosuga-hub
 game: Yosuga Hub
 category: database
 created_at: 2026-07-25T12:00:00+09:00
-updated_at: 2026-07-25T12:00:00+09:00
+updated_at: 2026-07-26T09:20:00+09:00
 source: claude-code
 tags:
   - Yosuga Hub
@@ -78,8 +78,17 @@ DB が v3 の端末では起動できなくなる状態だった。
 
 ## 影響範囲
 
-`connectedDebugAndroidTest` **5件すべて成功**(Pixel_10 / Android 17)。
+`connectedDebugAndroidTest` **5件すべて成功**(エミュレータ Pixel_10 / Android 17)。
 単体テスト 362 件も通過。既存データへの影響はない(列の追加のみ)。
+
+### 追記(2026-07-26): 実機でも確認した
+
+実機(**Pixel 10a / Android 17**)を入手したので、`connectedDebugAndroidTest` を流した。
+**5件すべて成功**。長く「未検証」に置いていたマイグレーションの実機確認が、これで片付いた。
+
+**実機に運用データを入れる前に流したのが要点。** このタスクは実行後にアプリを
+アンインストールするため、プロジェクト・トークン・Vault 選択がすべて消える。
+以後この実機は運用専用にし、テストはエミュレータへ回す。
 
 ## 未解決事項
 
