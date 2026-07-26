@@ -172,13 +172,15 @@ fun ConsoleScreen(
         // GitHub 取得はここ、と**4箇所に散っていた**。毎朝使うものが
         // 設定の奥にあるのは誤りなので、順序ごと固定して先頭に置く。
         Command("朝の準備", enabled = !importing) {
-            viewModel.morningRoutine {
-                // 同期が転んでいても開く。手で確かめられるほうがよい。
-                // `?q=` で入力欄まで埋まる(送信はアプリの仕様で手動。実機で確認済み)。
-                RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.MORNING_BRIEF)?.let { url ->
-                    openExternalLink(context, url)
-                }
-            }
+            // 行き先はヨスガ(2026-07-26)。以前はレコルに Morning Brief を書かせ、
+            // それを人がヨスガへ貼っていた。だが現況JSONは Morning Brief の材料を
+            // すべて持っている(completedAt / recentChanges の日付 / calendar /
+            // tasks / blockers / decisions)。**間に要約を挟む必要がない。**
+            //
+            // 「締切が近い」「停滞している」の指摘も、材料さえあればヨスガができる。
+            // v4.3 の「知識を活かすのはレコルではない(人間かヨスガの仕事)」に戻す。
+            // 転んでいても進む。何が転んだかは端末ログに残っている。
+            viewModel.morningRoutine { onOpenContext() }
         }
         AsciiDivider()
         Command("GitHub → Obsidian", enabled = !importing, onClick = viewModel::importNotes)
@@ -198,7 +200,9 @@ fun ConsoleScreen(
         AsciiDivider()
 
         // URL 未設定なら出さない(押せて何も起きない口を作らない)。
-        ExternalLink.sanitize(uiState.recoruUrl)?.let { url ->
+        // レコルの残った仕事は、記録タブに手打ちした未整理メモの仕分けだけ。
+        // 入力欄に「巡回」を入れて開く(送信はアプリの仕様で手動)。
+        RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.PATROL)?.let { url ->
             Command("レコルを開く") {
                 val opened = openExternalLink(context, url)
                 if (!opened) {

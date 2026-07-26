@@ -35,6 +35,12 @@ object RecoruLink {
         return "$base${separator}q=$encoded$fragment"
     }
 
-    /** 朝の準備のあとレコルへ渡す言葉。レコル側の指示書がこの語で Morning Brief を作る。 */
-    const val MORNING_BRIEF = "Morning Brief"
+    /**
+     * レコルへ渡す言葉。
+     *
+     * **朝の近況はレコルを通さない**(2026-07-26)。現況JSONが Morning Brief の
+     * 材料をすべて持っており、間に要約を挟む必要がないと分かったため。
+     * レコルに残るのは、記録タブに手打ちした未整理メモの仕分けだけ。
+     */
+    const val PATROL = "巡回"
 }

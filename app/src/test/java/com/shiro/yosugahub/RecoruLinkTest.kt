@@ -17,16 +17,16 @@ class RecoruLinkTest {
     @Test
     fun `クエリの無いURLには疑問符で足す`() {
         assertEquals(
-            "$gpt?q=Morning%20Brief",
-            RecoruLink.withPrompt(gpt, "Morning Brief"),
+            "$gpt?q=patrol%20now",
+            RecoruLink.withPrompt(gpt, "patrol now"),
         )
     }
 
     @Test
     fun `既にクエリがあるURLにはアンパサンドで足す`() {
         assertEquals(
-            "$gpt?model=x&q=Morning%20Brief",
-            RecoruLink.withPrompt("$gpt?model=x", "Morning Brief"),
+            "$gpt?model=x&q=patrol%20now",
+            RecoruLink.withPrompt("$gpt?model=x", "patrol now"),
         )
     }
 
@@ -34,14 +34,14 @@ class RecoruLinkTest {
     fun `断片より前に足す`() {
         // # の後ろに付けると q がフラグメント扱いになり、静かに無視される。
         assertEquals(
-            "$gpt?q=Morning%20Brief#top",
-            RecoruLink.withPrompt("$gpt#top", "Morning Brief"),
+            "$gpt?q=patrol%20now#top",
+            RecoruLink.withPrompt("$gpt#top", "patrol now"),
         )
     }
 
     @Test
     fun `日本語のプロンプトをエンコードする`() {
-        val url = RecoruLink.withPrompt(gpt, "巡回")
+        val url = RecoruLink.withPrompt(gpt, RecoruLink.PATROL)
 
         assertTrue(url!!.startsWith("$gpt?q=%"))
         assertTrue(url.none { it.code > 127 })
@@ -55,14 +55,14 @@ class RecoruLinkTest {
     @Test
     fun `開けないURLは null`() {
         // ExternalLink と同じ判定を通す(file: や空文字で開かない)。
-        assertNull(RecoruLink.withPrompt("file:///etc/passwd", "Morning Brief"))
-        assertNull(RecoruLink.withPrompt("", "Morning Brief"))
+        assertNull(RecoruLink.withPrompt("file:///etc/passwd", "patrol now"))
+        assertNull(RecoruLink.withPrompt("", "patrol now"))
     }
 
     @Test
     fun `プラス記号ではなくパーセントで空白を表す`() {
         // URLEncoder の既定は + だが、URL のパスやクエリでは %20 のほうが安全に解釈される。
-        val url = RecoruLink.withPrompt(gpt, "Morning Brief")
+        val url = RecoruLink.withPrompt(gpt, "patrol now")
 
         assertTrue(url!!.contains("%20"))
         assertTrue(!url.contains("+"))
