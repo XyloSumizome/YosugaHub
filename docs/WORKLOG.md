@@ -18,6 +18,7 @@
 | **クリップボード自動入力** | ✅ JSON として取り出せるときだけ欄に入る |
 | 取り込み後のサーバー自動再同期 | ✅(狙っていなかったが `files/ai/` の更新時刻で確認できた) |
 | **カレンダー** | ✅ **7件**(`past` 5 / `upcoming` 2)。原因は Hub ではなく端末設定 |
+| **Obsidian + Dropbox 同期** | ✅ Remotely Save で `/Apps/remotely-save/Yosuga` へ |
 | サーバートークンの露出 | 塞いだ(下記) |
 
 **入り口は2本とも生きている。** 同じ回答JSONを共有とコピーの両方で入れたところ、
@@ -134,9 +135,30 @@ DATA: PROJECTS / RECORDS / CALENDAR / SETTINGS
 
 ### 次にやること(この順で)
 
-1. **Obsidian + Remotely Save で Dropbox 同期**。Vault は `/sdcard/Obsidian/Yosuga` に
-   作ってあり、Hub からの書き込みは確認済み。あとは Obsidian 側から開いて同期を設定するだけ。
-2. **実運用を1日通す**。Morning Brief → 作業 → 観測日記 → 取り込み。
+1. **実運用を1日通す**。Morning Brief → 作業 → 観測日記 → 取り込み。
+   **道具立ては全部そろっている。**あとは1日回してみるだけ。
+
+### Obsidian の据え方(2026-07-26 に確定)
+
+| | 場所 |
+|---|---|
+| Vault の実体 | **`/sdcard/Obsidian/Yosuga`**(共有ストレージ) |
+| Dropbox 側 | **`/Apps/remotely-save/Yosuga`**(アプリ専用フォルダ。ルートは触らない) |
+
+⚠ **Obsidian の「新規 Vault を作成」を押さないこと。** 既定で `/sdcard/Documents/` の下に
+**空の別 Vault** を作る。しかも名前が同じだと Vault 一覧に同名が2つ並び、
+**Remotely Save は Vault 名を Dropbox の同期先に使う**ので、間違った方が繋がる。
+必ず **「フォルダを Vault として開く」** を使う。
+
+⚠ **`.obsidian/plugins/remotely-save/data.json` は Dropbox の認証情報を持つ。**
+Remotely Save 自身が「機密情報を含むので共有するな」と書いている。
+**adb で覗く・AIに貼る・スクリーンショットを撮る、いずれもしないこと。**
+(2026-07-26 に一度うっかり中身を出してしまい、Dropbox 側の接続解除と再認証で塞いだ。)
+
+✅ **Hub の除外は実データで確認済み。** Obsidian を入れると Vault 内に
+非 `.md` が10件(`.obsidian/` 配下)できるが、`SafVaultReader` は
+「`.` 始まりをスキップ」「`.md` だけ拾う」ので、**一覧は11件のまま**だった。
+`data.json` がヨスガへ貼る候補に並ぶ事故は起きない。
 
 ### カレンダーの落とし穴(2026-07-26 に踏んだ)
 

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-26T11:45:00+09:00",
+  "generatedAt": "2026-07-26T12:20:00+09:00",
   "sourceCommit": "25004c5",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、長く未検証だった項目をまとめて確かめた。マイグレーション5件が実機で成功し、Vault への書き込み(新規11件)と**ノートの上書き反映(更新1件・枝番なし)が実機で確認できた**(risk-010 解消)。単体テスト 385 件、Room は v8。",
   "phase": "development",
@@ -150,17 +150,20 @@
       "id": "task-028",
       "title": "AI 側の指示を貼り直し、レコルのウェブ検索機能をOFFにする",
       "completedAt": "2026-07-26T11:10:00+09:00"
+    },
+    {
+      "id": "task-029",
+      "title": "Obsidian で Vault を開き、Remotely Save で Dropbox 同期を設定する",
+      "completedAt": "2026-07-26T12:10:00+09:00"
+    },
+    {
+      "id": "task-030",
+      "title": "Obsidian 同居時も Hub が .md だけを読むことを実データで確認(非.md が10件ある状態で11件のまま)",
+      "completedAt": "2026-07-26T12:18:00+09:00"
     }
   ],
   "inProgress": [],
   "nextTasks": [
-    {
-      "id": "task-045",
-      "title": "Obsidian + Remotely Save で Vault を Dropbox 同期する",
-      "detail": "Vault は /sdcard/Obsidian/Yosuga(共有ストレージ)にある。Hub の書き込みは確認済みなので、あとは Obsidian 側から開いて同期を設定する。",
-      "priority": "medium",
-      "dependencies": []
-    },
     {
       "id": "task-046",
       "title": "実運用を1日通す",
@@ -171,6 +174,11 @@
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "Obsidian + Remotely Save で Vault の Dropbox 同期を通す",
+      "commit": ""
+    },
     {
       "date": "2026-07-26",
       "summary": "カレンダーの誤解を招く表示を削除し、同期先が2つある件を記録する",
@@ -269,6 +277,12 @@
       "title": "公開済みの履歴に古いサーバートークンが残る",
       "detail": "b0c14ea1… が origin の履歴に残っている。トークンを作り直したので無効な文字列だが、履歴自体は消していない。ロリポップのドメインはリポジトリに書かれていないため、到達先は分からない。",
       "severity": "low"
+    },
+    {
+      "id": "risk-014",
+      "title": "Vault 内に Dropbox の認証情報が置かれている",
+      "detail": "`.obsidian/plugins/remotely-save/data.json` は Remotely Save 自身が「機密情報を含むので共有するな」と明記している。Hub は `.` 始まりを除外するので一覧には出ないが、**Vault を直接覗く作業(adb・AIへの貼り付け・スクリーンショット)では開かないこと**。",
+      "severity": "medium"
     }
   ],
   "decisions": [
@@ -346,6 +360,11 @@
       "date": "2026-07-26",
       "title": "UI に古い設計の残骸を残さない",
       "detail": "設定画面の「Googleアカウント: 未接続(Phase 4 で実装予定)」は、CalendarContract 方式へ差し替えた時点で嘘になっていた。カレンダーが0件のとき、この表示が原因に見えて誤診を招いた。方式を変えたら画面の痕跡も消す。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "Vault の実体は /sdcard/Obsidian/Yosuga(共有ストレージ)",
+      "detail": "Hub と Obsidian の両方から読める必要があるため、アプリ内フォルダではなく共有ストレージに置く。Obsidian の「新規作成」は既定で /sdcard/Documents/ 配下に作るので、必ず『フォルダを Vault として開く』を使う。Dropbox 側は /Apps/remotely-save/Yosuga。"
     }
   ],
   "questionsForYosuga": [
