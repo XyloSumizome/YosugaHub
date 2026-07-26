@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
   "generatedAt": "2026-07-26T14:10:00+09:00",
-  "sourceCommit": "pending",
+  "sourceCommit": "6f22a27",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。同日、**朝の経路からレコルを外した**——現況JSONが Morning Brief の材料をすべて持っており、間に要約を挟む必要が無かった。レコルに残るのは手打ち文書の分類だけ。単体テスト 407 件、Room は v8。",
   "phase": "development",
   "health": "on_track",
