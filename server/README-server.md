@@ -7,7 +7,8 @@ Androidアプリが生成する AI 用 JSON(projects / tasks / knowledge / calen
 
 ```
 server/
-  config.php    … トークン設定(必ず編集する)
+  config.example.php … トークン設定のひな形(Gitで追跡する)
+  config.php    … 実際のトークン設定(**Git管理外**。ひな形からコピーして作る)
   upload.php    … アプリからの受け口(POST)
   api.php       … ChatGPT向けの配信口(GET)
   openapi.yaml  … カスタムGPTの Actions 用の定義(サーバーへは置かない。GPTに貼る)
@@ -19,8 +20,12 @@ server/
 
 1. **トークンを作る**: アプリの 設定 → サーバー同期 → 「トークン生成」。
    生成された値をこの後2箇所(アプリとconfig.php)で使う。
-2. `config.php` の `$YOSUGA_TOKEN` を生成したトークンに書き換える。
-   ※ 初期値(CHANGE_ME...)のままだと upload.php / api.php は全リクエストを 403 で拒否する。
+2. `cp config.example.php config.php` してから、`config.php` の `$YOSUGA_TOKEN` を
+   生成したトークンに書き換える。
+   ※ 初期値(`CHANGE_ME`)のままだと upload.php / api.php は全リクエストを 403 で拒否する。
+   ⚠ **`config.php` は Git 管理外**(`.gitignore`)。本物のトークンを
+   `config.example.php` やドキュメントへ書かないこと。**リポジトリは public** なので、
+   書いた瞬間に誰でも読める。
 3. ロリポップの FTP(またはロリポップFTP画面)で、`server/` の中身を任意のディレクトリへアップロード。
    例: `/yosuga/` → URL は `https://あなたのドメイン/yosuga`
 4. アプリの 設定 → サーバー同期 で

@@ -121,7 +121,17 @@
       "Bash(grep -v \"^$\")",
       "Bash(grep -n '^```' docs/yosuga_prompt.md)",
       "Bash(grep -n '```json' docs/yosuga_prompt.md)",
-      "Bash(grep -c '```json' docs/yosuga_prompt.md)"
+      "Bash(grep -c '```json' docs/yosuga_prompt.md)",
+      "Bash(/mnt/c/Users/note_/AppData/Local/Android/Sdk/platform-tools/adb.exe kill-server *)",
+      "Bash(/mnt/c/Users/note_/AppData/Local/Android/Sdk/platform-tools/adb.exe start-server *)",
+      "Read(//mnt/c/**)",
+      "Bash(powershell.exe -NoProfile -Command 'Get-PnpDevice -PresentOnly | Where-Object { $_.Class -match '\\\\''USB|AndroidUsbDevice|WPD|Portable'\\\\'' } | Select-Object Status,Class,FriendlyName | Format-Table -AutoSize | Out-String -Width 200')",
+      "Bash(grep -vi \"hub\\\\|host controller\\\\|composite device$\\\\|Root Hub\")",
+      "Bash(cmd.exe /c 'set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat connectedDebugAndroidTest')",
+      "Bash(cmd.exe /c 'set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat installDebug')",
+      "Bash(git ls-tree *)",
+      "Bash(git grep *)",
+      "Bash(git check-ignore *)"
     ]
   }
 }

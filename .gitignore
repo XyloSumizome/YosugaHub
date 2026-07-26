@@ -12,3 +12,7 @@ local.properties
 
 # Kotlin コンパイラのエラーログ(ビルド時に生成される)
 .kotlin/
+
+# サーバーの本番トークン。ひな形は server/config.example.php を追跡する。
+# 過去に本物のトークンを載せて公開してしまったため、以後は追跡しない。
+/server/config.php
