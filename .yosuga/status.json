@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-26T10:00:00+09:00",
-  "sourceCommit": "b988b98",
+  "generatedAt": "2026-07-26T11:00:00+09:00",
+  "sourceCommit": "25004c5",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、長く未検証だった項目をまとめて確かめた。マイグレーション5件が実機で成功し、Vault への書き込み(新規11件)と**ノートの上書き反映(更新1件・枝番なし)が実機で確認できた**(risk-010 解消)。単体テスト 385 件、Room は v8。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
-    "title": "実機でしか確かめられない残りを潰す(共有シート / クリップボード / カレンダー)",
-    "detail": "上書き反映と Vault 書き込みは実機で確認できた。残るのは ChatGPT の共有シートに Hub が出るか(出なければ入り口の設計を見直す)、クリップボード自動入力、カレンダーの実データ。あわせて AI 側の指示の貼り直しが未了。"
+    "title": "実機での通し運用へ移る(カレンダー / Obsidian同期 / AI指示の貼り直し)",
+    "detail": "入り口(共有シート・クリップボード)は両方とも実機で通った。上書き反映・Vault書き込みも確認済み。残るはカレンダーの実データ、Obsidian + Remotely Save、AI 側の指示の貼り直し。"
   },
   "completed": [
     {
@@ -115,6 +115,26 @@
       "id": "task-021",
       "title": "公開リポジトリに露出していたサーバートークンを塞ぐ(config.php を追跡外にしトークンを作り直す)",
       "completedAt": "2026-07-26T09:40:00+09:00"
+    },
+    {
+      "id": "task-022",
+      "title": "共有シート経由の取り込みを実機で確認(Hub が出て JSON 本文が届く)",
+      "completedAt": "2026-07-26T10:44:00+09:00"
+    },
+    {
+      "id": "task-023",
+      "title": "クリップボード自動入力を実機で確認(JSONのときだけ欄に入る)",
+      "completedAt": "2026-07-26T10:40:00+09:00"
+    },
+    {
+      "id": "task-024",
+      "title": "取り込み成功時のサーバー自動再同期を実機で確認",
+      "completedAt": "2026-07-26T10:40:00+09:00"
+    },
+    {
+      "id": "task-025",
+      "title": "生成したサーバートークンをコピーできるようにする(マスク欄から取り出せなかった)",
+      "completedAt": "2026-07-26T10:20:00+09:00"
     }
   ],
   "inProgress": [],
@@ -123,20 +143,6 @@
       "id": "task-040",
       "title": "AI 側の指示を貼り直す",
       "detail": "レコル(recoru_prompt.md のシステムプロンプト)/ ヨスガ(セッションまとめの Frontmatter と観測日記の封筒)/ ゲーム(since の追加・書き換え禁止の撤廃)。",
-      "priority": "high",
-      "dependencies": []
-    },
-    {
-      "id": "task-042",
-      "title": "ChatGPT の共有シートに Yosuga Hub が出るか実機で確かめる",
-      "detail": "出なければ「ヨスガ/レコル → Hub」の入り口がクリップボード頼みになり、v5 の運用設計を見直す必要がある。",
-      "priority": "high",
-      "dependencies": []
-    },
-    {
-      "id": "task-043",
-      "title": "クリップボード自動入力を実機で確認する",
-      "detail": "JSON をコピーしてから 回答JSON → Hub を押す。エミュレータでは確認手段が無かった。共有シートが没だった場合はここが唯一の入り口になる。",
       "priority": "high",
       "dependencies": []
     },
@@ -157,6 +163,16 @@
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "config.example.php の初期値を api.php が見ている目印に合わせる",
+      "commit": "25004c5"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "生成したサーバートークンをコピーできるようにし、レコルへウェブ検索の禁止を足す",
+      "commit": "f4c42f9"
+    },
     {
       "date": "2026-07-26",
       "summary": "スキーマ事故のノートへ実機でのマイグレーション確認を追記(上書き反映の検証を兼ねる)",
@@ -232,7 +248,7 @@
     {
       "id": "risk-011",
       "title": "AI 側の指示が古いまま動く可能性",
-      "detail": "2026-07-25 に指示文をいくつも直した。貼り直さないと、封筒なしのJSONや旧コマンド名を前提に動く。",
+      "detail": "2026-07-25〜26 に指示文を直した(レコルへ『ウェブを検索しない』を追加)。貼り直さないと古い挙動のまま動く。",
       "severity": "medium"
     },
     {
@@ -313,6 +329,11 @@
       "date": "2026-07-26",
       "title": "Yosuga Hub 自身を Hub のプロジェクトとして登録する",
       "detail": "questionsForYosuga に挙げていた保留事項。上書き反映の検証で両側を制御できる対象が必要だったため登録した。projectId は yosuga-hub、表示名は YosugaHub(Vault の Games/YosugaHub/ になる)。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "入り口は共有シートを主・クリップボードを従とする",
+      "detail": "実機で両方とも通った。同じ回答JSONが2経路で同一サイズで届いた。共有シートは本文を送っており、懸念していた『リンクだけ共有される』は起きなかった。クリップボードは JSON として取り出せるときだけ欄に入る(ClipboardPrefill)。"
     }
   ],
   "questionsForYosuga": [
