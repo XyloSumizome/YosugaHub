@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-25T17:15:00+09:00",
-  "sourceCommit": "86b2589",
-  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-25 に AI との受け渡しが一通り実データで通った(Morning Brief / レコルの巡回 / ヨスガの観測日記)。Vault は更新が上書き反映される形になった。単体テスト 385 件・マイグレーションテスト 5 件が通り、Room は v8。",
+  "generatedAt": "2026-07-26T10:00:00+09:00",
+  "sourceCommit": "b988b98",
+  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、長く未検証だった項目をまとめて確かめた。マイグレーション5件が実機で成功し、Vault への書き込み(新規11件)と**ノートの上書き反映(更新1件・枝番なし)が実機で確認できた**(risk-010 解消)。単体テスト 385 件、Room は v8。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
-    "title": "AI 側の指示を貼り直し、上書き反映を実機で確かめる",
-    "detail": "2026-07-25 にレコル・ヨスガ・ゲーム向けの指示文をいくつも直した。貼り直さないと古い挙動のまま。あわせてノートの上書き反映(実機未確認)を確かめる。"
+    "title": "実機でしか確かめられない残りを潰す(共有シート / クリップボード / カレンダー)",
+    "detail": "上書き反映と Vault 書き込みは実機で確認できた。残るのは ChatGPT の共有シートに Hub が出るか(出なければ入り口の設計を見直す)、クリップボード自動入力、カレンダーの実データ。あわせて AI 側の指示の貼り直しが未了。"
   },
   "completed": [
     {
@@ -90,6 +90,31 @@
       "id": "task-016",
       "title": "使い方の HTML を書く(docs/how-to-use.html)",
       "completedAt": "2026-07-25T16:31:00+09:00"
+    },
+    {
+      "id": "task-017",
+      "title": "実機(Pixel 10a / Android 17)でマイグレーションテスト5件を通す",
+      "completedAt": "2026-07-26T09:10:00+09:00"
+    },
+    {
+      "id": "task-018",
+      "title": "実機を運用機として立ち上げる(プロジェクト4件 + GitHub トークン + 取得確認)",
+      "completedAt": "2026-07-26T09:30:00+09:00"
+    },
+    {
+      "id": "task-019",
+      "title": "Vault を実機の共有ストレージへ据え、ノート11件の書き込みと振り分けを確認",
+      "completedAt": "2026-07-26T09:48:00+09:00"
+    },
+    {
+      "id": "task-020",
+      "title": "ノートの上書き反映を実機で確認(更新1件・枝番なし・本文とupdated_atを実ファイルで裏取り)",
+      "completedAt": "2026-07-26T09:51:00+09:00"
+    },
+    {
+      "id": "task-021",
+      "title": "公開リポジトリに露出していたサーバートークンを塞ぐ(config.php を追跡外にしトークンを作り直す)",
+      "completedAt": "2026-07-26T09:40:00+09:00"
     }
   ],
   "inProgress": [],
@@ -102,29 +127,46 @@
       "dependencies": []
     },
     {
-      "id": "task-041",
-      "title": "ノートの上書き反映を実機で確認する",
-      "detail": "既存ノートを修正して push → GitHub → Obsidian →「更新 1件」が出れば本物。単体テストでは押さえてある。",
-      "priority": "high",
-      "dependencies": []
-    },
-    {
       "id": "task-042",
-      "title": "実機で確認する(共有シート / Obsidian + Remotely Save / カレンダー)",
-      "detail": "ChatGPT の共有シートに Yosuga Hub が出るかが要。出なければ共有経路は没。Vault は共有ストレージ上に置く。",
-      "priority": "medium",
+      "title": "ChatGPT の共有シートに Yosuga Hub が出るか実機で確かめる",
+      "detail": "出なければ「ヨスガ/レコル → Hub」の入り口がクリップボード頼みになり、v5 の運用設計を見直す必要がある。",
+      "priority": "high",
       "dependencies": []
     },
     {
       "id": "task-043",
       "title": "クリップボード自動入力を実機で確認する",
-      "detail": "JSON をコピーしてから 回答JSON → Hub を押す。エミュレータではクリップボードへ文字列を入れる手段が無く未確認。",
+      "detail": "JSON をコピーしてから 回答JSON → Hub を押す。エミュレータでは確認手段が無かった。共有シートが没だった場合はここが唯一の入り口になる。",
+      "priority": "high",
+      "dependencies": []
+    },
+    {
+      "id": "task-044",
+      "title": "カレンダーを実データにする",
+      "detail": "実機で READ_CALENDAR を許可し、近況報告の前後2週間が埋まることを確認する。",
+      "priority": "medium",
+      "dependencies": []
+    },
+    {
+      "id": "task-045",
+      "title": "Obsidian + Remotely Save で Vault を Dropbox 同期する",
+      "detail": "Vault は /sdcard/Obsidian/Yosuga(共有ストレージ)にある。Hub の書き込みは確認済みなので、あとは Obsidian 側から開いて同期を設定する。",
       "priority": "medium",
       "dependencies": []
     }
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "スキーマ事故のノートへ実機でのマイグレーション確認を追記(上書き反映の検証を兼ねる)",
+      "commit": "b988b98"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "サーバートークンを Git 管理外にし、ひな形 config.example.php を追加",
+      "commit": "b8ceaab"
+    },
     {
       "date": "2026-07-25",
       "summary": "Vault を整理されて更新されていく形にする",
@@ -188,12 +230,6 @@
   ],
   "risks": [
     {
-      "id": "risk-010",
-      "title": "ノートの上書き反映が実機未確認",
-      "detail": "単体テストでは押さえてあるが、実際に GitHub のノートを修正して通したことはない。",
-      "severity": "medium"
-    },
-    {
       "id": "risk-011",
       "title": "AI 側の指示が古いまま動く可能性",
       "detail": "2026-07-25 に指示文をいくつも直した。貼り直さないと、封筒なしのJSONや旧コマンド名を前提に動く。",
@@ -203,6 +239,12 @@
       "id": "risk-012",
       "title": "connectedDebugAndroidTest がアプリのデータを消す",
       "detail": "実行後にアンインストールされ、プロジェクト・トークン・Vault選択が消える。トークンは Keystore の鍵ごと消えるため再入力が必要。",
+      "severity": "low"
+    },
+    {
+      "id": "risk-013",
+      "title": "公開済みの履歴に古いサーバートークンが残る",
+      "detail": "b0c14ea1… が origin の履歴に残っている。トークンを作り直したので無効な文字列だが、履歴自体は消していない。ロリポップのドメインはリポジトリに書かれていないため、到達先は分からない。",
       "severity": "low"
     }
   ],
@@ -256,18 +298,33 @@
       "date": "2026-07-25",
       "title": "AIの出力揺れはアプリ側で吸収する",
       "detail": "封筒(schemaVersion/proposals)の無い回答JSONも受け取る。questionsForYosuga の型ゆれを吸収した前例と同じ判断。ただしプロンプトは正しい形を教え続ける。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "実機=運用機 / エミュレータ=テスト機 に分ける",
+      "detail": "connectedDebugAndroidTest はアプリをアンインストールし、プロジェクト・トークン・Vault選択を消す。実機に運用データを入れる前に一度だけ流し、以後この実機では回さない。テストはエミュレータへ寄せる。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "server/config.php を Git 管理外にする",
+      "detail": "本番トークンを平文で追跡しており、public リポジトリで公開されていた。ひな形 config.example.php を追跡し、config.php は .gitignore へ。公開されたものは取り消せないため、修復はトークンの作り直しで行った。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "Yosuga Hub 自身を Hub のプロジェクトとして登録する",
+      "detail": "questionsForYosuga に挙げていた保留事項。上書き反映の検証で両側を制御できる対象が必要だったため登録した。projectId は yosuga-hub、表示名は YosugaHub(Vault の Games/YosugaHub/ になる)。"
     }
   ],
   "questionsForYosuga": [
-    "Yosuga Hub 自身を Hub のプロジェクトとして登録するか。登録しないと .yosuga/notes/ は取り込んでも Inbox 行きになる。登録すると Morning Brief にゲーム制作以外のタスクが混ざる。",
     "リポジトリから消えたノートを Vault 側でも Archive/ へ移すか。いまは報告だけしている。"
   ],
   "dataQuality": {
     "validated": true,
     "missingFields": [],
     "warnings": [
-      "completed の completedAt は日付までは正確だが、時刻は概算(コミット時刻から起こしたもの)。",
-      "recentChanges は 2026-07-25 の主要な変更のみ。全量は git log と docs/WORKLOG.md にある。"
+      "completed の completedAt は日付までは正確だが、時刻は概算。",
+      "recentChanges は主要な変更のみ。全量は git log と docs/WORKLOG.md にある。",
+      "task-021 のトークン作り直しはシロさんがサーバーとアプリで実施した。Hub 側からは検証できていない。"
     ]
   }
 }
