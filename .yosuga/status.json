@@ -1,14 +1,14 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-26T12:20:00+09:00",
+  "generatedAt": "2026-07-26T13:30:00+09:00",
   "sourceCommit": "25004c5",
-  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、長く未検証だった項目をまとめて確かめた。マイグレーション5件が実機で成功し、Vault への書き込み(新規11件)と**ノートの上書き反映(更新1件・枝番なし)が実機で確認できた**(risk-010 解消)。単体テスト 385 件、Room は v8。",
+  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。同日、**朝の経路からレコルを外した**——現況JSONが Morning Brief の材料をすべて持っており、間に要約を挟む必要が無かった。レコルに残るのは手打ち文書の分類だけ。単体テスト 407 件、Room は v8。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
-    "title": "実運用を1日通す(Morning Brief → 作業 → 観測日記 → 取り込み)",
-    "detail": "実機でしか確かめられない項目は全て片付いた。入り口2本・上書き反映・Vault書込・カレンダーがすべて実データで動いている。残るは Obsidian + Remotely Save の Dropbox 同期と、通し運用。"
+    "title": "新しい朝の経路(Hub → ヨスガ)を1日通す",
+    "detail": "AI 側の指示を貼り直したうえで、> 朝の準備 → 制作 → 観測日記 → 取り込み を一周させる。あわせて現況JSONの量(約31KB)が実用に耐えるかを見る。"
   },
   "completed": [
     {
@@ -160,20 +160,83 @@
       "id": "task-030",
       "title": "Obsidian 同居時も Hub が .md だけを読むことを実データで確認(非.md が10件ある状態で11件のまま)",
       "completedAt": "2026-07-26T12:18:00+09:00"
+    },
+    {
+      "id": "task-031",
+      "title": "朝にやることを「朝の準備」1つにまとめる(カレンダー→GitHub→Vault→サーバー同期)",
+      "completedAt": "2026-07-26T12:40:00+09:00"
+    },
+    {
+      "id": "task-032",
+      "title": "同期先が http:// のとき送る前に理由を言って止める",
+      "completedAt": "2026-07-26T13:00:00+09:00"
+    },
+    {
+      "id": "task-033",
+      "title": "構造化して渡している節を statusMarkdown から外す(projects.json 36%減)",
+      "completedAt": "2026-07-26T13:10:00+09:00"
+    },
+    {
+      "id": "task-034",
+      "title": "朝の近況をレコルではなくヨスガへ直接渡す(Morning Brief 廃止)",
+      "completedAt": "2026-07-26T13:20:00+09:00"
+    },
+    {
+      "id": "task-035",
+      "title": "ConversationNoteTest のコンパイル不能を修正(VaultWriter.overwrite 未実装)",
+      "completedAt": "2026-07-26T12:30:00+09:00"
     }
   ],
   "inProgress": [],
   "nextTasks": [
     {
+      "id": "task-047",
+      "title": "AI 側の指示を貼り直す",
+      "detail": "ヨスガ(メモリ / 「朝の近況」の節が新しい)とレコル(Instructions / Morning Brief の節を削除・会話のきっかけからも外す)。朝の経路を変えたので貼り直さないと動かない。",
+      "priority": "high",
+      "dependencies": []
+    },
+    {
       "id": "task-046",
       "title": "実運用を1日通す",
-      "detail": "Morning Brief → 作業 → 観測日記 → 取り込み を実機で一周させる。",
+      "detail": "> 朝の準備 → 制作 → 観測日記 → 取り込み を実機で一周させる。",
       "priority": "medium",
-      "dependencies": []
+      "dependencies": [
+        "task-047"
+      ]
+    },
+    {
+      "id": "task-048",
+      "title": "現況JSONの量を実地で見る",
+      "detail": "約31KB。重すぎるなら statusMarkdown の Summary を落とす等で削る。机上で削ると必要なものまで削るので、一度渡してから決める。",
+      "priority": "medium",
+      "dependencies": [
+        "task-046"
+      ]
     }
   ],
   "blockers": [],
   "recentChanges": [
+    {
+      "date": "2026-07-26",
+      "summary": "朝の近況をレコルではなくヨスガへ直接渡す",
+      "commit": "9a3feed"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "構造化して渡している節を statusMarkdown から外す(36%減)",
+      "commit": "72859a3"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "同期先が http:// のとき送る前に止める",
+      "commit": "4480094"
+    },
+    {
+      "date": "2026-07-26",
+      "summary": "朝にやることを「朝の準備」1つにまとめる",
+      "commit": "68bbb0d"
+    },
     {
       "date": "2026-07-26",
       "summary": "Obsidian + Remotely Save で Vault の Dropbox 同期を通す",
@@ -283,6 +346,12 @@
       "title": "Vault 内に Dropbox の認証情報が置かれている",
       "detail": "`.obsidian/plugins/remotely-save/data.json` は Remotely Save 自身が「機密情報を含むので共有するな」と明記している。Hub は `.` 始まりを除外するので一覧には出ないが、**Vault を直接覗く作業(adb・AIへの貼り付け・スクリーンショット)では開かないこと**。",
       "severity": "medium"
+    },
+    {
+      "id": "risk-015",
+      "title": "現況JSONが毎朝ヨスガの会話に乗る",
+      "detail": "約31KB。レコルを挟んでいた唯一の実用的な理由が『量』だった。重すぎるなら statusMarkdown を削るが、机上で削ると必要なものまで削るので実地で見てから決める。",
+      "severity": "medium"
     }
   ],
   "decisions": [
@@ -365,6 +434,16 @@
       "date": "2026-07-26",
       "title": "Vault の実体は /sdcard/Obsidian/Yosuga(共有ストレージ)",
       "detail": "Hub と Obsidian の両方から読める必要があるため、アプリ内フォルダではなく共有ストレージに置く。Obsidian の「新規作成」は既定で /sdcard/Documents/ 配下に作るので、必ず『フォルダを Vault として開く』を使う。Dropbox 側は /Apps/remotely-save/Yosuga。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "朝の近況は Hub からヨスガへ直接渡す(Morning Brief 廃止)",
+      "detail": "現況JSONが Brief の材料をすべて持っていた(tasks.completedAt / recentChanges の日付 / calendar / blockers.since / recentDecisions)。7節のうち5節は選別で Hub が渡せる。残る2節も、締切や停滞の指摘はヨスガができ、シロの状態はヨスガが書いた観測日記をレコル経由で本人へ返していた。v4.3 の「知識を活かすのはレコルではない」に戻す。"
+    },
+    {
+      "date": "2026-07-26",
+      "title": "仕分けは各ゲームの Claude Code に任せる",
+      "detail": "v5 で「意味付けは生成元の Claude Code が出力時点で行う」と決めてあり、実機でそのとおり動いた(Frontmatter → NoteRouter)。レコルに残るのは記録タブに手打ちした documents の分類だけで、実機では0件。ロリポップ同期・Actions は維持するが必須ではない。"
     }
   ],
   "questionsForYosuga": [
