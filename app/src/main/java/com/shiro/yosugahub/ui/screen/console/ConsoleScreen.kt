@@ -166,6 +166,19 @@ fun ConsoleScreen(
         }
 
         // ── オペレーション ──
+        // 朝にやることを1つにまとめる(2026-07-26)。それまで
+        // カレンダーは CALENDAR 画面、サーバー同期は SETTINGS の奥、
+        // GitHub 取得はここ、と**4箇所に散っていた**。毎朝使うものが
+        // 設定の奥にあるのは誤りなので、順序ごと固定して先頭に置く。
+        Command("朝の準備", enabled = !importing) {
+            viewModel.morningRoutine {
+                // 同期が転んでいても開く。手で確かめられるほうがよい。
+                ExternalLink.sanitize(uiState.recoruUrl)?.let { url ->
+                    openExternalLink(context, url)
+                }
+            }
+        }
+        AsciiDivider()
         Command("GitHub → Obsidian", enabled = !importing, onClick = viewModel::importNotes)
         AsciiDivider()
         Command("会話 → Obsidian") { showSaveSession = true }

@@ -92,6 +92,9 @@ class ConversationNoteTest {
         val writer = object : VaultWriter {
             override suspend fun write(directory: String, fileName: String, content: String) =
                 VaultWriteResult.Written("$directory/$fileName")
+
+            override suspend fun overwrite(vaultPath: String, content: String) =
+                unusedOverwrite()
         }
         val repository = ConversationImportRepository(writer) { now }
 
@@ -112,6 +115,9 @@ class ConversationNoteTest {
                 called = true
                 return VaultWriteResult.Written("x")
             }
+
+            override suspend fun overwrite(vaultPath: String, content: String) =
+                unusedOverwrite()
         }
         val repository = ConversationImportRepository(writer) { now }
 
@@ -124,9 +130,20 @@ class ConversationNoteTest {
         val writer = object : VaultWriter {
             override suspend fun write(directory: String, fileName: String, content: String) =
                 VaultWriteResult.NotConfigured
+
+            override suspend fun overwrite(vaultPath: String, content: String) =
+                unusedOverwrite()
         }
         val repository = ConversationImportRepository(writer) { now }
 
         assertEquals(ConversationImportResult.VaultNotConfigured, repository.save("本文"))
     }
+
+    /**
+     * 会話ログの保存は必ず新規作成で、[VaultWriter.overwrite] を通らない
+     * (同じ日に2回まとめても、別ファイルとして積む)。
+     * 呼ばれたら仕様が変わったということなので、黙って通さず落とす。
+     */
+    private fun unusedOverwrite(): VaultWriteResult =
+        throw AssertionError("会話ログの保存で overwrite は呼ばれないはず")
 }

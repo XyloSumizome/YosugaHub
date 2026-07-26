@@ -17,6 +17,8 @@ import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.ImportResult
+import com.shiro.yosugahub.data.repository.MorningRoutineRepository
+import com.shiro.yosugahub.data.repository.MorningRoutineResult
 import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProjectRepository
@@ -54,6 +56,7 @@ class AssistantViewModel(
     private val importRepository: ImportRepository,
     private val proposalRepository: ProposalRepository,
     private val noteImportRepository: NoteImportRepository,
+    private val morningRoutineRepository: MorningRoutineRepository,
     private val conversationImportRepository: ConversationImportRepository,
     private val projectRepository: ProjectRepository,
     userPreferencesRepository: UserPreferencesRepository,
@@ -81,6 +84,29 @@ class AssistantViewModel(
             } ?: return@launch
             delay(SUMMARY_DELAY_MS)
             _noteImportSummary.value = summary
+        }
+    }
+
+    /**
+     * 朝の準備(2026-07-26)。カレンダー → GitHub の status → ノート → サーバー同期。
+     * 済んだら [onDone] を呼ぶ(呼び出し側でレコルを開く)。
+     *
+     * **転んでも onDone は呼ぶ。** 同期が失敗した朝でも、レコルを開いて
+     * 手で確かめられるほうがよい。何が転んだかは端末ログに残る。
+     */
+    fun morningRoutine(onDone: (MorningRoutineResult) -> Unit) {
+        viewModelScope.launch {
+            val result = opLog.run { emit ->
+                emit.emit(LogLine("> MORNING", LogTone.ACCENT))
+                val r = morningRoutineRepository.run(
+                    onStep = { step -> emit.emit(MorningLog.format(step)) },
+                    onNoteEvent = { event -> emit.emit(ImportLog.format(event)) },
+                )
+                emit.emit(LogLine("> DONE", LogTone.ACCENT))
+                r
+            } ?: return@launch
+            delay(SUMMARY_DELAY_MS)
+            onDone(result)
         }
     }
 
@@ -194,6 +220,7 @@ class AssistantViewModel(
                     importRepository = app.container.importRepository,
                     proposalRepository = app.container.proposalRepository,
                     noteImportRepository = app.container.noteImportRepository,
+                    morningRoutineRepository = app.container.morningRoutineRepository,
                     conversationImportRepository = app.container.conversationImportRepository,
                     projectRepository = app.container.projectRepository,
                     userPreferencesRepository = app.container.userPreferencesRepository,

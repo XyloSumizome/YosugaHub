@@ -34,6 +34,7 @@ import com.shiro.yosugahub.data.repository.GitHubStatusRepository
 import com.shiro.yosugahub.data.repository.ImportRepository
 import com.shiro.yosugahub.data.repository.KnowledgeRepository
 import com.shiro.yosugahub.data.repository.ProjectRepository
+import com.shiro.yosugahub.data.repository.MorningRoutineRepository
 import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.ProjectStatusRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
@@ -79,6 +80,7 @@ interface AppContainer {
     val repoNoteRepository: RepoNoteRepository
     val noteImportRepository: NoteImportRepository
     val conversationImportRepository: ConversationImportRepository
+    val morningRoutineRepository: MorningRoutineRepository
 }
 
 /** Room + DataStore を用いる既定の実装。 */
@@ -147,6 +149,20 @@ class DefaultAppContainer(
             repoNoteRepository = repoNoteRepository,
             vaultWriter = vaultWriter,
             dao = database.importedNoteDao(),
+        )
+    }
+
+    /**
+     * 朝にやることを1つにまとめる(2026-07-26)。
+     * 既存の Repository を順番に呼ぶだけで、新しいデータ経路は作らない。
+     */
+    override val morningRoutineRepository: MorningRoutineRepository by lazy {
+        MorningRoutineRepository(
+            projects = { projectRepository.projects() },
+            syncCalendar = { calendarRepository.sync() },
+            refreshStatus = { list -> projectStatusRepository.refreshAll(list) },
+            importNotes = { onEvent -> noteImportRepository.importAll(onEvent) },
+            syncServer = { serverSyncRepository.sync() },
         )
     }
 
