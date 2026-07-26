@@ -32,7 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +54,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
 ) {
     val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     val uiState by viewModel.uiState.collectAsState()
     val importHistory by viewModel.importHistory.collectAsState()
     val vaultChecking by viewModel.vaultChecking.collectAsState()
@@ -235,16 +238,35 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     TacticalOutlinedButton(
                         onClick = {
-                            syncTokenInput = viewModel.generateSyncToken()
+                            val token = viewModel.generateSyncToken()
+                            syncTokenInput = token
+                            // 生成したトークンは**必ず外へ持ち出す**(サーバーの config.php に貼る)。
+                            // 入力欄はマスク表示なので、Android の仕様で欄から選択してもコピーできない
+                            // (貼り付けしか出ない)。ここで自動でクリップボードへ入れないと、
+                            // 生成できるのに取り出せないという行き止まりになる。
+                            clipboard.setText(AnnotatedString(token))
                             Toast.makeText(
                                 context,
-                                "トークンを生成しました。同じ値をサーバーの config.php にも設定してください。",
+                                "トークンを生成してコピーしました。同じ値をサーバーの config.php にも貼ってください。",
                                 Toast.LENGTH_LONG,
                             ).show()
                         },
                         modifier = Modifier.weight(1f),
                     ) {
                         Text("トークン生成")
+                    }
+                }
+                // 生成したあとに別のものをコピーしてしまったとき用。欄が空なら出さない。
+                if (syncTokenInput.isNotBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TacticalOutlinedButton(
+                        onClick = {
+                            clipboard.setText(AnnotatedString(syncTokenInput))
+                            Toast.makeText(context, "トークンをコピーしました", Toast.LENGTH_SHORT).show()
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("トークンをコピー")
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
