@@ -6,6 +6,16 @@
     <!-- 端末に同期済みのカレンダー(Googleカレンダー含む)を読むために必要。読み取り専用 -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
 
+    <!--
+        朝の準備で ChatGPT アプリを名指しして現況を渡すために必要(2026-07-26)。
+        Android 11 以降はパッケージが既定で「見えない」ので、setPackage した
+        startActivity が ActivityNotFoundException になる。ここで宣言した相手だけ見える。
+        ※ 選択画面(createChooser)は宣言なしでも動く。名指しのときだけ要る。
+    -->
+    <queries>
+        <package android:name="com.openai.chatgpt" />
+    </queries>
+
     <application
         android:name=".YosugaHubApplication"
         android:allowBackup="true"

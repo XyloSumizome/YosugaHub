@@ -94,19 +94,25 @@ class AssistantViewModel(
      * **転んでも onDone は呼ぶ。** 同期が失敗した朝でも、レコルを開いて
      * 手で確かめられるほうがよい。何が転んだかは端末ログに残る。
      */
-    fun morningRoutine(onDone: (MorningRoutineResult) -> Unit) {
+    fun morningRoutine(onDone: (MorningRoutineResult, String) -> Unit) {
         viewModelScope.launch {
-            val result = opLog.run { emit ->
+            val pair = opLog.run { emit ->
                 emit.emit(LogLine("> MORNING", LogTone.ACCENT))
                 val r = morningRoutineRepository.run(
                     onStep = { step -> emit.emit(MorningLog.format(step)) },
                     onNoteEvent = { event -> emit.emit(ImportLog.format(event)) },
                 )
+                // 朝は渡す中身が決まっている(現況のみ・過去ログは含めない)ので、
+                // ここで作ってしまう。exports/ への保存も createContextExport が行う。
+                val context = exportRepository.createContextExport()
+                emit.emit(
+                    LogLine("  CONTEXT ${context.json.length} chars … OK", LogTone.OK),
+                )
                 emit.emit(LogLine("> DONE", LogTone.ACCENT))
-                r
+                r to context.json
             } ?: return@launch
             delay(SUMMARY_DELAY_MS)
-            onDone(result)
+            onDone(pair.first, pair.second)
         }
     }
 

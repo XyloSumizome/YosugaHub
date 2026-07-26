@@ -39,6 +39,7 @@ import com.shiro.yosugahub.ui.screen.assistant.AssistantViewModel
 import com.shiro.yosugahub.ui.screen.assistant.NoteImportSummaryDialog
 import com.shiro.yosugahub.ui.share.importResultMessage
 import com.shiro.yosugahub.ui.share.openExternalLink
+import com.shiro.yosugahub.ui.share.sendToChatGpt
 import com.shiro.yosugahub.ui.share.shareJsonText
 import com.shiro.yosugahub.ui.theme.TermAmber
 import com.shiro.yosugahub.ui.theme.TermGreen
@@ -180,7 +181,17 @@ fun ConsoleScreen(
             // 「締切が近い」「停滞している」の指摘も、材料さえあればヨスガができる。
             // v4.3 の「知識を活かすのはレコルではない(人間かヨスガの仕事)」に戻す。
             // 転んでいても進む。何が転んだかは端末ログに残っている。
-            viewModel.morningRoutine { onOpenContext() }
+            //
+            // 渡す相手も中身も決まっている(ヨスガへ現況のみ・過去ログは含めない)ので、
+            // 選択画面を出さず ChatGPT を名指しする。入っていなければ
+            // `ヨスガへ共有` の画面へ逃がす(そこから選択画面を出せる)。
+            viewModel.morningRoutine { _, contextJson ->
+                val sent = sendToChatGpt(context, contextJson, "Yosuga Hub 現況")
+                if (!sent) {
+                    Toast.makeText(context, "ChatGPT へ渡せませんでした。共有先を選んでください。", Toast.LENGTH_LONG).show()
+                    onOpenContext()
+                }
+            }
         }
         AsciiDivider()
         Command("GitHub → Obsidian", enabled = !importing, onClick = viewModel::importNotes)
