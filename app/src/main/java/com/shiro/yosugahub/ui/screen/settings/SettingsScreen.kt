@@ -178,13 +178,27 @@ fun SettingsScreen(
             }
         }
         item {
-            SectionCard(title = "Googleアカウント") {
-                Text("未接続(Phase 4 で実装予定)", style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        item {
+            // 旧・設計書v2の Phase 4(OAuth で Google カレンダーAPIへ接続)は採らなかった。
+            // CalendarContract で端末に同期済みのカレンダーを読む方式に差し替えてある。
+            // ここに「Googleアカウント: 未接続(Phase 4 で実装予定)」と出していたため、
+            // 予定が0件のときに「アカウント未接続が原因」と誤読させていた(2026-07-26 に削除)。
             SectionCard(title = "カレンダー") {
+                Text(
+                    text = "端末に同期済みのカレンダー(Googleカレンダーを含む)を読みます。" +
+                        "READ_CALENDAR の許可だけで動くので、" +
+                        "Hub 側で Google アカウントに接続する必要はありません。",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 Text("取得期間: 過去14日〜未来14日", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "予定が出ないときは、端末の 設定 → パスワードとアカウント → " +
+                        "Google → アカウントの同期 で「カレンダー」が ON か確認してください。" +
+                        "Googleカレンダーのアプリに表示されていても、" +
+                        "端末のカレンダーへ同期されていなければ読めません。",
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
         }
         item {

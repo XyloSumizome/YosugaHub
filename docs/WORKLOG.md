@@ -17,6 +17,7 @@
 | **共有シート経由の取り込み** | ✅ Hub が出て、**URLではなく JSON 本文**が届いた |
 | **クリップボード自動入力** | ✅ JSON として取り出せるときだけ欄に入る |
 | 取り込み後のサーバー自動再同期 | ✅(狙っていなかったが `files/ai/` の更新時刻で確認できた) |
+| **カレンダー** | ✅ **7件**(`past` 5 / `upcoming` 2)。原因は Hub ではなく端末設定 |
 | サーバートークンの露出 | 塞いだ(下記) |
 
 **入り口は2本とも生きている。** 同じ回答JSONを共有とコピーの両方で入れたところ、
@@ -133,19 +134,34 @@ DATA: PROJECTS / RECORDS / CALENDAR / SETTINGS
 
 ### 次にやること(この順で)
 
-1. **AI 側の指示を貼り直す**(2026-07-25〜26 にいくつも直したため)。
-   - レコル: `docs/recoru_prompt.md` のシステムプロンプト(41〜271行のコードブロック)。
-     **あわせて GPT 編集画面でウェブ検索機能を OFF にする**(こちらが本命)。
-   - ヨスガ: `docs/yosuga_prompt.md` の**セッションまとめの節**(Frontmatter を追加した)と、
-     **観測日記の形式**(`schemaVersion` / `proposals` の封筒を追加した)
-   - ゲーム: `docs/claude_code_onboarding.md`(`since` の追加 / 書き換え禁止の撤廃)
-2. **カレンダーを実データにする**。実機で `READ_CALENDAR` を許可する。
-3. **Obsidian + Remotely Save で Dropbox 同期**。Vault は `/sdcard/Obsidian/Yosuga` に
+1. **Obsidian + Remotely Save で Dropbox 同期**。Vault は `/sdcard/Obsidian/Yosuga` に
    作ってあり、Hub からの書き込みは確認済み。あとは Obsidian 側から開いて同期を設定するだけ。
+2. **実運用を1日通す**。Morning Brief → 作業 → 観測日記 → 取り込み。
+
+### カレンダーの落とし穴(2026-07-26 に踏んだ)
+
+**Android にはカレンダーの同期先が2つある。** 設定の「アカウントの同期」に、
+紛らわしい2項目が並ぶ。
+
+| 表示名 | authority | 誰が読むか |
+|---|---|---|
+| **Google カレンダー** | `com.google.android.calendar` | Google カレンダーアプリ専用 |
+| **カレンダー** | `com.android.calendar` | **Hub を含む全アプリ**(共有プロバイダ) |
+
+前者だけ ON で後者が OFF だと、**アプリには予定が見えるのに Hub は0件**になる。
+Hub のコードは正しい。疑うのは端末設定。
+
+⚠ さらに、設定画面に **「Googleアカウント: 未接続(Phase 4 で実装予定)」**が
+残っていたため、「アカウント未接続が原因」と誤読した。これは旧設計(OAuth)の
+名残で、`CalendarContract` 方式へ差し替えた時点で嘘になっていた。**削除済み。**
+経緯は `.yosuga/notes/2026-07-26-calendar-two-sync-authorities.md`。
+
+**切り分けの型**: 端末の設定・同期・権限は、アプリのコードをいくら読んでも分からない。
+`adb shell content query --uri content://com.android.calendar/calendars` と
+`dumpsys content` で**プロバイダの中身を直接見る**のが速い。
 
 ### 未検証・残っている宿題
 
-- **カレンダーが0件**。実機で `READ_CALENDAR` を許可すれば埋まるはず。
 - **`cmd clipboard` は実機でも未実装**。adb からクリップボードへ文字列を入れられないので、
   クリップボード関連の確認は**手でコピーしてもらうしかない**。
 - **修正ログの2週間絞り込みが実データで未検証**。キャッシュ内が全て2週間以内だったため。
