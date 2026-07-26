@@ -28,6 +28,15 @@ data class ContextExport(
      * 名前だけなので軽い(本文は載せない)。
      */
     val vocabulary: VocabularyExport = VocabularyExport(),
+    /**
+     * 直近の観測日記(2026-07-26)。
+     *
+     * **ヨスガ本人が書いたものだが、ヨスガは覚えているとは限らない**
+     * (ChatGPT は過去の日記全文を保持しない、というヨスガ自身の指摘による)。
+     * 「シロさんの状態」を語る材料をメモリ頼みにしないため、Hub から渡す。
+     * 本文を持つので**直近数件だけ**にする。
+     */
+    val recentDiary: List<DiaryExport> = emptyList(),
 ) {
     companion object {
         /** このアプリが出力する状況JSONのスキーマ版。 */

@@ -3,6 +3,7 @@ package com.shiro.yosugahub
 import com.shiro.yosugahub.data.file.ContextExporter
 import com.shiro.yosugahub.data.file.model.ContextExport
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.ItemKind
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
@@ -134,6 +135,29 @@ class ContextExporterTest {
 
         assertEquals(listOf("Yosuga Hub", "UI"), export.vocabulary.tags)
         assertEquals(listOf("Ultraleap"), export.vocabulary.entities)
+    }
+
+    /**
+     * 観測日記を現況に載せる(2026-07-26)。**ヨスガ本人が書いたものだが、
+     * ヨスガが覚えているとは限らない**(ChatGPT は過去の日記全文を保持しない)。
+     * 「シロさんの状態」の材料をメモリ頼みにしないため、Hub から渡す。
+     */
+    @Test
+    fun recent_diary_is_carried_but_capped() {
+        val entries = (1..5).map {
+            DiaryEntry(id = "d$it", date = "2026-07-2$it", body = "本文$it", createdAt = "")
+        }
+        val export = ContextExporter.build(
+            projects = emptyList(),
+            events = emptyList(),
+            generatedAt = "2026-07-26T09:00:00+09:00",
+            diary = entries,
+        )
+
+        // 本文を持つので件数を絞る。傾向が分かればよく、履歴を渡す場ではない。
+        assertEquals(ContextExporter.MAX_DIARY, export.recentDiary.size)
+        assertEquals("2026-07-21", export.recentDiary.first().date)
+        assertEquals("本文1", export.recentDiary.first().body)
     }
 
     /** 語彙が無い日もある。空は「渡し忘れ」ではなく「まだ何も無い」。 */

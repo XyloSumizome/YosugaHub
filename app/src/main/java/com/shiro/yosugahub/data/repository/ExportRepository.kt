@@ -28,6 +28,7 @@ class ExportRepository(
     private val calendarRepository: CalendarRepository,
     private val taskRepository: TaskRepository,
     private val knowledgeRepository: KnowledgeRepository,
+    private val diaryRepository: DiaryRepository,
     private val projectStatusRepository: ProjectStatusRepository,
 ) {
 
@@ -58,6 +59,9 @@ class ExportRepository(
             // 既存の語彙を渡す(2026-07-26)。これが無いと受け手が毎回新しいタグを作る。
             tagNames = knowledgeRepository.tagNames().first(),
             entityNames = knowledgeRepository.entities().first().map { it.name },
+            // 「シロさんの状態」をヨスガのメモリ頼みにしない(2026-07-26)。
+            // ヨスガ本人が書いたものだが、過去の日記全文を保持しているとは限らない。
+            diary = diaryRepository.entries().first(),
         )
         val json = ContextExporter.toJson(export)
 

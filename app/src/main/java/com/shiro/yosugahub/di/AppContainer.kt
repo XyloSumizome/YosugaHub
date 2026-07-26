@@ -232,6 +232,7 @@ class DefaultAppContainer(
             calendarRepository,
             taskRepository,
             knowledgeRepository,
+            diaryRepository,
             projectStatusRepository,
         )
     }

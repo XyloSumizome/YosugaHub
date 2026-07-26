@@ -5,12 +5,14 @@ import com.shiro.yosugahub.data.file.model.BlockerExport
 import com.shiro.yosugahub.data.file.model.ChangeExport
 import com.shiro.yosugahub.data.file.model.ContextExport
 import com.shiro.yosugahub.data.file.model.DecisionExport
+import com.shiro.yosugahub.data.file.model.DiaryExport
 import com.shiro.yosugahub.data.file.model.EventExport
 import com.shiro.yosugahub.data.file.model.ProjectExport
 import com.shiro.yosugahub.data.file.model.TaskExport
 import com.shiro.yosugahub.data.file.model.UserContext
 import com.shiro.yosugahub.data.file.model.VocabularyExport
 import com.shiro.yosugahub.domain.model.CalendarEvent
+import com.shiro.yosugahub.domain.model.DiaryEntry
 import com.shiro.yosugahub.domain.model.KnowledgeItem
 import com.shiro.yosugahub.domain.model.Project
 import com.shiro.yosugahub.domain.model.ProjectStatusSnapshot
@@ -50,6 +52,8 @@ object ContextExporter {
         tagNames: List<String> = emptyList(),
         /** 既存のエンティティ名。表記ゆれを防ぐための語彙(2026-07-26)。 */
         entityNames: List<String> = emptyList(),
+        /** 観測日記。新しい順に [MAX_DIARY] 件だけ渡す(2026-07-26)。 */
+        diary: List<DiaryEntry> = emptyList(),
         // DeviceCalendarDataSource の読み取り窓と合わせる(±14日 / 2026-07-25)。
         pastDays: Int = CALENDAR_PAST_DAYS,
         futureDays: Int = CALENDAR_FUTURE_DAYS,
@@ -66,6 +70,7 @@ object ContextExporter {
         tasks = tasks.map { it.toExport() },
         recentDecisions = decisions.map { it.toDecisionExport() },
         vocabulary = VocabularyExport(tags = tagNames, entities = entityNames),
+        recentDiary = diary.take(MAX_DIARY).map { DiaryExport(date = it.date, body = it.body) },
     )
 
     fun toJson(export: ContextExport): String = json.encodeToString(export)
@@ -236,4 +241,10 @@ object ContextExporter {
     const val CALENDAR_PAST_DAYS = 14
     const val CALENDAR_FUTURE_DAYS = 14
     const val CHANGES_DAYS = 14L
+
+    /**
+     * 現況に載せる観測日記の件数(2026-07-26)。
+     * 本文を持つので少なめにする。**傾向が分かればよく、履歴を渡す場ではない。**
+     */
+    const val MAX_DIARY = 3
 }
