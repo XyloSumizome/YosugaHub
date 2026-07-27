@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
   "generatedAt": "2026-07-27T22:00:00+09:00",
-  "sourceCommit": "a012c4d",
+  "sourceCommit": "97516c7",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。2026-07-27 に**レコルを廃止**し、AI はヨスガ1体になった。あわせて**ヨスガへの指示文を ChatGPT のメモリから Hub 同梱へ移し**(`data/prompt/YosugaPrompt.kt`)、夜のボタン2つ(観察日誌 / セッション記録)を足した。単体テスト 429 件、Room は v8(変更なし)。",
   "phase": "development",
   "health": "on_track",
@@ -416,7 +416,7 @@
     {
       "id": "risk-017",
       "title": "2026-07-27 の変更が実機で通しきれていない",
-      "detail": "実機で確認できたのは、アプリの起動と `> ヨスガへ現状報告` が指示文を同梱すること(端末ログの CONTEXT + PROMPT 1222)まで。未確認は ① 夜の2ボタンで新しい会話に指示文が入るか ② 材料が無いときヨスガが聞き返すか ③ 回答JSON の取り込み ④ Vault へ書いた Frontmatter を Obsidian が読めるか。とくに④は、壊れていても Obsidian が黙って無視するため目視でしか分からない。",
+      "detail": "実機で確認できたのは、導入(データ保持)・起動・`> ヨスガへ現状報告` が指示文を同梱すること(端末ログの CONTEXT + PROMPT 1222)まで。未検証は ① 夜の2ボタンで新しい会話の入力欄に指示文が入るか ② 質問せずに書き始めるか ③ 回答JSON の取り込み ④ Vault へ書いた Frontmatter を Obsidian が読めるか。⚠ ②が空振りする場合、ChatGPT の「チャット履歴を参照」がオフの可能性が高い——いまの夜の経路はこれが効いていることが唯一の前提。④は壊れていても Obsidian が黙って無視するため目視でしか分からない。",
       "severity": "medium"
     }
   ],
