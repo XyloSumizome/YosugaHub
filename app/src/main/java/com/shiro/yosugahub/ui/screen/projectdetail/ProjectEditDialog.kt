@@ -29,7 +29,7 @@ import com.shiro.yosugahub.ui.component.healthLabel
  * inProgress / nextTask はタスクからの導出へ置き換える予定のため編集させない。
  *
  * [original] が null なら**新規作成**。このときだけ **ID を入力させる**。
- * ID はサーバー・レコル・分類履歴が参照する正本なので、
+ * ID はサーバー・各ゲームの Claude Code・分類履歴が参照する正本なので、
  * 作成後は変えられない(編集時は表示のみ)。
  */
 @Composable
@@ -83,7 +83,8 @@ fun ProjectEditDialog(
                             idTaken -> "その ID は既に使われています。"
                             trimmedId.isNotEmpty() && !trimmedId.matches(ID_PATTERN) ->
                                 "使えるのは英小文字・数字・ハイフンだけです。"
-                            else -> "サーバー・レコル・分類履歴がこの ID を参照します。" +
+                            else -> "サーバー・各ゲームの Claude Code・分類履歴が" +
+                                "この ID を参照します。" +
                                 "作り直すときは以前と同じ ID にしてください(例: anri)。"
                         },
                         style = MaterialTheme.typography.bodySmall,

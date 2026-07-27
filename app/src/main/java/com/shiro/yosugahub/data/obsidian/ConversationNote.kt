@@ -42,6 +42,49 @@ object ConversationNoteBuilder {
         )
     }
 
+    /**
+     * セッション記録(回答JSON の `session[]`)からノートを組む(2026-07-27)。
+     *
+     * [build] との違いは **Frontmatter を Hub が組み立てる**こと。
+     * 貼り付け経路ではヨスガが書いた YAML をそのまま信じるしかなかったが、
+     * JSON で受け取れるなら札は Hub が付けられる。引用符やコロンで
+     * 壊れた YAML が Vault に入ると、Obsidian 側で**検索から消える**
+     * (パースに失敗した Frontmatter は無いものとして扱われる)。
+     *
+     * `games` / `category` / `tags` は空なら**その行ごと省く**。
+     * `tags: []` のような空の札は、あとで見たとき「付け忘れ」と
+     * 「該当なし」の区別がつかない。
+     */
+    fun buildSession(
+        body: String,
+        date: String,
+        generatedAt: String,
+        games: List<String> = emptyList(),
+        category: String = "",
+        tags: List<String> = emptyList(),
+    ): ConversationNote {
+        val trimmed = body.trim()
+        return ConversationNote(
+            directory = DIRECTORY,
+            fileName = fileName(date, SESSION_SLUG),
+            content = buildString {
+                appendLine(DELIMITER)
+                appendLine("type: $TYPE")
+                appendLine("source: $SOURCE")
+                appendLine("date: $date")
+                appendLine("created_at: $generatedAt")
+                flowSequence("games", games)?.let { appendLine(it) }
+                if (category.isNotBlank()) appendLine("category: ${quoted(category)}")
+                flowSequence("tags", tags)?.let { appendLine(it) }
+                appendLine(DELIMITER)
+                appendLine()
+                appendLine("# セッション記録($date)")
+                appendLine()
+                append(trimmed)
+            },
+        )
+    }
+
     fun hasFrontmatter(text: String): Boolean =
         text.lineSequence().firstOrNull()?.trim() == DELIMITER
 
@@ -82,6 +125,23 @@ object ConversationNoteBuilder {
         append(body)
     }
 
+    /**
+     * `tags: ["a", "b"]` の1行。空要素は捨て、残りが無ければ null(行ごと省く)。
+     *
+     * **要素は必ず引用符で囲む。** フロー表記の中では `,` `]` `:` が区切りとして働き、
+     * 日本語のタグでも「グラップル, 暑さ」のような値が混ざると壊れる。
+     * 条件付きで囲むより、常に囲むほうが読みやすさの損より安全が勝つ。
+     */
+    private fun flowSequence(key: String, values: List<String>): String? {
+        val cleaned = values.map { it.trim() }.filter { it.isNotEmpty() }
+        if (cleaned.isEmpty()) return null
+        return "$key: [${cleaned.joinToString(", ") { quoted(it) }}]"
+    }
+
+    /** YAML の二重引用符スカラー。バックスラッシュと引用符だけを逃がす。 */
+    private fun quoted(value: String): String =
+        "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
     /** YAML の平文スカラーとして書けない場合だけ引用符で囲む。 */
     private fun quoteIfNeeded(value: String): String =
         if (value.contains(": ") || value.first() in "-?:,[]{}#&*!|>'\"%@`") {
@@ -91,4 +151,10 @@ object ConversationNoteBuilder {
         }
 
     private const val DEFAULT_SLUG = "session"
+
+    /**
+     * セッション記録のファイル名スラッグ。**日付ごとに1つ**にする。
+     * 同じ日に2回頼んだら [VaultWriter] の枝番が付く(上書きしない)。
+     */
+    private const val SESSION_SLUG = "session"
 }

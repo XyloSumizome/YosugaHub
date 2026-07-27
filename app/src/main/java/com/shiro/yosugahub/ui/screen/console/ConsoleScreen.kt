@@ -24,11 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.shiro.yosugahub.data.file.ChatGptLink
 import com.shiro.yosugahub.data.file.ClipboardPrefill
-import com.shiro.yosugahub.data.file.ExternalLink
-import com.shiro.yosugahub.data.file.RecoruLink
 import com.shiro.yosugahub.data.repository.ConversationImportResult
 import com.shiro.yosugahub.ui.component.AsciiDivider
 import com.shiro.yosugahub.ui.component.DialogAction
@@ -79,11 +79,38 @@ fun ConsoleScreen(
     var responsePrefill by remember { mutableStateOf("") }
     val clipboard = LocalClipboardManager.current
 
+    /**
+     * ヨスガへ頼みごとを渡す(2026-07-27)。
+     *
+     * **必ずクリップボードへ入れてから開く。** `?q=` に載せられるのは
+     * 200文字程度までで、観測日記もセッション記録も指示文がそれを超える
+     * ([ChatGptLink.MAX_URL_LENGTH])。載らなかったときに何も残らないと、
+     * 開いた先で「何を頼むんだったか」になる。コピーしてあれば貼るだけで済む。
+     *
+     * 開く先は設定の会話URL。**その日の会話**でなければ、日記もセッション記録も
+     * 材料が無い状態で書かせることになる。
+     */
+    fun askYosuga(prompt: String) {
+        clipboard.setText(AnnotatedString(prompt))
+        val url = ChatGptLink.withPrompt(uiState.yosugaConversationUrl, prompt)
+        val prefilled = ChatGptLink.fitsInUrl(uiState.yosugaConversationUrl, prompt)
+        val opened = openExternalLink(context, url)
+        val message = when {
+            !opened -> "コピーしました。開けるアプリがありません。"
+            prefilled -> "入力欄に入れました。送信してください。"
+            uiState.yosugaConversationUrl.isBlank() ->
+                "コピーしました。会話に貼り付けてください。" +
+                    "(SETTINGS で会話URLを設定すると、その日の会話が開きます)"
+            else -> "コピーしました。会話の入力欄に貼り付けてください。"
+        }
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+
     summary?.let {
         NoteImportSummaryDialog(summary = it, onDismiss = viewModel::dismissNoteImportSummary)
     }
     // 共有で届いた本文。**中身の検査はせず**に確認だけ取り、判定は取り込み側へ任せる
-    // (レコルの回答でなければ「JSONの形式が正しくありません」として弾かれる)。
+    // (回答JSONでなければ「JSONの形式が正しくありません」として弾かれる)。
     sharedText?.let { text ->
         SharedImportDialog(
             text = text,
@@ -129,7 +156,7 @@ fun ConsoleScreen(
             },
             title = "IMPORT RESPONSE",
             description = "回答JSONを貼り付けて取り込む。" +
-                "レコルの整理でも、ヨスガの観測日記でも同じ口から入る。",
+                "観測日記でも、セッション記録でも、タスクの提案でも同じ口から入る。",
             label = "response json",
             confirmLabel = "IMPORT",
         )
@@ -201,7 +228,7 @@ fun ConsoleScreen(
         // 現況(既定)+ 必要なら過去ログ。渡す口を1つに統べた(2026-07-25)。
         Command("ヨスガへ共有", onClick = onOpenContext)
         AsciiDivider()
-        // レコル(整理)とヨスガ(観測日記)の両方が同じ口から入る。
+        // ヨスガが出す提案は種類を問わずこの1つの口から入る(観測日記 / セッション記録 / タスク)。
         Command("回答JSON → Hub") {
             // クリップボードに回答JSONらしきものがあれば入れておく。
             // 関係ない文字列は入れない(消す手間のほうが増えるため)。
@@ -210,22 +237,14 @@ fun ConsoleScreen(
         }
         AsciiDivider()
 
-        // URL 未設定なら出さない(押せて何も起きない口を作らない)。
-        // レコルの残った仕事は、記録タブに手打ちした未整理メモの仕分けだけ。
-        // **その文書が無い日は出さない**(2026-07-26)。朝の近況がレコルを通らなく
-        // なったので、毎日並べても押す理由が思い出せない扉になる。
-        // 入力欄に「巡回」を入れて開く(送信はアプリの仕様で手動)。
-        RecoruLink.withPrompt(uiState.recoruUrl, RecoruLink.PATROL)
-            ?.takeIf { uiState.unsortedDocumentCount > 0 }
-            ?.let { url ->
-            Command("レコルを開く (${uiState.unsortedDocumentCount})") {
-                val opened = openExternalLink(context, url)
-                if (!opened) {
-                    Toast.makeText(context, "開けるアプリがありません。", Toast.LENGTH_SHORT).show()
-                }
-            }
-            AsciiDivider()
-        }
+        // 夜にヨスガへ頼む2つ(2026-07-27)。どちらも**その日の会話が材料**なので、
+        // 指示文はクリップボードへ入れ、設定された会話URLを開く。
+        // ⚠ `?q=` には載らない(指示文は数百字あり、URLエンコードで数千字になる)。
+        // レコルの「巡回」が2文字だったから入っていただけで、仕組みの限界ではなく寸法の話。
+        Command("観測日記を頼む") { askYosuga(viewModel.diaryRequest()) }
+        AsciiDivider()
+        Command("セッション記録を頼む") { askYosuga(viewModel.sessionRequest()) }
+        AsciiDivider()
 
         val reviewSuffix = if (uiState.pendingCount > 0) " (${uiState.pendingCount})" else ""
         Command("REVIEW$reviewSuffix", token = ">", onClick = onOpenReview)

@@ -24,6 +24,12 @@ fun importResultMessage(result: ImportResult): String = when (result) {
                 "(宛先の文書が見つからない、または確定済み・アーカイブ済み)。" +
                 "やり直すには RECORDS の「文書」で「再分類」を押してください。")
                 .takeIf { result.skippedClassificationCount > 0 },
+            // セッション記録は承認を挟まず Obsidian へ入るので、REVIEW へは案内しない。
+            "セッション記録を ${result.sessionCount} 件 Obsidian へ保存しました。"
+                .takeIf { result.sessionCount > 0 },
+            ("セッション記録を保存できませんでした: " +
+                result.sessionFailures.distinct().joinToString(" / "))
+                .takeIf { result.sessionFailures.isNotEmpty() },
         ).ifEmpty { listOf("受け取れる提案がありませんでした。") }
             .joinToString("\n") + syncSuffix(result.sync)
     is ImportResult.InvalidJson ->

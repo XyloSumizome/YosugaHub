@@ -112,17 +112,19 @@ class SettingsViewModel(
     }
 
     /**
-     * レコル(カスタムGPT)のURL(2026-07-25)。
+     * ヨスガとのその日の会話のURL(2026-07-27)。
+     * 2026-07-25 に置いていたレコルのURLを、レコル廃止に伴って置き換えた。
      * uiState の combine は5フロー上限なので独立させる。
      */
-    val recoruUrl: StateFlow<String> = userPreferencesRepository.recoruUrl.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = "",
-    )
+    val yosugaConversationUrl: StateFlow<String> =
+        userPreferencesRepository.yosugaConversationUrl.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = "",
+        )
 
-    fun saveRecoruUrl(url: String) {
-        viewModelScope.launch { userPreferencesRepository.setRecoruUrl(url.trim()) }
+    fun saveYosugaConversationUrl(url: String) {
+        viewModelScope.launch { userPreferencesRepository.setYosugaConversationUrl(url.trim()) }
     }
 
     val uiState: StateFlow<SettingsUiState> = combine(

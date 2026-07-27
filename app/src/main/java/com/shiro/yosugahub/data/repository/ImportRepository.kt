@@ -6,6 +6,7 @@ import com.shiro.yosugahub.data.file.ImportHistoryNames
 import com.shiro.yosugahub.data.file.PastedJson
 import com.shiro.yosugahub.data.file.ProposalMapper
 import com.shiro.yosugahub.data.file.ResponseImporter
+import com.shiro.yosugahub.data.file.model.SessionProposal
 import com.shiro.yosugahub.data.local.db.dao.PendingProposalDao
 import com.shiro.yosugahub.data.local.db.dao.RecommendationDao
 import com.shiro.yosugahub.data.local.db.entity.RecommendationEntity
@@ -38,6 +39,10 @@ sealed interface ImportResult {
         val fileName: String,
         val classificationCount: Int = 0,
         val skippedClassificationCount: Int = 0,
+        /** Obsidian へ書けたセッション記録の件数(2026-07-27)。承認は挟まない。 */
+        val sessionCount: Int = 0,
+        /** セッション記録を書けなかった理由。空なら全部書けた。 */
+        val sessionFailures: List<String> = emptyList(),
         /** 取り込み後の自動同期の結果。未配線なら null。 */
         val sync: SyncResult? = null,
     ) : ImportResult
@@ -66,6 +71,16 @@ class ImportRepository(
     private val recommendationDao: RecommendationDao,
     private val pendingProposalDao: PendingProposalDao,
     private val documentRepository: DocumentRepository,
+    /**
+     * セッション記録を Obsidian へ書く(2026-07-27)。
+     *
+     * **関数で受ける**のは、ここに Vault の I/O を持ち込まないため。
+     * ImportRepository の責務は「読んで・検証して・振り分ける」までで、
+     * 書き先ごとの事情(SAF・権限・枝番)は各 Repository が持つ。
+     * 未配線なら何も書かない(テストで Vault を用意しなくてよい)。
+     */
+    private val saveSessions: suspend (List<SessionProposal>) -> SessionSaveOutcome =
+        { SessionSaveOutcome() },
     /**
      * 取り込みが成立した直後にサーバーへ反映する(v4.1 運用)。
      * ヨスガが読む側のデータを古いまま放置しないため。未配線なら null を返す。
@@ -138,11 +153,16 @@ class ImportRepository(
                 val classified =
                     classificationApplier.apply(result.response.proposals.classifications)
 
+                // セッション記録は承認を挟まず Obsidian へ直接書く(SessionProposal の KDoc 参照)。
+                val sessions = saveSessions(result.response.proposals.session)
+
                 ImportResult.SuccessProposals(
                     proposalCount = rows.size,
                     fileName = fileName,
                     classificationCount = classified.applied,
                     skippedClassificationCount = classified.skipped,
+                    sessionCount = sessions.saved,
+                    sessionFailures = sessions.failures,
                     // Room への反映が済んでから同期する(送る内容に取り込み結果を含めるため)。
                     sync = syncAfterImport(),
                 )

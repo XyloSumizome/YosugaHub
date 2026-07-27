@@ -19,7 +19,7 @@ import com.shiro.yosugahub.ui.component.TerminalField
 
 /**
  * テキストを貼り付けて取り込む共用ダイアログ。
- * 既定は回答JSON(レコルの整理でも、ヨスガの観測日記でも同じ口から入る。
+ * 既定は回答JSON(観測日記でも、セッション記録でも、タスクの提案でも同じ口から入る。
  * コードブロックの囲いは取り込み側で外れる)。
  * 文言を差し替えれば会話ログの保存にも使える(v5 Phase 3-d)。
  */
@@ -28,7 +28,7 @@ fun PasteImportDialog(
     onDismiss: () -> Unit,
     onImport: (String) -> Unit,
     title: String = "回答JSONを貼り付け",
-    description: String = "レコルの回答をコピーして、ここに貼り付けてください。" +
+    description: String = "ヨスガの回答JSONをコピーして、ここに貼り付けてください。" +
         "コードブロックの囲い(```)ごとでも構いません。",
     label: String = "回答JSON",
     confirmLabel: String = "取り込む",

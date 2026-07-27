@@ -67,8 +67,8 @@ fun SettingsScreen(
     var syncTokenInput by remember { mutableStateOf("") }
     // 保存済みURLを初期値にする(uiState 反映後に一度だけ取り込む)。
     var syncUrlInput by remember(uiState.syncBaseUrl) { mutableStateOf(uiState.syncBaseUrl) }
-    val recoruUrl by viewModel.recoruUrl.collectAsState()
-    var recoruUrlInput by remember(recoruUrl) { mutableStateOf(recoruUrl) }
+    val yosugaUrl by viewModel.yosugaConversationUrl.collectAsState()
+    var yosugaUrlInput by remember(yosugaUrl) { mutableStateOf(yosugaUrl) }
 
     // Vault フォルダ選択。選択されたら読み書き権限を永続化して URI を保存する。
     val vaultPicker = rememberLauncherForActivityResult(
@@ -138,21 +138,28 @@ fun SettingsScreen(
             }
         }
         item {
-            SectionCard(title = "レコル(カスタムGPT)") {
+            // 2026-07-25 まではレコル(カスタムGPT)のURLを入れる欄だった。
+            // レコル廃止(2026-07-27)で役目を差し替えたが、**仕組みは同じ**
+            // ——URLを持っておいて、言うことを添えて開く。
+            SectionCard(title = "ヨスガの会話") {
                 Text(
-                    text = "URLを入れると、コンソールの `> OPEN RECORU` から一発で開けます。" +
-                        "ブラウザのアドレス欄や共有からコピーしてください。",
+                    text = "その日のヨスガとの会話のURLを入れると、" +
+                        "「観測日記を頼む」「セッション記録を頼む」がその会話を開きます。\n" +
+                        "ChatGPT で会話を開き、共有やアドレス欄から " +
+                        "https://chatgpt.com/c/… をコピーしてください。\n" +
+                        "未設定でも動きますが、新しい会話が開くため" +
+                        "その日のやりとりが材料になりません。",
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TerminalField(
-                    value = recoruUrlInput,
-                    onValueChange = { recoruUrlInput = it },
-                    label = "レコルのURL(https://…)",
+                    value = yosugaUrlInput,
+                    onValueChange = { yosugaUrlInput = it },
+                    label = "会話のURL(https://chatgpt.com/c/…)",
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                if (recoruUrlInput.isNotBlank() && !ExternalLink.isValid(recoruUrlInput)) {
+                if (yosugaUrlInput.isNotBlank() && !ExternalLink.isValid(yosugaUrlInput)) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "http:// か https:// で始まるURLだけを開けます(空白を含むものは不可)。",
@@ -163,14 +170,14 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 TacticalOutlinedButton(
                     onClick = {
-                        viewModel.saveRecoruUrl(recoruUrlInput)
+                        viewModel.saveYosugaConversationUrl(yosugaUrlInput)
                         Toast.makeText(
                             context,
-                            if (recoruUrlInput.isBlank()) "URLを消しました。" else "保存しました。",
+                            if (yosugaUrlInput.isBlank()) "URLを消しました。" else "保存しました。",
                             Toast.LENGTH_SHORT,
                         ).show()
                     },
-                    enabled = recoruUrlInput.isBlank() || ExternalLink.isValid(recoruUrlInput),
+                    enabled = yosugaUrlInput.isBlank() || ExternalLink.isValid(yosugaUrlInput),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("保存")

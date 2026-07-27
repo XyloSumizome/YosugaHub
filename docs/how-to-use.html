@@ -307,13 +307,7 @@
             <td>ヨスガ</td>
             <td class="wrapcell">通常の ChatGPT（ボイス・メモリあり）</td>
             <td class="wrapcell">読めない</td>
-            <td class="wrapcell">会話の相棒。相談・設計・アイデア出し。<strong>観測日記を書く</strong></td>
-          </tr>
-          <tr>
-            <td>レコル</td>
-            <td class="wrapcell">カスタムGPT + Actions</td>
-            <td class="wrapcell">読める</td>
-            <td class="wrapcell">情報の仕分け。Morning Brief の作成。文書の分類</td>
+            <td class="wrapcell">会話の相棒。相談・設計・アイデア出し。<strong>観測日記とセッション記録を書き、Hub への提案JSONも出す</strong></td>
           </tr>
           <tr>
             <td>シロ</td>
@@ -334,8 +328,15 @@
     <div class="note">
       <p>
         <strong>ヨスガは Hub を読めない。</strong>
-        だから朝の Morning Brief が要る。レコルが Hub を読んで要約し、
-        それを人間がヨスガへ貼る。この橋渡しが仕組みの背骨。
+        だから Hub が渡す。<code>朝の準備</code> を押すと、<strong>指示文と現況JSONが
+        そのまま ChatGPT へ届く</strong>。要約は挟まない ——
+        間に要約を挟むと情報が落ちるだけだと分かったため（2026-07-26）。
+      </p>
+      <p>
+        <strong>AI は1体だけ。</strong>以前は「Hub を読むAI（レコル）」と
+        「会話するAI（ヨスガ）」を分けていたが、
+        <strong>レコルは 2026-07-27 に廃止した</strong>。
+        仕分けは生成元（各ゲームの Claude Code / ヨスガ）が出力時点で済ませている。
       </p>
     </div>
   </section>
@@ -354,11 +355,13 @@ PENDING : 0
 SYNC    : 2026-07-25 06:26
 STATUS  : [ READY ]
 
+&gt; 朝の準備
 &gt; GitHub → Obsidian
 &gt; 会話 → Obsidian
 &gt; ヨスガへ共有
 &gt; 回答JSON → Hub
-&gt; レコルを開く
+&gt; 観測日記を頼む
+&gt; セッション記録を頼む
 &gt; REVIEW
 
 DATA
@@ -376,6 +379,14 @@ DATA
       <table>
         <thead><tr><th>コマンド</th><th>何が起きるか</th></tr></thead>
         <tbody>
+          <tr>
+            <td>朝の準備</td>
+            <td class="wrapcell">
+              カレンダー取込 → GitHub取得 → Vault書込 → サーバー同期を順に走らせ、
+              そのまま <strong>指示文 + 現況JSON</strong> を ChatGPT へ渡す。
+              <strong>途中で転んでも止まらない</strong>（何が転んだかは端末ログに残る）
+            </td>
+          </tr>
           <tr>
             <td>GitHub → Obsidian</td>
             <td class="wrapcell">
@@ -399,13 +410,24 @@ DATA
           <tr>
             <td>回答JSON → Hub</td>
             <td class="wrapcell">
-              レコルの整理でも、ヨスガの観測日記でも<strong>同じ口から入る</strong>。
+              観測日記でも、セッション記録でも、タスクの提案でも<strong>同じ口から入る</strong>。
               クリップボードに JSON があれば自動で入る
             </td>
           </tr>
           <tr>
-            <td>レコルを開く</td>
-            <td class="wrapcell">レコル（カスタムGPT）をブラウザで開く。URL は設定で登録する</td>
+            <td>観測日記を頼む</td>
+            <td class="wrapcell">
+              指示文を<strong>クリップボードへ入れて</strong>、設定した
+              <strong>その日の会話</strong>を開く。長押しして貼り、送信する。
+              日付は<strong>既定で今日</strong>（別の日は会話の中で言えばよい）
+            </td>
+          </tr>
+          <tr>
+            <td>セッション記録を頼む</td>
+            <td class="wrapcell">
+              同上。1日の記録（実装・調べたこと・相談・決定・タスク・アイデア・メモ・様子）を
+              JSON で出させ、取り込むと<strong>承認を挟まず Obsidian へ入る</strong>
+            </td>
           </tr>
           <tr>
             <td>REVIEW</td>
@@ -433,32 +455,30 @@ DATA
     <ol class="flow">
       <li>
         <div>
-          <h4>アプリを新しくする</h4>
+          <h4>朝：<code>朝の準備</code> を押す</h4>
           <p>
-            <code>PROJECTS</code> →「GitHubからすべて更新」。
-            各ゲームの進捗が入り、<strong>成功するとサーバーへ自動で送られる</strong>。
+            カレンダー取込 → GitHub取得 → Vault書込 → サーバー同期が順に走り、
+            そのまま ChatGPT が開いて<strong>指示文と現況JSONが入っている</strong>。
+            送信すればその日が始まる。
           </p>
           <p>
-            <strong>順番が逆だと意味がない。</strong>
-            先にレコルへ聞くと、古いデータを読ませることになる。
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <h4>レコルに Morning Brief を作らせる</h4>
-          <p>
-            <code>レコルを開く</code> →「Morning Brief」と言う。
-            昨日の成果・今日の予定・未完了タスク・決定事項・課題が Markdown で返る。
+            <strong>順番に意味がある。</strong>カレンダーを最初に置くのは、
+            ここが古いと最後の同期で古い予定を送ってしまうため。
+            <strong>途中で転んでも止まらない</strong>（何が転んだかは端末ログに残る）。
           </p>
         </div>
       </li>
       <li>
         <div>
-          <h4>ヨスガに貼って1日を始める</h4>
+          <h4>ヨスガが今日の入り口を作る</h4>
           <p>
-            Brief をコピーしてヨスガの会話に貼る。
-            これでヨスガは今日の状況を知った状態で会話に入れる。
+            昨日の成果（完了タスクと各ゲームの修正を<strong>分けて</strong>）、今日の予定、
+            気をつけること（締切が近い・止まっている・詰まりが長い）、シロさんの状態。
+            長い一覧は読み上げず、<strong>その日いちばん効くことを2〜3点</strong>だけ。
+          </p>
+          <p>
+            <strong>指示文は Hub が毎回同梱する。</strong>
+            ChatGPT のメモリに覚えさせる必要はない（2026-07-27〜）。
           </p>
         </div>
       </li>
@@ -473,14 +493,16 @@ DATA
       </li>
       <li>
         <div>
-          <h4>終わりに残す</h4>
+          <h4>夜：<code>観測日記を頼む</code> / <code>セッション記録を頼む</code></h4>
           <p>
-            ヨスガに「セッションまとめをください」→ <code>会話 → Obsidian</code> で原文を保存。
-            レコルへ貼れば、タスクや決定事項として整理される。
+            どちらも指示文がクリップボードへ入り、<strong>その日の会話</strong>が開く。
+            長押しして貼り、送信する。返ってきた JSON を
+            <code>回答JSON → Hub</code> へ（共有シートからでも入る）。
           </p>
           <p>
-            「観測を書いて」と言えば観測日記の JSON が返る。
-            <code>回答JSON → Hub</code> へ。翌朝の Brief の「シロの状態」になる。
+            <strong>観測日記</strong>は <code>REVIEW</code> で承認して Hub に入る。
+            <strong>セッション記録</strong>は記録そのものなので<strong>承認を挟まず</strong>
+            <code>Conversations/Yosuga/</code> へ直接入る。
           </p>
         </div>
       </li>
@@ -490,21 +512,25 @@ DATA
   <hr class="rule">
 
   <section>
-    <h2>レコルの巡回</h2>
+    <h2>その日の会話を Hub に教える</h2>
     <p>
-      レコルは<strong>合図を待たない</strong>。会話を開いて何か一言（「おはよう」でもいい）
-      送れば、未整理の文書を全件分類して回答JSONを返す。
+      観測日記もセッション記録も、<strong>材料はその日の会話そのもの</strong>。
+      新しい会話で頼むと、ヨスガの手元には何も無い。
     </p>
     <p>
-      「Morning Brief」と言ったときだけは Brief を優先する。
-      同じ会話の2回目以降は巡回しない。
+      そこで <code>SETTINGS</code> →「ヨスガの会話」に、その日の会話の URL
+      （<code>https://chatgpt.com/c/…</code>）を入れておく。夜の2つのボタンはそこを開く。
+      未設定でも動くが、新しい会話になる。
     </p>
     <div class="note">
       <p>
-        <strong>「未整理の文書はありません」は正常。</strong>
-        巡回が見るのは <code>RECORDS</code> → 文書 に手で入れたものだけ。
-        ゲームの修正は Obsidian へ直行するので、ここには来ない。
-        何も無い日のほうが多い。
+        <strong>指示文は入力欄に自動では入らない。</strong>
+        URL に載せられるのは 200 文字前後まで（日本語は URL 化で1文字9バイトになる）。
+        実際の指示文は 450〜1250 文字あるので<strong>載らない</strong>。
+        だからボタンは<strong>必ずクリップボードへ入れてから</strong>開く。貼るだけでよい。
+      </p>
+      <p>
+        以前レコルで「巡回」が入力欄に入っていたのは、<strong>2文字だったから</strong>。
       </p>
     </div>
   </section>

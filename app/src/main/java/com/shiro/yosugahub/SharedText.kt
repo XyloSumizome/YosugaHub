@@ -7,7 +7,7 @@ import android.content.Intent
  *
  * 受けるのは `ACTION_SEND` の text 系 MIME だけ。ランチャーからの起動や、
  * 本文の無い共有では null を返す。**中身の検査はここではしない**
- * (レコルの回答かどうかは取り込み時に `ResponseImporter` が判定する)。
+ * (回答JSONかどうかは取り込み時に `ResponseImporter` が判定する)。
  *
  * 判定は [from] の素の値を取る版に置いてある。`Intent` は単体テストで動かないため、
  * ロジックだけを切り離してテストできるようにしている。

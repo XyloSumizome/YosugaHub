@@ -82,21 +82,30 @@ class UserPreferencesRepository(context: Context) {
     }
 
     /**
-     * レコル(カスタムGPT)のURL。コンソールから一発で開くために持つ(2026-07-25)。
+     * ヨスガとの**その日の会話**のURL(`https://chatgpt.com/c/…`)。
+     *
+     * 2026-07-25 に持っていたレコル(カスタムGPT)のURLを、レコル廃止に伴って
+     * 置き換えたもの(2026-07-27)。**役目が違う**ので値は引き継がない。
+     *
+     * ⚠ **なぜ会話単位のURLが要るのか。** 観測日記とセッション記録の材料は
+     * 「その日の会話そのもの」なので、新しい会話を開いてしまうと材料がゼロになる。
+     * 共有インテント(`ACTION_SEND`)では行き先の会話を指定できないため、
+     * URL で名指しする。未設定なら [ChatGptLink.DEFAULT_URL](新しい会話)へ退く。
+     *
      * 秘密情報ではないため平文。開く前に `ExternalLink` で http/https のみに絞る。
      */
-    val recoruUrl: Flow<String> = dataStore.data
+    val yosugaConversationUrl: Flow<String> = dataStore.data
         .catch { error ->
             if (error is IOException) emit(emptyPreferences()) else throw error
         }
-        .map { preferences -> preferences[Keys.RECORU_URL].orEmpty() }
+        .map { preferences -> preferences[Keys.YOSUGA_CONVERSATION_URL].orEmpty() }
 
-    suspend fun setRecoruUrl(value: String) {
-        dataStore.edit { preferences -> preferences[Keys.RECORU_URL] = value }
+    suspend fun setYosugaConversationUrl(value: String) {
+        dataStore.edit { preferences -> preferences[Keys.YOSUGA_CONVERSATION_URL] = value }
     }
 
     private object Keys {
-        val RECORU_URL = stringPreferencesKey("recoru_url")
+        val YOSUGA_CONVERSATION_URL = stringPreferencesKey("yosuga_conversation_url")
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
         val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")

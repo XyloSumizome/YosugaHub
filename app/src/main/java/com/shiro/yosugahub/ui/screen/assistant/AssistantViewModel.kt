@@ -9,11 +9,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.shiro.yosugahub.YosugaHubApplication
 import com.shiro.yosugahub.data.local.datastore.UserPreferencesRepository
+import com.shiro.yosugahub.data.prompt.YosugaPrompt
 import com.shiro.yosugahub.data.repository.ApproveResult
 import com.shiro.yosugahub.data.repository.AssistantRepository
 import com.shiro.yosugahub.data.repository.ConversationImportRepository
 import com.shiro.yosugahub.data.repository.ConversationImportResult
-import com.shiro.yosugahub.data.repository.DocumentRepository
 import com.shiro.yosugahub.data.repository.ExportRepository
 import com.shiro.yosugahub.data.repository.ExportResult
 import com.shiro.yosugahub.data.repository.ImportRepository
@@ -24,7 +24,6 @@ import com.shiro.yosugahub.data.repository.NoteImportRepository
 import com.shiro.yosugahub.data.repository.NoteImportSummary
 import com.shiro.yosugahub.data.repository.ProjectRepository
 import com.shiro.yosugahub.data.repository.ProposalRepository
-import com.shiro.yosugahub.domain.model.DocumentStatus
 import com.shiro.yosugahub.domain.model.PendingProposal
 import com.shiro.yosugahub.domain.model.Recommendation
 import com.shiro.yosugahub.ui.component.LogLine
@@ -38,6 +37,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 /** ヨスガ連携画面 / コンソールが監視するUI状態。 */
 data class AssistantUiState(
@@ -46,16 +46,14 @@ data class AssistantUiState(
     /** コンソール上部の状態表示用。 */
     val projectCount: Int = 0,
     val lastSync: String = "",
-    /** レコル(カスタムGPT)のURL。空なら「レコルを開く」を出さない(2026-07-25)。 */
-    val recoruUrl: String = "",
     /**
-     * まだ仕分けていない文書の数(`UNCLASSIFIED` / `CLASSIFICATION_PENDING`)。
+     * ヨスガとの**その日の会話**のURL。空なら新しい会話が開く。
      *
-     * **0 なら「レコルを開く」を出さない**(2026-07-26)。朝の近況がレコルを
-     * 通らなくなり、レコルに残る仕事はこの文書の仕分けだけになった。
-     * 用のない扉を毎日並べても、押す理由が思い出せないだけ。
+     * 2026-07-25 に置いていたレコルのURLを、レコル廃止(2026-07-27)で
+     * 置き換えたもの。観測日記とセッション記録は「その日の会話」が材料なので、
+     * どの会話を開くかが結果を左右する。
      */
-    val unsortedDocumentCount: Int = 0,
+    val yosugaConversationUrl: String = "",
 ) {
     val pendingCount: Int get() = proposals.size
 }
@@ -69,22 +67,13 @@ class AssistantViewModel(
     private val morningRoutineRepository: MorningRoutineRepository,
     private val conversationImportRepository: ConversationImportRepository,
     private val projectRepository: ProjectRepository,
-    documentRepository: DocumentRepository,
     userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
 
     private val projectCount = projectRepository.projects()
         .map { it.size }
     private val lastSync = userPreferencesRepository.lastSyncedAt
-    private val recoruUrl = userPreferencesRepository.recoruUrl
-
-    /** レコルの出番がある文書だけを数える。分類が済んだものは対象外。 */
-    private val unsortedDocuments = documentRepository.documents().map { docs ->
-        docs.count {
-            it.status == DocumentStatus.UNCLASSIFIED ||
-                it.status == DocumentStatus.CLASSIFICATION_PENDING
-        }
-    }
+    private val yosugaConversationUrl = userPreferencesRepository.yosugaConversationUrl
 
     /** 端末ログ(v5 UI)。取り込み・保存・生成などの操作すべてで共用する。 */
     val opLog = OpLogState()
@@ -124,16 +113,37 @@ class AssistantViewModel(
                 // 朝は渡す中身が決まっている(現況のみ・過去ログは含めない)ので、
                 // ここで作ってしまう。exports/ への保存も createContextExport が行う。
                 val context = exportRepository.createContextExport()
+                // 指示文を前置きして渡す(2026-07-27)。これより前は
+                // 「ヨスガとは何者か・現況をどう読むか」を **ChatGPT のメモリ**に
+                // 頼っていたが、メモリは中身を確かめられず、いつ薄れたかも分からない。
+                // 運ぶべき情報として Hub が毎回同梱する(YosugaPrompt の KDoc 参照)。
+                val payload = YosugaPrompt.withMorningHeader(context.json)
                 emit.emit(
-                    LogLine("  CONTEXT ${context.json.length} chars … OK", LogTone.OK),
+                    LogLine(
+                        "  CONTEXT ${context.json.length} chars " +
+                            "(+ PROMPT ${YosugaPrompt.MORNING_HEADER.length}) … OK",
+                        LogTone.OK,
+                    ),
                 )
                 emit.emit(LogLine("> DONE", LogTone.ACCENT))
-                r to context.json
+                r to payload
             } ?: return@launch
             delay(SUMMARY_DELAY_MS)
             onDone(pair.first, pair.second)
         }
     }
+
+    /**
+     * 観測日記の要求文(2026-07-27)。既定の日付は**今日**。
+     * 別の日の分がほしいときは、会話の中でシロさんが言えばヨスガが差し替える
+     * ——Hub 側に日付ピッカーを置くほどの頻度ではない。
+     */
+    fun diaryRequest(): String = YosugaPrompt.diary(today())
+
+    /** 1日のセッション記録の要求文(2026-07-27)。日付の扱いは [diaryRequest] と同じ。 */
+    fun sessionRequest(): String = YosugaPrompt.session(today())
+
+    private fun today(): String = LocalDate.now().toString()
 
     fun dismissNoteImportSummary() {
         _noteImportSummary.value = null
@@ -218,15 +228,14 @@ class AssistantViewModel(
         assistantRepository.recommendations(),
         projectCount,
         lastSync,
-        combine(recoruUrl, unsortedDocuments) { url, count -> url to count },
-    ) { pending, recommendations, projects, sync, recoru ->
+        yosugaConversationUrl,
+    ) { pending, recommendations, projects, sync, conversationUrl ->
         AssistantUiState(
             proposals = pending.map { it.toCardUi() },
             recommendations = recommendations,
             projectCount = projects,
             lastSync = sync,
-            recoruUrl = recoru.first,
-            unsortedDocumentCount = recoru.second,
+            yosugaConversationUrl = conversationUrl,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -249,7 +258,6 @@ class AssistantViewModel(
                     morningRoutineRepository = app.container.morningRoutineRepository,
                     conversationImportRepository = app.container.conversationImportRepository,
                     projectRepository = app.container.projectRepository,
-                    documentRepository = app.container.documentRepository,
                     userPreferencesRepository = app.container.userPreferencesRepository,
                 )
             }

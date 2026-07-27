@@ -18,8 +18,9 @@
 個人用のAndroid制作管理アプリ「Yosuga Hub」。
 設計書: `yosuga_hub_design_v5_obsidian_bridge.md`(**必読 / 最新の最上位方針: Obsidianブリッジ**)
 + `yosuga_hub_android_design_v4.md`(v5が最上位方針を上書き。技術資料として有効)
-+ `yosuga_hub_design_v4_3_role_split.md`(役割分離 ヨスガ/レコル。**レコルは必須から外れた**。
-  **Morning Brief は 2026-07-26 に廃止**——現況を Hub からヨスガへ直接渡す)
++ `yosuga_hub_design_v4_3_role_split.md`(役割分離 ヨスガ/レコル。
+  ⚠ **レコルは 2026-07-27 に廃止**。**Morning Brief は 2026-07-26 に廃止**。
+  現況も指示文も Hub からヨスガへ直接渡す。この設計書は経緯として読むこと)
 + `yosuga_hub_design_v4_1_classification.md`(AI分類ワークフロー / 実装完了・維持)
 + `yosuga_hub_android_design_v3.md` / `_v3_1.md`(基本思想・知識ベース仕様として有効)。
 `yosuga_hub_android_design_v2.md` は技術資料として引き続き有効(アーキテクチャ・ライブラリ候補)。
@@ -58,9 +59,9 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **v3-Step 4 相当 完了**: ホームAI秘書再編(今日やること/承認待ち件数/最近の決定)。記録タブは手動追加・編集・検索対応。
 - **GitHub連携 完了**(3-a〜3-d): リポジトリ設定 + トークンKeystore保管 / Ktor で `.yosuga/status.json` 取得 /
   Room v5 キャッシュと詳細画面表示・一括更新 / 状況JSONへの反映(source=github/local を明示)。
-- 運用ドキュメント: `docs/yosuga_prompt.md`(ヨスガ=会話の相棒用)、
-  `docs/recoru_prompt.md`(レコル=Hub管理・カスタムGPT用)、
-  `docs/claude_code_onboarding.md`(各ゲームのClaude Code用)。
+- 運用ドキュメント: `docs/yosuga_prompt.md`(ヨスガの運用説明。**指示文の正本は
+  `data/prompt/YosugaPrompt.kt`**)、`docs/claude_code_onboarding.md`(各ゲームのClaude Code用)、
+  `docs/recoru_prompt.md`(**⛔ 廃止**。回答JSON v2 の書式仕様としてのみ有効)。
 - 未検証: 実通信・実機でのマイグレーション通し・Keystore復号・Obsidian SAF書き出し(WORKLOG再開ポイント参照)。
 - **カレンダー連携 完了**(旧Phase 4): 設計書v2のOAuth方式ではなく **CalendarContract で端末に同期済みの
   カレンダーを読む**方式を採用(READ_CALENDAR のみ / Google Cloud設定・新規ライブラリ不要)。
@@ -105,7 +106,8 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **プロジェクト追加UI**(2026-07-25 / `ProjectsScreen` の先頭)。
   それまで**プロジェクトは仮データからしか生まれず、作る手段が無かった**。
   `ProjectEditDialog` は `original = null` で新規作成になり、**新規のときだけ ID を入力**させる
-  (ID はサーバー・レコル・分類履歴が参照する正本なので**自動採番にしない**。編集時は変更不可)。
+  (ID はサーバー・各ゲームの Claude Code・分類履歴が参照する正本なので**自動採番にしない**。
+  編集時は変更不可)。
 - **プロジェクトの呼称は英字名**(2026-07-25): `ANRI` / `Kamieru` / `GengeKyou`。
   ID(`anri` / `paper-armor-frog` / `gengenkyo`)は**変更禁止**。
   ⚠ **表示名は Obsidian の `Games/<表示名>/` フォルダ名になる**(`NoteRouter`)ので、
@@ -123,17 +125,19 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
 - **GitHub取得 → ロリポップ同期は自動**(2026-07-24)。取得が成功した時だけ push する。
 - **AI との受け渡しが一通り実データで通った**(2026-07-25):
   Morning Brief / レコルの巡回(合図なしで分類→回答JSON)/ ヨスガの観測日記。
-- **コンソールのコマンドは1行表記**(2026-07-25): `GitHub → Obsidian` / `会話 → Obsidian` /
-  `ヨスガへ共有` / `回答JSON → Hub` / `レコルを開く` / `REVIEW`。
+- **コンソールのコマンドは1行表記**(2026-07-25): `朝の準備` / `GitHub → Obsidian` /
+  `会話 → Obsidian` / `ヨスガへ共有` / `回答JSON → Hub` /
+  `観測日記を頼む` / `セッション記録を頼む` / `REVIEW`。
   **画面名(REVIEW / RECORDS 等)は英字のまま**——`ImportMessage` の案内がその名前で
   行き先を指しているため、変えると案内が壊れる。
 - **Vault は更新反映する**(2026-07-25 / 実機未確認): 同じ `sourcePath` の新しい sha は
   **記録済みの場所へ上書き**(枝番を作らない)。削除は**報告のみ**で Vault 側は残す。
   観測日記は**同じ日付なら差し替え**。セッションログは**無尽蔵に追加**し、
   整理はヨスガが Frontmatter(`date`/`games`/`category`/`tags`)で行う。
-- **⚠ プロンプトには文字数上限がある**。レコル(カスタムGPT)の Instructions は **8000字**で、
-  超えると**黙って末尾が切れる**。編集したら `python3 scripts/measure_prompts.py` で測る。
-  ヨスガは**カスタムGPTではない**(Instructions 欄が無い)のでメモリに覚えさせる。
+- **⚠ 指示文は `?q=` に載らない**(2026-07-27 に実測)。日本語は URL エンコードで
+  1文字9バイトになり、450〜1250字の指示文が 2,300〜7,300字になる。上限は 2000字
+  (`ChatGptLink.MAX_URL_LENGTH`)。編集したら `python3 scripts/measure_prompts.py` で測る。
+  **URLは超過を黙って切る**ので、`ChatGptLink` は入り切らないと分かった時点で `q` を諦める。
 - **⚠ `connectedDebugAndroidTest` はアプリをアンインストールする**。実行後にデータが
   全部消える(プロジェクト・トークン・Vault選択)。トークンは Keystore の鍵ごと消えるため再入力必須。
 - **使い方の一覧**: `docs/how-to-use.html`(ブラウザで開く)。
@@ -143,9 +147,10 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   Obsidian + Remotely Save で Dropbox 同期。**実機=運用機 / エミュレータ=テスト機**に分ける
   (`connectedDebugAndroidTest` はアプリのデータを消すため、実機では流さない)。
 - **次にやること**(詳細は WORKLOG 冒頭の再開ポイント):
-  1. **AI 側の指示を貼り直す**(2026-07-26 に朝の経路を変えたため。レコル・ヨスガ両方)。
-  2. **実運用を1日通す**(`> 朝の準備` → 制作 → 観測日記 → 取り込み)。
-  3. 現況JSONの**量**を実地で見る(いま約31KB。重すぎるようなら `statusMarkdown` を削る)。
+  1. **2026-07-27 の変更を実機で通す**(すべて実機未確認)。設定に会話URL →
+     `> 朝の準備` → 夜の2ボタン → `> 回答JSON → Hub` → Vault の Frontmatter を目で見る。
+  2. 現況JSONの**量**を実地で見る(約31KB + 指示文1.2KB)。
+  3. **観察日記の文体規則**を Hub へ移すか決める(`YosugaPrompt.DIARY_STYLE`)。
 - **v4.3 AI役割分離(2026-07-23)**: 実地検証で「データを読めるAI(カスタムGPT+Actions)」と
   「会話を持つAI(通常ChatGPT)」が分かれることが判明し、役割分担として設計に昇格。
   **ヨスガ=会話の相棒(Hubに触れない) / レコル=Hub管理者(Actionsで読み、回答JSONで更新提案)**。
@@ -162,12 +167,35 @@ v3ロードマップの現在地(詳細は設計書v3・v3.1の付録・WORKLOG�
   → コンソール **`> 朝の準備`** が カレンダー取込 → GitHub取得 → Vault書込 →
   サーバー同期 を走らせ、そのまま `ヨスガへ共有` へ進む。**Morning Brief は廃止**。
   これは v4.3 の「**知識を活かすのはレコルではない**」に戻す変更。
-- **レコルに残る仕事は1つだけ**: 記録タブに**手打ちした** `documents` の分類。
-  ゲームの知識ノートは**生成元の Claude Code が Frontmatter で分類済み**(v5 方針)なので、
-  レコルは触らない。`documents` が空ならレコルを開く用事は無い。
-  ロリポップ同期・Actions・`openapi.yaml` は**維持するが必須ではない**(設備は残す)。
+- **⚠ レコルを廃止した(2026-07-27)**。**AI はヨスガ1体だけ**になった。
+  残っていた仕事3つのうち、2つは消え、1つは元々ヨスガの仕事だった:
+  ① 文書の分類 — `documents` を作る経路は `RecordsViewModel.addDocument`(`source="manual"`)
+  の**1箇所だけ**で実機0件(ゲームの知識ノートは**生成元の Claude Code が
+  Frontmatter で分類済み**)/ ② `items[]` — ①に連動してゼロ + ヨスガが直接出せる /
+  ③ 指示書 `directives[]` — **v4.2 まではヨスガの仕事**で、移した理由は
+  「配信中の指示を Actions で読んで重複を防ぐため」だけだった。
+  **消してはいない**。ロリポップ同期・Actions・`openapi.yaml`・サーバーPHP・
+  `documents`/`classifications` は v4.1 / v4.2 と同じく**維持するが必須ではない**。
+  `RecoruLink` は `ChatGptLink` へ転用、設定のURL欄は**ヨスガの会話URL**へ置き換えた。
+- **⚠ ヨスガへの指示文は Hub が同梱する(2026-07-27)。メモリに頼らない。**
+  正本は `data/prompt/YosugaPrompt.kt`(純粋ロジック / 説明は `docs/yosuga_prompt.md`)。
+  メモリは中身を確かめられず・いつ薄れたか分からず・新しい会話では効き方が違うため。
+  `> 朝の準備` は **指示文 + 現況JSON** を送る。
+  ⚠ 例外は**観察日記の文体規則**だけで、これはヨスガのメモリ側が正
+  (Hub へ移すなら `YosugaPrompt.DIARY_STYLE`)。
+- **夜のボタン2つ**(2026-07-27): `> 観測日記を頼む` / `> セッション記録を頼む`。
+  日付は**既定で今日**(別の日は会話の中で指定。Hub にピッカーは置かない)。
+  ⚠ **指示文は `?q=` に載らない**(日本語は URLエンコードで1文字9バイト。
+  450〜1250字 → 2,300〜7,300字)。**必ずクリップボードへ入れてから**会話URLを開く。
+  `ChatGptLink` は上限超過時に `q` を付けずに開く(URLは黙って切れるため)。
+  ⚠ **会話URLが要る理由**: 日記もセッション記録も**材料はその日の会話そのもの**で、
+  共有インテントでは行き先の会話を指定できない。
+- **セッション記録 `session[]`**(2026-07-27): 1日の記録を JSON で受け、
+  **承認を挟まず Obsidian へ直接書く**(`Conversations/Yosuga/YYYY-MM-DD-session.md`)。
+  **Frontmatter は Hub が組む**(`ConversationNoteBuilder.buildSession`)——
+  ⚠ Obsidian は**壊れた Frontmatter を無いものとして扱う**ので、AI に YAML を書かせない。
 - 将来: MCP(v4 Phase4)。積み残しは WORKLOG 再開ポイント参照。
-- アシスタント名は「ヨスガ」「レコル」(カタカナ表記)。
+- アシスタント名は「ヨスガ」(カタカナ表記)。「レコル」は廃止済みの旧名。
   アプリUIの「ヨスガ画面」等の文言は当面そのまま(改名は実機検証後・積み残し)。
 
 注意: まだ着手していない v3-Step は未実装。実装済みのように扱わないこと。

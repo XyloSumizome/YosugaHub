@@ -38,7 +38,7 @@ class ProjectsViewModel(
      *
      * これまで**プロジェクトを作る手段が仮データしか無かった**ため、
      * 仮データを消すと二度と作れなくなっていた。ID は呼び出し側が決める
-     * (サーバー・レコル・分類履歴が参照する正本なので自動採番にしない)。
+     * (サーバー・各ゲームの Claude Code・分類履歴が参照する正本なので自動採番にしない)。
      */
     fun createProject(project: Project, onDone: () -> Unit = {}) {
         viewModelScope.launch {

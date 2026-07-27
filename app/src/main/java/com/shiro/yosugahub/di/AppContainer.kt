@@ -242,6 +242,8 @@ class DefaultAppContainer(
             database.recommendationDao(),
             database.pendingProposalDao(),
             documentRepository,
+            // セッション記録は Obsidian が正本なので、Room ではなく Vault へ渡す。
+            saveSessions = { conversationImportRepository.saveSessions(it) },
             // 取り込んだ内容をヨスガが読む側へすぐ反映する(未設定なら sync が即座に返る)。
             syncAfterImport = { serverSyncRepository.sync() },
         )
