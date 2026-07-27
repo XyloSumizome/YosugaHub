@@ -52,7 +52,7 @@ object ContextExporter {
         tagNames: List<String> = emptyList(),
         /** 既存のエンティティ名。表記ゆれを防ぐための語彙(2026-07-26)。 */
         entityNames: List<String> = emptyList(),
-        /** 観測日記。新しい順に [MAX_DIARY] 件だけ渡す(2026-07-26)。 */
+        /** 観察日誌。新しい順に [MAX_DIARY] 件だけ渡す(2026-07-26)。 */
         diary: List<DiaryEntry> = emptyList(),
         // DeviceCalendarDataSource の読み取り窓と合わせる(±14日 / 2026-07-25)。
         pastDays: Int = CALENDAR_PAST_DAYS,
@@ -243,7 +243,7 @@ object ContextExporter {
     const val CHANGES_DAYS = 14L
 
     /**
-     * 現況に載せる観測日記の件数(2026-07-26)。
+     * 現況に載せる観察日誌の件数(2026-07-26)。
      * 本文を持つので少なめにする。**傾向が分かればよく、履歴を渡す場ではない。**
      */
     const val MAX_DIARY = 3

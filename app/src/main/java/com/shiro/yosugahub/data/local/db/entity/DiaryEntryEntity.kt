@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** diary_entries テーブル(Yosuga視点の観察日記)。date で時系列参照する。 */
+/** diary_entries テーブル(Yosuga視点の観察日誌)。date で時系列参照する。 */
 @Entity(
     tableName = "diary_entries",
     indices = [Index("date")],

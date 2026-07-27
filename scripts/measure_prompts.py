@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """ヨスガへ渡す指示文の寸法を測る。
 
-**2026-07-27 に測る対象が変わった。** それまではプロンプトを人が貼る前提で、
-「カスタムGPT の Instructions 8000 文字」「カスタム指示 1500 文字」という
-*貼り先の欄*の上限を見ていた。レコル廃止と、指示文を Hub が同梱する方式への
-変更で、その欄はどちらも使わなくなった。
+**2026-07-27 に測る対象が2度変わった。**
 
-いま効いている制約は1つだけ:
+1. もとは「カスタムGPT の Instructions 8000 文字」「カスタム指示 1500 文字」という
+   *貼り先の欄*の上限を見ていた。レコル廃止と指示文の Hub 同梱で、その欄は使わなくなった。
+2. 次に「URL の `?q=` に載るか」を見た。だが日本語は URL エンコードで1文字9バイトになり、
+   **どの指示文も載らないことが確定した**。そこで夜のボタンも朝と同じ
+   **共有インテント**(`EXTRA_TEXT` / Binder の約1MBまで)に変えた。
 
-- **URL の `?q=` に載るか**(`ChatGptLink.MAX_URL_LENGTH` = 2000)。
-  超えるとエラーではなく**黙って切れる**。切れた指示文は一見それらしいので
-  事故に気づけない。載らない場合はクリップボード経由になる(それが既定)。
+→ **いま長さは実質の制約ではない。** それでも測るのは、指示文が**読まれる量**として
+   妥当かを見るため。長すぎる指示は守られない。
 
-参考として素の文字数も出す。共有インテント(`EXTRA_TEXT`)は Binder の
-約1MB まで通るので、そちらは実質の上限にならない。
+⚠ **ブロックは名前で取り出す。** 以前は `\"\"\"` を出てくる順に決め打ちしていたため、
+定数を1つ足しただけで**全部ずれて**別の指示文の字数を表示していた(気づきにくい壊れ方)。
 """
 import pathlib
 import re
@@ -28,29 +28,60 @@ MAX_URL_LENGTH = 2000
 # `https://chatgpt.com/c/<id>?q=` 相当。URL 本体が食う分の見積もり。
 URL_OVERHEAD = 40
 
+# (表示名, その宣言を見つける目印)。目印の**後ろで最初に現れる** `"""…"""` を取る。
+PARTS = (
+    ("朝の前置き", "MORNING_HEADER"),
+    ("夜の前置き", "NIGHT_HEADER"),
+    ("観察日誌の本文", "fun diary"),
+    ("セッション記録の本文", "fun session"),
+)
+
+
+def block_after(text: str, anchor: str) -> str | None:
+    """`anchor` より後ろで最初の三重引用符ブロックを返す。"""
+    start = text.find(anchor)
+    if start < 0:
+        return None
+    m = re.search(r'"""(.*?)"""', text[start:], re.S)
+    return m.group(1) if m else None
+
 
 def main() -> int:
     if not SOURCE.exists():
         print(f"❌ {SOURCE.relative_to(ROOT)} が見つからない")
         return 1
 
-    blocks = re.findall(r'"""(.*?)"""', SOURCE.read_text(encoding="utf-8"), re.S)
-    if len(blocks) < 3:
-        print("❌ 指示文を3つ(朝 / 観測日記 / セッション記録)取り出せなかった")
-        return 1
+    text = SOURCE.read_text(encoding="utf-8")
+    found = {}
+    for name, anchor in PARTS:
+        body = block_after(text, anchor)
+        if body is None:
+            print(f"❌ 「{name}」({anchor})を取り出せなかった。目印が変わっていないか確認する")
+            return 1
+        found[name] = body
 
     print(f"{SOURCE.relative_to(ROOT)}\n")
-    for name, body in zip(("朝の前置き", "観測日記", "セッション記録"), blocks):
-        encoded = len(urllib.parse.quote(body, safe="")) + URL_OVERHEAD
-        fits = encoded <= MAX_URL_LENGTH
-        mark = "✅" if fits else "📋"
-        how = "?q= で入力欄に入る" if fits else "クリップボード経由(?q= には載らない)"
-        print(f"{mark} {name:8} 素 {len(body):5} 字 / URL化 {encoded:6} 字 — {how}")
+    for name, body in found.items():
+        print(f"   {name:12} {len(body):5} 字")
+
+    # 実際に渡されるのは 前置き + 本文。夜は毎回まっさらな会話が開くので
+    # NIGHT_HEADER が必ず付く。
+    night = len(found["夜の前置き"])
+    print("\n実際に渡る量(前置き込み):\n")
+    totals = (
+        ("朝 ヨスガへ現状報告", len(found["朝の前置き"]), "+ 現況JSON(約31KB)"),
+        ("夜 観察日誌を要求", night + len(found["観察日誌の本文"]), ""),
+        ("夜 ヨスガへ総括を要求", night + len(found["セッション記録の本文"]), ""),
+    )
+    for name, size, note in totals:
+        encoded = len(urllib.parse.quote("あ" * size, safe="")) + URL_OVERHEAD
+        fits = "✅ URLにも載る" if encoded <= MAX_URL_LENGTH else "— URLには載らない"
+        print(f"   {name:20} 約 {size:5} 字  {fits} {note}")
 
     print(
-        "\n📋 は異常ではない。日本語は URL エンコードで 1文字 9 バイトになるため、"
-        "\n   200 字を超える指示文は載らない。コンソールのボタンは必ず"
-        "\n   クリップボードへ入れてから開くので、貼り付ければ済む。"
+        "\n⚠ どれも共有インテント(EXTRA_TEXT)で渡すので、長さは制約にならない。"
+        "\n  「URLには載らない」は退避経路(ChatGPT アプリが無い端末)の話でしかない。"
+        "\n  日本語は URL エンコードで1文字9バイトになるため、載るのは約200字まで。"
     )
     return 0
 

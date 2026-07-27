@@ -125,7 +125,7 @@ data class EntityRefImport(
     val type: String = "other",
 )
 
-/** 観察日記の提案(ヨスガ視点の本文)。承認で diary_entries へ。 */
+/** 観察日誌の提案(ヨスガ視点の本文)。承認で diary_entries へ。 */
 @Serializable
 data class DiaryProposal(
     val date: String = "",

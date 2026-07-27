@@ -157,7 +157,11 @@
       "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat --offline clean assembleDebug\")",
       "Bash(cmd.exe /c \"set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat --offline testDebugUnitTest\")",
       "Bash(grep -n \"^---$\" docs/WORKLOG.md)",
-      "Bash(echo \"--- exit $? ---\")"
+      "Bash(echo \"--- exit $? ---\")",
+      "Bash(git rev-list *)",
+      "Bash(cmd.exe /c 'set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat clean assembleDebug testDebugUnitTest installDebug')",
+      "Bash(grep -oE \"^\\(recoru_url|yosuga_conversation_url|last_synced_at|obsidian_vault_uri|github_token_encrypted|sync_base_url|sync_token_encrypted|[a-z_]{4,40}\\)$\")",
+      "Bash(cmd.exe /c 'set JAVA_HOME=C:\\\\Program Files\\\\Android\\\\Android Studio\\\\jbr&& gradlew.bat assembleDebug testDebugUnitTest installDebug')"
     ]
   }
 }

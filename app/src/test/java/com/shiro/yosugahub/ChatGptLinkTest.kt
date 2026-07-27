@@ -66,10 +66,10 @@ class ChatGptLinkTest {
 
     @Test
     fun stays_within_the_length_cap_when_it_fits() {
-        val url = ChatGptLink.withPrompt(conversation, "今日の観測日記")
+        val url = ChatGptLink.withPrompt(conversation, "今日の観察日誌")
 
         assertTrue(url.length <= ChatGptLink.MAX_URL_LENGTH)
-        assertTrue(ChatGptLink.fitsInUrl(conversation, "今日の観測日記"))
+        assertTrue(ChatGptLink.fitsInUrl(conversation, "今日の観察日誌"))
     }
 
     /**

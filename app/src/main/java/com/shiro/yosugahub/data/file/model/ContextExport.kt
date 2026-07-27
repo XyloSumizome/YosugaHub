@@ -29,7 +29,7 @@ data class ContextExport(
      */
     val vocabulary: VocabularyExport = VocabularyExport(),
     /**
-     * 直近の観測日記(2026-07-26)。
+     * 直近の観察日誌(2026-07-26)。
      *
      * **ヨスガ本人が書いたものだが、ヨスガは覚えているとは限らない**
      * (ChatGPT は過去の日記全文を保持しない、というヨスガ自身の指摘による)。

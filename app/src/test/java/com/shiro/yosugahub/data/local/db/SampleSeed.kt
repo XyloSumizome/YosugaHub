@@ -188,7 +188,7 @@ object SampleSeed {
         ItemEntityCrossRef(itemId = "item-002", entityId = "entity-002"),
     )
 
-    /** 仮の観察日記(Yosuga視点の文例)。 */
+    /** 仮の観察日誌(Yosuga視点の文例)。 */
     val diaryEntries: List<DiaryEntryEntity> = listOf(
         DiaryEntryEntity(
             id = "diary-001",

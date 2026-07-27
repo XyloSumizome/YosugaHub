@@ -9,7 +9,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** 観測日記の保存(2026-07-25: 同じ日付は上書き)。 */
+/** 観察日誌の保存(2026-07-25: 同じ日付は上書き)。 */
 class DiaryRepositoryTest {
 
     private class FakeDiaryDao : DiaryDao {
@@ -47,7 +47,7 @@ class DiaryRepositoryTest {
         assertEquals(2, dao.rows.size)
     }
 
-    /** 観察日記は一日につき1件。同じ日付が来たら差し替える(シロさんの運用確認)。 */
+    /** 観察日誌は一日につき1件。同じ日付が来たら差し替える(シロさんの運用確認)。 */
     @Test
     fun the_same_date_replaces_the_body_instead_of_piling_up() = runBlocking {
         val dao = FakeDiaryDao()

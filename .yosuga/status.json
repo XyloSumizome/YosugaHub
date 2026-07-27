@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
-  "generatedAt": "2026-07-27T18:00:00+09:00",
+  "generatedAt": "2026-07-27T21:00:00+09:00",
   "sourceCommit": "6dd85e2",
-  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。2026-07-27 に**レコルを廃止**し、AI はヨスガ1体になった。あわせて**ヨスガへの指示文を ChatGPT のメモリから Hub 同梱へ移し**(`data/prompt/YosugaPrompt.kt`)、夜のボタン2つ(観測日記 / セッション記録)を足した。単体テスト 429 件、Room は v8(変更なし)。",
+  "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。2026-07-27 に**レコルを廃止**し、AI はヨスガ1体になった。あわせて**ヨスガへの指示文を ChatGPT のメモリから Hub 同梱へ移し**(`data/prompt/YosugaPrompt.kt`)、夜のボタン2つ(観察日誌 / セッション記録)を足した。単体テスト 429 件、Room は v8(変更なし)。",
   "phase": "development",
   "health": "on_track",
   "currentGoal": {
@@ -68,7 +68,7 @@
     },
     {
       "id": "task-012",
-      "title": "Morning Brief / 巡回 / 観測日記を実データで一周",
+      "title": "Morning Brief / 巡回 / 観察日誌を実データで一周",
       "completedAt": "2026-07-25T14:00:00+09:00"
     },
     {
@@ -208,7 +208,7 @@
     },
     {
       "id": "task-040b",
-      "title": "現況JSONに直近の観測日記を載せる(ヨスガは自分が書いた日記を覚えているとは限らない)",
+      "title": "現況JSONに直近の観察日誌を載せる(ヨスガは自分が書いた日記を覚えているとは限らない)",
       "completedAt": "2026-07-26T15:05:00+09:00"
     },
     {
@@ -222,13 +222,13 @@
     {
       "id": "task-050",
       "title": "2026-07-27 の変更を実機で通す",
-      "detail": "① SETTINGS →「ヨスガの会話」に その日の会話URL(https://chatgpt.com/c/…)を入れる ② `> 朝の準備` で 指示文 + 現況 が届くか(メモリを当てにせず始まるかが要点) ③ 夜に `> 観測日記を頼む` / `> セッション記録を頼む`(コピー → 貼り付け → 送信) ④ `> 回答JSON → Hub` で取り込み ⑤ Vault の Conversations/Yosuga/YYYY-MM-DD-session.md の Frontmatter を目で見る。",
+      "detail": "① SETTINGS →「ヨスガの会話」に その日の会話URL(https://chatgpt.com/c/…)を入れる ② `> 朝の準備` で 指示文 + 現況 が届くか(メモリを当てにせず始まるかが要点) ③ 夜に `> 観察日誌を頼む` / `> セッション記録を頼む`(コピー → 貼り付け → 送信) ④ `> 回答JSON → Hub` で取り込み ⑤ Vault の Conversations/Yosuga/YYYY-MM-DD-session.md の Frontmatter を目で見る。",
       "priority": "high",
       "dependencies": []
     },
     {
       "id": "task-051",
-      "title": "観察日記の文体規則を Hub へ移すか決める",
+      "title": "観察日誌の文体規則を Hub へ移すか決める",
       "detail": "いま文体規則はヨスガのメモリにしかない。移すなら YosugaPrompt.DIARY_STYLE に入れる(空でなくなれば日記の要求文も自動で同梱に切り替わる)。移すときは docs/yosuga_prompt.md の該当節も同時に直す(二重に書かない)。",
       "priority": "medium",
       "dependencies": []
@@ -254,6 +254,36 @@
   "recentChanges": [
     {
       "date": "2026-07-27",
+      "summary": "コンソール4項目を改称(ヨスガへ現状報告 / 過去情報をヨスガへ / 観察日誌を要求 / ヨスガへ総括を要求)",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
+      "summary": "日記の呼称を「観察日誌」へ統一(71箇所)。ただしメモリ参照名「観察日記 作成ルール」は残す",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
+      "summary": "夜の2つを共有インテントへ変更。指示文が必ず入力欄に入る代わりに毎回新しい会話になる",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
+      "summary": "YosugaPrompt.NIGHT_HEADER を新設。新しい会話でも役割と「材料が無いなら聞き返す」を同梱",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
+      "summary": "measure_prompts.py が順序決め打ちで別の指示文の字数を出していたのを、名前で取り出す形へ修正",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
+      "summary": "実機(Pixel 10a)へ導入。指示文の同梱を実機で確認(CONTEXT + PROMPT 1222)",
+      "commit": ""
+    },
+    {
+      "date": "2026-07-27",
       "summary": "レコルを廃止し、コンソール・設定・文言から外す(設備は残す)",
       "commit": ""
     },
@@ -264,7 +294,7 @@
     },
     {
       "date": "2026-07-27",
-      "summary": "夜のボタン2つ(観測日記を頼む / セッション記録を頼む)を追加",
+      "summary": "夜のボタン2つ(観察日誌を頼む / セッション記録を頼む)を追加",
       "commit": ""
     },
     {
@@ -284,12 +314,12 @@
     },
     {
       "date": "2026-07-26",
-      "summary": "現況JSONに直近の観測日記を載せる",
+      "summary": "現況JSONに直近の観察日誌を載せる",
       "commit": "65ecea2"
     },
     {
       "date": "2026-07-26",
-      "summary": "現況JSONに直近の観測日記を載せる",
+      "summary": "現況JSONに直近の観察日誌を載せる",
       "commit": ""
     },
     {
@@ -375,14 +405,20 @@
     },
     {
       "id": "risk-017",
-      "title": "2026-07-27 の変更が実機未確認",
-      "detail": "レコル廃止・指示文の同梱・夜の2ボタン・セッション記録の Obsidian 書き込みは、ビルドと単体テスト(429件)までしか通していない。とくに ① ChatGPT アプリが会話URLをどう開くか ② クリップボードからの貼り付け ③ Vault へ書いた Frontmatter を Obsidian が読めるか は実機でしか分からない。",
+      "title": "2026-07-27 の変更が実機で通しきれていない",
+      "detail": "実機で確認できたのは、アプリの起動と `> ヨスガへ現状報告` が指示文を同梱すること(端末ログの CONTEXT + PROMPT 1222)まで。未確認は ① 夜の2ボタンで新しい会話に指示文が入るか ② 材料が無いときヨスガが聞き返すか ③ 回答JSON の取り込み ④ Vault へ書いた Frontmatter を Obsidian が読めるか。とくに④は、壊れていても Obsidian が黙って無視するため目視でしか分からない。",
       "severity": "medium"
+    },
+    {
+      "id": "risk-018",
+      "title": "設定「ヨスガの会話」がほぼ使われない欄として残っている",
+      "detail": "夜の2つを共有インテントへ変えたため、この URL を使うのは ChatGPT アプリが入っていない端末だけになった。「押せて何も起きない口を作らない」という既存の方針に反する。消すかどうかはシロさんの判断待ち。いまは『退避用』と明記して残してある。",
+      "severity": "low"
     }
   ],
   "decisions": [
     "レコルは廃止する(2026-07-27)。残っていた仕事3つのうち2つは構造的に発生せず、1つ(指示書)は元々ヨスガの仕事だった。設備は削除せず維持する。",
-    "ヨスガへの指示文は Hub が毎回同梱する。メモリは中身を確かめられず、いつ薄れたかも分からないため。例外は観察日記の文体規則だけ。",
+    "ヨスガへの指示文は Hub が毎回同梱する。メモリは中身を確かめられず、いつ薄れたかも分からないため。例外は観察日誌の文体規則だけ。",
     "セッション記録は承認を挟まず Obsidian へ直接書く。記録そのものであり、判断の余地が無いものに承認画面を通させないため。",
     "セッション記録の Frontmatter は Hub が組む。AI に YAML を書かせると壊れたときにObsidian が Frontmatter ごと無視し、検索から静かに消えるため。",
     {
@@ -468,7 +504,7 @@
     {
       "date": "2026-07-26",
       "title": "朝の近況は Hub からヨスガへ直接渡す(Morning Brief 廃止)",
-      "detail": "現況JSONが Brief の材料をすべて持っていた(tasks.completedAt / recentChanges の日付 / calendar / blockers.since / recentDecisions)。7節のうち5節は選別で Hub が渡せる。残る2節も、締切や停滞の指摘はヨスガができ、シロの状態はヨスガが書いた観測日記をレコル経由で本人へ返していた。v4.3 の「知識を活かすのはレコルではない」に戻す。"
+      "detail": "現況JSONが Brief の材料をすべて持っていた(tasks.completedAt / recentChanges の日付 / calendar / blockers.since / recentDecisions)。7節のうち5節は選別で Hub が渡せる。残る2節も、締切や停滞の指摘はヨスガができ、シロの状態はヨスガが書いた観察日誌をレコル経由で本人へ返していた。v4.3 の「知識を活かすのはレコルではない」に戻す。"
     },
     {
       "date": "2026-07-26",
@@ -497,7 +533,7 @@
     }
   ],
   "questionsForYosuga": [
-    "観察日記の文体規則を Hub 側(YosugaPrompt.DIARY_STYLE)へ移すか。移すとメモリ非依存が完成するが、文体の調整がコード変更になる。",
+    "観察日誌の文体規則を Hub 側(YosugaPrompt.DIARY_STYLE)へ移すか。移すとメモリ非依存が完成するが、文体の調整がコード変更になる。",
     "リポジトリから消えたノートを Vault 側でも Archive/ へ移すか。いまは報告だけしている。"
   ],
   "dataQuality": {

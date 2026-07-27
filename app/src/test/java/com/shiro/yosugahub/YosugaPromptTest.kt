@@ -109,4 +109,29 @@ class YosugaPromptTest {
         assertFalse(YosugaPrompt.diary("2026-07-27").contains("\"session\""))
         assertFalse(YosugaPrompt.session("2026-07-27").contains("\"diary\""))
     }
+
+    /**
+     * 夜の要求は**まっさらな新しい会話**で開く(共有インテントは行き先の会話を
+     * 選べない / 2026-07-27)。前置きが落ちると、ヨスガは自分が何者かを知らないまま
+     * 日誌を書くことになる——**動くので気づけない**種類の壊れ方。
+     */
+    @Test
+    fun night_requests_carry_the_role_preamble() {
+        assertTrue(YosugaPrompt.diary("2026-07-27").startsWith(YosugaPrompt.NIGHT_HEADER))
+        assertTrue(YosugaPrompt.session("2026-07-27").startsWith(YosugaPrompt.NIGHT_HEADER))
+        assertTrue(YosugaPrompt.NIGHT_HEADER.contains("ヨスガ"))
+    }
+
+    /**
+     * 新しい会話には今日のやりとりが無い。**材料が無いなら聞き返す**と書いていないと、
+     * それらしい嘘の日誌が出る(そして Obsidian にそのまま残る)。
+     */
+    @Test
+    fun night_preamble_forbids_writing_without_material() {
+        val header = YosugaPrompt.NIGHT_HEADER
+
+        assertTrue("材料が無い旨を伝えていない", header.contains("材料"))
+        assertTrue("聞き返させていない", header.contains("一度だけ"))
+        assertTrue("推測を禁じていない", header.contains("推測"))
+    }
 }

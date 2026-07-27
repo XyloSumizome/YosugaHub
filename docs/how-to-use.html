@@ -269,7 +269,7 @@
 
   <header class="masthead">
     <h1>Yosuga Hub の使い方</h1>
-    <p class="sub">2026-07-25 時点 / v5 Obsidian ブリッジ</p>
+    <p class="sub">2026-07-27 時点 / v5 Obsidian ブリッジ</p>
   </header>
 
   <hr class="rule">
@@ -307,7 +307,7 @@
             <td>ヨスガ</td>
             <td class="wrapcell">通常の ChatGPT（ボイス・メモリあり）</td>
             <td class="wrapcell">読めない</td>
-            <td class="wrapcell">会話の相棒。相談・設計・アイデア出し。<strong>観測日記とセッション記録を書き、Hub への提案JSONも出す</strong></td>
+            <td class="wrapcell">会話の相棒。相談・設計・アイデア出し。<strong>観察日誌とセッション記録を書き、Hub への提案JSONも出す</strong></td>
           </tr>
           <tr>
             <td>シロ</td>
@@ -328,7 +328,7 @@
     <div class="note">
       <p>
         <strong>ヨスガは Hub を読めない。</strong>
-        だから Hub が渡す。<code>朝の準備</code> を押すと、<strong>指示文と現況JSONが
+        だから Hub が渡す。<code>ヨスガへ現状報告</code> を押すと、<strong>指示文と現況JSONが
         そのまま ChatGPT へ届く</strong>。要約は挟まない ——
         間に要約を挟むと情報が落ちるだけだと分かったため（2026-07-26）。
       </p>
@@ -355,13 +355,13 @@ PENDING : 0
 SYNC    : 2026-07-25 06:26
 STATUS  : [ READY ]
 
-&gt; 朝の準備
+&gt; ヨスガへ現状報告
 &gt; GitHub → Obsidian
 &gt; 会話 → Obsidian
-&gt; ヨスガへ共有
+&gt; 過去情報をヨスガへ
 &gt; 回答JSON → Hub
-&gt; 観測日記を頼む
-&gt; セッション記録を頼む
+&gt; 観察日誌を要求
+&gt; ヨスガへ総括を要求
 &gt; REVIEW
 
 DATA
@@ -380,7 +380,7 @@ DATA
         <thead><tr><th>コマンド</th><th>何が起きるか</th></tr></thead>
         <tbody>
           <tr>
-            <td>朝の準備</td>
+            <td>ヨスガへ現状報告</td>
             <td class="wrapcell">
               カレンダー取込 → GitHub取得 → Vault書込 → サーバー同期を順に走らせ、
               そのまま <strong>指示文 + 現況JSON</strong> を ChatGPT へ渡す。
@@ -401,7 +401,7 @@ DATA
             <td class="wrapcell">ヨスガのセッションまとめを、原文のまま <code>Conversations/Yosuga/</code> へ</td>
           </tr>
           <tr>
-            <td>ヨスガへ共有</td>
+            <td>過去情報をヨスガへ</td>
             <td class="wrapcell">
               ヨスガに渡す資料を作る。<strong>現況は既定で入る</strong>。
               過去ログ（Obsidian のノート）は選んだときだけ足される
@@ -410,20 +410,20 @@ DATA
           <tr>
             <td>回答JSON → Hub</td>
             <td class="wrapcell">
-              観測日記でも、セッション記録でも、タスクの提案でも<strong>同じ口から入る</strong>。
+              観察日誌でも、セッション記録でも、タスクの提案でも<strong>同じ口から入る</strong>。
               クリップボードに JSON があれば自動で入る
             </td>
           </tr>
           <tr>
-            <td>観測日記を頼む</td>
+            <td>観察日誌を要求</td>
             <td class="wrapcell">
-              指示文を<strong>クリップボードへ入れて</strong>、設定した
-              <strong>その日の会話</strong>を開く。長押しして貼り、送信する。
-              日付は<strong>既定で今日</strong>（別の日は会話の中で言えばよい）
+              <strong>新しい会話</strong>が開き、指示文が入力欄に入る。
+              そのまま送信する。日付は<strong>既定で今日</strong>
+              （別の日は会話の中で言えばよい）
             </td>
           </tr>
           <tr>
-            <td>セッション記録を頼む</td>
+            <td>ヨスガへ総括を要求</td>
             <td class="wrapcell">
               同上。1日の記録（実装・調べたこと・相談・決定・タスク・アイデア・メモ・様子）を
               JSON で出させ、取り込むと<strong>承認を挟まず Obsidian へ入る</strong>
@@ -455,7 +455,7 @@ DATA
     <ol class="flow">
       <li>
         <div>
-          <h4>朝：<code>朝の準備</code> を押す</h4>
+          <h4>朝：<code>ヨスガへ現状報告</code> を押す</h4>
           <p>
             カレンダー取込 → GitHub取得 → Vault書込 → サーバー同期が順に走り、
             そのまま ChatGPT が開いて<strong>指示文と現況JSONが入っている</strong>。
@@ -486,21 +486,21 @@ DATA
         <div>
           <h4>制作しながら相談する</h4>
           <p>
-            過去の設計判断を思い出したくなったら <code>ヨスガへ共有</code>。
+            過去の設計判断を思い出したくなったら <code>過去情報をヨスガへ</code>。
             現況に加えて、Obsidian のノートを選んで一緒に渡せる。
           </p>
         </div>
       </li>
       <li>
         <div>
-          <h4>夜：<code>観測日記を頼む</code> / <code>セッション記録を頼む</code></h4>
+          <h4>夜：<code>観察日誌を要求</code> / <code>ヨスガへ総括を要求</code></h4>
           <p>
-            どちらも指示文がクリップボードへ入り、<strong>その日の会話</strong>が開く。
-            長押しして貼り、送信する。返ってきた JSON を
+            どちらも<strong>新しい会話</strong>が開き、指示文が入力欄に入っている。
+            材料（今日やったこと）を伝えて送信する。返ってきた JSON を
             <code>回答JSON → Hub</code> へ（共有シートからでも入る）。
           </p>
           <p>
-            <strong>観測日記</strong>は <code>REVIEW</code> で承認して Hub に入る。
+            <strong>観察日誌</strong>は <code>REVIEW</code> で承認して Hub に入る。
             <strong>セッション記録</strong>は記録そのものなので<strong>承認を挟まず</strong>
             <code>Conversations/Yosuga/</code> へ直接入る。
           </p>
@@ -512,25 +512,44 @@ DATA
   <hr class="rule">
 
   <section>
-    <h2>その日の会話を Hub に教える</h2>
+    <h2>夜は毎回「新しい会話」になる</h2>
     <p>
-      観測日記もセッション記録も、<strong>材料はその日の会話そのもの</strong>。
-      新しい会話で頼むと、ヨスガの手元には何も無い。
+      朝も夜も、Hub は <strong>共有インテント</strong>で ChatGPT へ本文を渡している。
+      長さの制限が実質無い（約1MBまで）代わりに、
+      <strong>行き先の会話を指定できない</strong>。だから夜のボタンを押すと、
+      指示文の入った<strong>まっさらな新しい会話</strong>が開く。
     </p>
+    <div class="scroll">
+      <table>
+        <tr><th>渡し方</th><th>入る量</th><th>会話の指定</th></tr>
+        <tr>
+          <td>共有インテント</td>
+          <td class="wrapcell">約1MB（いま使っている方）</td>
+          <td class="wrapcell"><strong>できない</strong></td>
+        </tr>
+        <tr>
+          <td>URL の <code>?q=</code></td>
+          <td class="wrapcell">日本語 約200字</td>
+          <td class="wrapcell">できる</td>
+        </tr>
+      </table>
+    </div>
     <p>
-      そこで <code>SETTINGS</code> →「ヨスガの会話」に、その日の会話の URL
-      （<code>https://chatgpt.com/c/…</code>）を入れておく。夜の2つのボタンはそこを開く。
-      未設定でも動くが、新しい会話になる。
+      指示文は 640〜1434 文字あるので URL には載らない。つまり
+      <strong>「入力欄に必ず入ること」と「会話を指定できること」は両立しない</strong>。
+      2026-07-27 に前者を選んだ。
     </p>
     <div class="note">
       <p>
-        <strong>指示文は入力欄に自動では入らない。</strong>
-        URL に載せられるのは 200 文字前後まで（日本語は URL 化で1文字9バイトになる）。
-        実際の指示文は 450〜1250 文字あるので<strong>載らない</strong>。
-        だからボタンは<strong>必ずクリップボードへ入れてから</strong>開く。貼るだけでよい。
+        <strong>材料は、その新しい会話であなたが話した内容。</strong>
+        朝からの会話の続きではない。ヨスガには
+        「材料が無いなら書き始めず、一度だけ聞き返す」と毎回指示しているので、
+        何も渡さずに送ると<strong>今日は何がありましたか</strong>と聞き返してくる。
+        それが正しい動き（黙ってそれらしい日誌を作らせない）。
       </p>
       <p>
-        以前レコルで「巡回」が入力欄に入っていたのは、<strong>2文字だったから</strong>。
+        <code>SETTINGS</code> →「ヨスガの会話（退避用）」は、
+        ChatGPT アプリが入っていない端末向けの逃げ道。ふだんは使わない。
       </p>
     </div>
   </section>
@@ -650,7 +669,7 @@ DATA
       <li><strong>Hub は判断しない。</strong>分類も要約も、情報を作った側が済ませておく。</li>
       <li><strong>承認しないと入らない。</strong>AI が出しただけでは何も起きない。</li>
       <li><strong>先にアプリ、あとで AI。</strong>順番を逆にすると古いデータを読ませる。</li>
-      <li><strong>観測日記はヨスガ、仕分けはレコル。</strong>逆はしない。</li>
+      <li><strong>観察日誌はヨスガ、仕分けはレコル。</strong>逆はしない。</li>
     </ul>
   </section>
 

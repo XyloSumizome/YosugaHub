@@ -82,27 +82,38 @@ fun ConsoleScreen(
     /**
      * ヨスガへ頼みごとを渡す(2026-07-27)。
      *
-     * **必ずクリップボードへ入れてから開く。** `?q=` に載せられるのは
-     * 200文字程度までで、観測日記もセッション記録も指示文がそれを超える
-     * ([ChatGptLink.MAX_URL_LENGTH])。載らなかったときに何も残らないと、
-     * 開いた先で「何を頼むんだったか」になる。コピーしてあれば貼るだけで済む。
+     * ⚠ **朝と同じ共有インテントで渡す。** 当初は設定の会話URLを `?q=` 付きで
+     * 開いていたが、**指示文は URL に載らなかった**(日本語は URL エンコードで
+     * 1文字9バイトになり、447〜1246字が 2,373〜6,566字に膨らむ。上限は
+     * [ChatGptLink.MAX_URL_LENGTH])。結果、入力欄は空のまま開き、
+     * 毎回シロさんが貼る作業が残っていた。
      *
-     * 開く先は設定の会話URL。**その日の会話**でなければ、日記もセッション記録も
-     * 材料が無い状態で書かせることになる。
+     * 共有インテントは `EXTRA_TEXT` で本文を運ぶので**長さの制限が実質無い**
+     * (Binder の約1MBまで)。代わりに**行き先の会話を指定できず、毎回新しい
+     * 会話になる**。「入力欄に必ず入ること」を取り、会話の指定を捨てた
+     * (2026-07-27 / シロさんの判断)。
+     *
+     * → 新しい会話には朝の前置きが無いので、[YosugaPrompt.NIGHT_HEADER] が
+     * 役割と「材料が無いなら聞き返す」を毎回同梱する。
+     *
+     * クリップボードへは**引き続き**入れる。ChatGPT が入っていない端末では
+     * URL へ退くうえ、送信前に打ち直したくなったときの保険にもなる。
      */
     fun askYosuga(prompt: String) {
         clipboard.setText(AnnotatedString(prompt))
-        val url = ChatGptLink.withPrompt(uiState.yosugaConversationUrl, prompt)
-        val prefilled = ChatGptLink.fitsInUrl(uiState.yosugaConversationUrl, prompt)
-        val opened = openExternalLink(context, url)
-        val message = when {
-            !opened -> "コピーしました。開けるアプリがありません。"
-            prefilled -> "入力欄に入れました。送信してください。"
-            uiState.yosugaConversationUrl.isBlank() ->
-                "コピーしました。会話に貼り付けてください。" +
-                    "(SETTINGS で会話URLを設定すると、その日の会話が開きます)"
-            else -> "コピーしました。会話の入力欄に貼り付けてください。"
+        if (sendToChatGpt(context, prompt, "Yosuga への依頼")) {
+            Toast.makeText(context, "入力欄に入れました。送信してください。", Toast.LENGTH_LONG).show()
+            return
         }
+        // ChatGPT アプリが無い / 共有を受け付けない。設定の会話URL(未設定なら
+        // 新しい会話)を開いて、貼り付けてもらう。
+        val opened = openExternalLink(
+            context,
+            ChatGptLink.withPrompt(uiState.yosugaConversationUrl, prompt),
+        )
+        val message =
+            if (opened) "コピーしました。会話の入力欄に貼り付けてください。"
+            else "コピーしました。開けるアプリがありません。"
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
@@ -156,7 +167,7 @@ fun ConsoleScreen(
             },
             title = "IMPORT RESPONSE",
             description = "回答JSONを貼り付けて取り込む。" +
-                "観測日記でも、セッション記録でも、タスクの提案でも同じ口から入る。",
+                "観察日誌でも、セッション記録でも、タスクの提案でも同じ口から入る。",
             label = "response json",
             confirmLabel = "IMPORT",
         )
@@ -199,7 +210,9 @@ fun ConsoleScreen(
         // カレンダーは CALENDAR 画面、サーバー同期は SETTINGS の奥、
         // GitHub 取得はここ、と**4箇所に散っていた**。毎朝使うものが
         // 設定の奥にあるのは誤りなので、順序ごと固定して先頭に置く。
-        Command("朝の準備", enabled = !importing) {
+        // ⚠ 表示名は 2026-07-27 に「朝の準備」から改めた。**何をするか**ではなく
+        // **ヨスガに何が届くか**で呼ぶ(夜の2つと語の作りを揃える)。中身は変えていない。
+        Command("ヨスガへ現状報告", enabled = !importing) {
             // 行き先はヨスガ(2026-07-26)。以前はレコルに Morning Brief を書かせ、
             // それを人がヨスガへ貼っていた。だが現況JSONは Morning Brief の材料を
             // すべて持っている(completedAt / recentChanges の日付 / calendar /
@@ -211,7 +224,7 @@ fun ConsoleScreen(
             //
             // 渡す相手も中身も決まっている(ヨスガへ現況のみ・過去ログは含めない)ので、
             // 選択画面を出さず ChatGPT を名指しする。入っていなければ
-            // `ヨスガへ共有` の画面へ逃がす(そこから選択画面を出せる)。
+            // `過去情報をヨスガへ` の画面へ逃がす(そこから選択画面を出せる)。
             viewModel.morningRoutine { _, contextJson ->
                 val sent = sendToChatGpt(context, contextJson, "Yosuga Hub 現況")
                 if (!sent) {
@@ -226,9 +239,11 @@ fun ConsoleScreen(
         Command("会話 → Obsidian") { showSaveSession = true }
         AsciiDivider()
         // 現況(既定)+ 必要なら過去ログ。渡す口を1つに統べた(2026-07-25)。
-        Command("ヨスガへ共有", onClick = onOpenContext)
+        // 表示名は 2026-07-27 に「ヨスガへ共有」から改めた。朝の1つ目と役目が
+        // 紛らわしかったため、**Vault の過去ログを足せるのはこちら**だと名前で示す。
+        Command("過去情報をヨスガへ", onClick = onOpenContext)
         AsciiDivider()
-        // ヨスガが出す提案は種類を問わずこの1つの口から入る(観測日記 / セッション記録 / タスク)。
+        // ヨスガが出す提案は種類を問わずこの1つの口から入る(観察日誌 / セッション記録 / タスク)。
         Command("回答JSON → Hub") {
             // クリップボードに回答JSONらしきものがあれば入れておく。
             // 関係ない文字列は入れない(消す手間のほうが増えるため)。
@@ -241,9 +256,9 @@ fun ConsoleScreen(
         // 指示文はクリップボードへ入れ、設定された会話URLを開く。
         // ⚠ `?q=` には載らない(指示文は数百字あり、URLエンコードで数千字になる)。
         // レコルの「巡回」が2文字だったから入っていただけで、仕組みの限界ではなく寸法の話。
-        Command("観測日記を頼む") { askYosuga(viewModel.diaryRequest()) }
+        Command("観察日誌を要求") { askYosuga(viewModel.diaryRequest()) }
         AsciiDivider()
-        Command("セッション記録を頼む") { askYosuga(viewModel.sessionRequest()) }
+        Command("ヨスガへ総括を要求") { askYosuga(viewModel.sessionRequest()) }
         AsciiDivider()
 
         val reviewSuffix = if (uiState.pendingCount > 0) " (${uiState.pendingCount})" else ""

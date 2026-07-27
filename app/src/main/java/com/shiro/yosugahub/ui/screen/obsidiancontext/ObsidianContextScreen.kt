@@ -100,7 +100,7 @@ fun ObsidianContextScreen(
 
     // 戻り口・画面固有の操作とも、他のサブ画面と同じ上辺バーに載せる。
     SubScreenScaffold(
-        title = "ヨスガへ共有",
+        title = "過去情報をヨスガへ",
         onBack = onBack,
         modifier = modifier,
         actions = {
@@ -182,7 +182,7 @@ fun ObsidianContextScreen(
             // 端末ログと操作列は Vault の状態に依らず出す。
             if (uiState.isBuilding || opLines.isNotEmpty()) {
                 OpTerminal(
-                    title = "ヨスガへ共有",
+                    title = "過去情報をヨスガへ",
                     lines = opLines,
                     running = uiState.isBuilding,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
