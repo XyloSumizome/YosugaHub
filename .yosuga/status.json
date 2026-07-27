@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "projectId": "yosuga-hub",
   "generatedAt": "2026-07-27T18:00:00+09:00",
-  "sourceCommit": "ef69452",
+  "sourceCommit": "6dd85e2",
   "summary": "設計 v5「Obsidian ブリッジ」。Hub は AI ではなく情報を運ぶハブで、知識の正本は Obsidian の Markdown。2026-07-26 に実機(Pixel 10a / Android 17)を導入し、未検証だった項目をすべて通した。2026-07-27 に**レコルを廃止**し、AI はヨスガ1体になった。あわせて**ヨスガへの指示文を ChatGPT のメモリから Hub 同梱へ移し**(`data/prompt/YosugaPrompt.kt`)、夜のボタン2つ(観測日記 / セッション記録)を足した。単体テスト 429 件、Room は v8(変更なし)。",
   "phase": "development",
   "health": "on_track",
