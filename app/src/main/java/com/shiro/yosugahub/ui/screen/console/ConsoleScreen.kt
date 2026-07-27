@@ -105,11 +105,13 @@ fun ConsoleScreen(
             Toast.makeText(context, "入力欄に入れました。送信してください。", Toast.LENGTH_LONG).show()
             return
         }
-        // ChatGPT アプリが無い / 共有を受け付けない。設定の会話URL(未設定なら
-        // 新しい会話)を開いて、貼り付けてもらう。
+        // ChatGPT アプリが無い / 共有を受け付けない。ブラウザで新しい会話を開いて、
+        // 貼り付けてもらう。⚠ **行き先を選ばせる設定は置かない**(2026-07-27 に
+        // 一度置いて同日中に撤去した。共有インテントへ変えた時点で、ここでしか
+        // 読まれない = 実質使われない欄になったため)。
         val opened = openExternalLink(
             context,
-            ChatGptLink.withPrompt(uiState.yosugaConversationUrl, prompt),
+            ChatGptLink.withPrompt(ChatGptLink.DEFAULT_URL, prompt),
         )
         val message =
             if (opened) "コピーしました。会話の入力欄に貼り付けてください。"

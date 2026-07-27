@@ -46,14 +46,6 @@ data class AssistantUiState(
     /** コンソール上部の状態表示用。 */
     val projectCount: Int = 0,
     val lastSync: String = "",
-    /**
-     * ヨスガとの**その日の会話**のURL。空なら新しい会話が開く。
-     *
-     * 2026-07-25 に置いていたレコルのURLを、レコル廃止(2026-07-27)で
-     * 置き換えたもの。観察日誌とセッション記録は「その日の会話」が材料なので、
-     * どの会話を開くかが結果を左右する。
-     */
-    val yosugaConversationUrl: String = "",
 ) {
     val pendingCount: Int get() = proposals.size
 }
@@ -73,7 +65,6 @@ class AssistantViewModel(
     private val projectCount = projectRepository.projects()
         .map { it.size }
     private val lastSync = userPreferencesRepository.lastSyncedAt
-    private val yosugaConversationUrl = userPreferencesRepository.yosugaConversationUrl
 
     /** 端末ログ(v5 UI)。取り込み・保存・生成などの操作すべてで共用する。 */
     val opLog = OpLogState()
@@ -228,14 +219,12 @@ class AssistantViewModel(
         assistantRepository.recommendations(),
         projectCount,
         lastSync,
-        yosugaConversationUrl,
-    ) { pending, recommendations, projects, sync, conversationUrl ->
+    ) { pending, recommendations, projects, sync ->
         AssistantUiState(
             proposals = pending.map { it.toCardUi() },
             recommendations = recommendations,
             projectCount = projects,
             lastSync = sync,
-            yosugaConversationUrl = conversationUrl,
         )
     }.stateIn(
         scope = viewModelScope,

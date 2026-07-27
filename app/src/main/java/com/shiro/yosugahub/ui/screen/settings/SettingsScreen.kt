@@ -38,7 +38,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shiro.yosugahub.data.file.ExternalLink
 import com.shiro.yosugahub.ui.component.DialogAction
 import com.shiro.yosugahub.ui.component.SectionCard
 import com.shiro.yosugahub.ui.component.TacticalButton
@@ -67,8 +66,6 @@ fun SettingsScreen(
     var syncTokenInput by remember { mutableStateOf("") }
     // 保存済みURLを初期値にする(uiState 反映後に一度だけ取り込む)。
     var syncUrlInput by remember(uiState.syncBaseUrl) { mutableStateOf(uiState.syncBaseUrl) }
-    val yosugaUrl by viewModel.yosugaConversationUrl.collectAsState()
-    var yosugaUrlInput by remember(yosugaUrl) { mutableStateOf(yosugaUrl) }
 
     // Vault フォルダ選択。選択されたら読み書き権限を永続化して URI を保存する。
     val vaultPicker = rememberLauncherForActivityResult(
@@ -134,54 +131,6 @@ fun SettingsScreen(
                             )
                         }
                     }
-                }
-            }
-        }
-        item {
-            // 2026-07-25 まではレコル(カスタムGPT)のURLを入れる欄だった。
-            // レコル廃止(2026-07-27)で「その日の会話」を指す役目に差し替えたが、
-            // ⚠ **同じ日のうちに退避経路へ降格した。** 夜のボタンを共有インテントへ
-            // 変えたため、通常はこのURLを使わない(共有インテントでは行き先の会話を
-            // 指定できず、代わりに指示文が必ず入力欄へ入る)。
-            SectionCard(title = "ヨスガの会話(退避用)") {
-                Text(
-                    text = "ふだんは使いません。" +
-                        "「観察日誌を要求」「ヨスガへ総括を要求」は ChatGPT アプリへ" +
-                        "直接渡すので、指示文はそのまま入力欄に入ります。\n" +
-                        "ChatGPT アプリが入っていない端末では、代わりにここのURLを" +
-                        "開いて貼り付ける形になります。空欄なら新しい会話が開きます。",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                TerminalField(
-                    value = yosugaUrlInput,
-                    onValueChange = { yosugaUrlInput = it },
-                    label = "会話のURL(https://chatgpt.com/c/…)",
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (yosugaUrlInput.isNotBlank() && !ExternalLink.isValid(yosugaUrlInput)) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "http:// か https:// で始まるURLだけを開けます(空白を含むものは不可)。",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                TacticalOutlinedButton(
-                    onClick = {
-                        viewModel.saveYosugaConversationUrl(yosugaUrlInput)
-                        Toast.makeText(
-                            context,
-                            if (yosugaUrlInput.isBlank()) "URLを消しました。" else "保存しました。",
-                            Toast.LENGTH_SHORT,
-                        ).show()
-                    },
-                    enabled = yosugaUrlInput.isBlank() || ExternalLink.isValid(yosugaUrlInput),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("保存")
                 }
             }
         }

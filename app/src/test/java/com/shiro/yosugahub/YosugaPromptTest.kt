@@ -123,15 +123,28 @@ class YosugaPromptTest {
     }
 
     /**
-     * 新しい会話には今日のやりとりが無い。**材料が無いなら聞き返す**と書いていないと、
-     * それらしい嘘の日誌が出る(そして Obsidian にそのまま残る)。
+     * 材料は**この会話ではなく、その日それまでの会話**。どこを見るかを書いていないと、
+     * 目の前の空の会話を材料だと思って何も書けなくなる。
      */
     @Test
-    fun night_preamble_forbids_writing_without_material() {
+    fun night_preamble_points_at_the_rest_of_the_day() {
         val header = YosugaPrompt.NIGHT_HEADER
 
-        assertTrue("材料が無い旨を伝えていない", header.contains("材料"))
-        assertTrue("聞き返させていない", header.contains("一度だけ"))
-        assertTrue("推測を禁じていない", header.contains("推測"))
+        assertTrue("材料の在りかを言っていない", header.contains("材料"))
+        assertTrue("その日それまでを指していない", header.contains("今日"))
+    }
+
+    /**
+     * ⚠ **確認の質問から始めさせない**(2026-07-27 / 実機で毎回聞かれたため)。
+     * ただし捏造の禁止は残す——履歴を参照できない設定だと手元が空になり、
+     * それらしい嘘の日誌が**承認を挟まず** Obsidian に残る。
+     */
+    @Test
+    fun night_preamble_forbids_asking_back_but_also_forbids_making_things_up() {
+        val header = YosugaPrompt.NIGHT_HEADER
+
+        assertTrue("質問から始めるなと言っていない", header.contains("質問から始めない"))
+        assertTrue("推測を禁じていない", header.contains("推測しない"))
+        assertFalse("聞き返しの指示が残っている", header.contains("一度だけ"))
     }
 }

@@ -111,22 +111,6 @@ class SettingsViewModel(
         viewModelScope.launch { onResult(importRepository.readHistory(fileName)) }
     }
 
-    /**
-     * ヨスガとのその日の会話のURL(2026-07-27)。
-     * 2026-07-25 に置いていたレコルのURLを、レコル廃止に伴って置き換えた。
-     * uiState の combine は5フロー上限なので独立させる。
-     */
-    val yosugaConversationUrl: StateFlow<String> =
-        userPreferencesRepository.yosugaConversationUrl.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = "",
-        )
-
-    fun saveYosugaConversationUrl(url: String) {
-        viewModelScope.launch { userPreferencesRepository.setYosugaConversationUrl(url.trim()) }
-    }
-
     val uiState: StateFlow<SettingsUiState> = combine(
         userPreferencesRepository.obsidianVaultUri,
         gitHubSettingsRepository.hasToken,

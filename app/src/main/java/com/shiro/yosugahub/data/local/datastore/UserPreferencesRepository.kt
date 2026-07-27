@@ -81,31 +81,14 @@ class UserPreferencesRepository(context: Context) {
         dataStore.edit { preferences -> preferences[Keys.SYNC_TOKEN_ENCRYPTED] = value }
     }
 
-    /**
-     * ヨスガとの**その日の会話**のURL(`https://chatgpt.com/c/…`)。
-     *
-     * 2026-07-25 に持っていたレコル(カスタムGPT)のURLを、レコル廃止に伴って
-     * 置き換えたもの(2026-07-27)。**役目が違う**ので値は引き継がない。
-     *
-     * ⚠ **なぜ会話単位のURLが要るのか。** 観察日誌とセッション記録の材料は
-     * 「その日の会話そのもの」なので、新しい会話を開いてしまうと材料がゼロになる。
-     * 共有インテント(`ACTION_SEND`)では行き先の会話を指定できないため、
-     * URL で名指しする。未設定なら [ChatGptLink.DEFAULT_URL](新しい会話)へ退く。
-     *
-     * 秘密情報ではないため平文。開く前に `ExternalLink` で http/https のみに絞る。
-     */
-    val yosugaConversationUrl: Flow<String> = dataStore.data
-        .catch { error ->
-            if (error is IOException) emit(emptyPreferences()) else throw error
-        }
-        .map { preferences -> preferences[Keys.YOSUGA_CONVERSATION_URL].orEmpty() }
-
-    suspend fun setYosugaConversationUrl(value: String) {
-        dataStore.edit { preferences -> preferences[Keys.YOSUGA_CONVERSATION_URL] = value }
-    }
+    // ⚠ 会話URLの設定は 2026-07-27 に**追加した日のうちに撤去**した。
+    // 夜の依頼を共有インテントへ変えた時点で、この URL を読む経路は
+    // 「ChatGPT アプリが入っていない端末」だけになり、実質使われない欄になったため。
+    // 「押せて何も起きない口を作らない」に従う。退避先は
+    // `ChatGptLink.DEFAULT_URL`(新しい会話)を直接使う。
+    // 旧キー `yosuga_conversation_url` / `recoru_url` は DataStore に残るが誰も読まない。
 
     private object Keys {
-        val YOSUGA_CONVERSATION_URL = stringPreferencesKey("yosuga_conversation_url")
         val LAST_SYNCED_AT = stringPreferencesKey("last_synced_at")
         val OBSIDIAN_VAULT_URI = stringPreferencesKey("obsidian_vault_uri")
         val GITHUB_TOKEN_ENCRYPTED = stringPreferencesKey("github_token_encrypted")
